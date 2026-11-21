@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: coldshore-online
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: SUPABASE_URL
+        value: https://gaodqkdbhqwogrwmazaj.supabase.co
+      - key: SUPABASE_KEY
+        value: sb_publishable_F-gfmdHDbfs7V-zwF2c8eg_EP2hRPDe
+      - key: CS_SECRET
+        generateValue: true

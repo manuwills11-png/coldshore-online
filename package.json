@@ -1,0 +1,19 @@
+{
+  "name": "coldshore-online",
+  "version": "1.0.0",
+  "description": "ColdShore Online co-op server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "bot": "node tools/bot.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ws": "^8.23.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
