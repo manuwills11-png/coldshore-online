@@ -49,7 +49,7 @@ const BUILDINGS = {
 const upCost = (b, lv) => { const c = {}; for (const k in BUILDINGS[b].base) if (BUILDINGS[b].base[k]) c[k] = Math.round(BUILDINGS[b].base[k] * Math.pow(1.75, lv)); return c; };
 const upNeed = (b, lv) => { const n = BUILDINGS[b].need || {}; let r = null; for (const at in n) if (lv + 1 >= +at) r = n[at]; return r; };   // building level requirements, e.g. a level 3 tower needs power 2 for its searchlights
 const settlersOf = c => 6 + 6 * (c.b.housing || 0);
-const MAX_OPS = 3, MAX_SQUAD = 4;
+const MAX_OPS = 6, MAX_SQUAD = 6;   // no rules about who goes where: anyone can run their own operation or join any squad
 
 /* ---------------- story ---------------- */
 const STORY = [
@@ -134,7 +134,7 @@ const BONUS = [
 ];
 function startMission(room, starter, mid, tier, squadPids) {
   const c = DB.crews[room.code]; if (!c) return;
-  if (room.ops.size >= MAX_OPS) return send(starter, { t: 'err', m: 'Three squads are already out. Wait for one to come home.' });
+  if (room.ops.size >= MAX_OPS) return send(starter, { t: 'err', m: 'Every player is already out on an operation.' });
   if (starter.op) return send(starter, { t: 'err', m: 'You are already on an operation.' });
   const entry = (c.board || []).find(m => m.mid === mid); if (!entry) return send(starter, { t: 'err', m: 'That mission is no longer on the board.' });
   if ([...room.ops.values()].some(M => M.mid === mid)) return send(starter, { t: 'err', m: 'Another squad already took that contract.' });

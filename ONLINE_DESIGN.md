@@ -35,13 +35,14 @@ Clear missions end with **nests**: flesh mounds spread around the town. Hold E a
 
 **Bonus objective:** every operation rolls one bonus: nobody goes down, finish inside 9 minutes, kill an elite, or 60 kills between the squad. Meeting it pays 50% more supplies and XP.
 
-## Squads and split operations
+## Free choice: who goes where
 
-Up to **three squads** can be out at once, each on a different contract, with up to four players per squad.
+There are no rules about who goes where. Every player picks for themselves.
 
-- **Deploy** on a contract takes you plus everyone at Haven who is marked **Ready**. Anyone not ready stays at Haven and can take a different contract with their own group.
-- A running operation shows on the board with its squad and current objective. Anyone at Haven can **Join this squad** while it has room.
-- Each squad has its own sim host, its own zombies and its own objectives. Squads do not see each other's zombies. Players at Haven see each other walking around.
+- **Deploy** on any contract takes only you. Anyone else can **join** your squad whenever they like, from the board or from the map, or start a different contract of their own.
+- Every open contract and every squad already out is marked on the map (M), at its town. Click one to see it, then press Enter to deploy, J to join or W to set a waypoint.
+- Clicking anywhere else on the map sets a waypoint: a diamond on screen with the distance, a beam in the world and a dot on the minimap. Right-click or X clears it.
+- Each squad has its own sim host, its own zombies and its own objectives. Players at Haven see each other walking around.
 - Pulling out of an operation with others still in it leaves the squad running.
 
 ## The settlement: Haven

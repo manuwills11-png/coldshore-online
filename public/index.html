@@ -916,6 +916,7 @@ fetch('car.json').then(r => r.json()).then(j => { const bin = atob(j.glb), buf =
   new THREE.GLTFLoader().parse(buf.buffer, '', g => { CARG = g; if (typeof assetsReady !== 'undefined') { assetsReady.car = true; refreshMenu(); } }, e => { console.warn('car failed', e); assetsReady.car = true; refreshMenu(); }); }).catch(e => { console.warn('car fetch failed', e); assetsReady.car = true; refreshMenu(); });
 const CARKINDS = ['Car', 'Car_hatch', 'Car_suv', 'Car_pickup', 'Car_van'];
 function buildGlbCar(col, wreck, kind) {
+  if (kind === 'Car_humvee' && !wreck) { const o = buildGlbCar(0x4a5236, false, 'Car_suv'); return humveeDress(o); }
   if (!kind || !CARG.scene.getObjectByName(kind)) kind = pick(CARKINDS.filter(k => CARG.scene.getObjectByName(k))) || 'Car';
   const src = CARG.scene.getObjectByName(kind) || CARG.scene, g = src.clone(true), out = new THREE.Group(); out.add(g); out.userData.kind = kind;
   const drop = [];
@@ -2002,6 +2003,7 @@ function addItem(it) {
   if (it.k === 'weapon') { giveWeapon(it.id, WPN[it.id].cap, it.n || 0); return; }
   if (typeof wpFix === 'function') wpFix();
   const own_ = ks => ks.filter(k => P.wp[k] && P.wp[k].has), pick_ = a => a[Math.floor(Math.random() * a.length)];
+  if (story && story.lmodScarce && /ammo|shells|bolts/.test(it.k)) it = Object.assign({}, it, { n: Math.max(1, Math.ceil(it.n / 2)) });
   if (it.k === 'ammo') { const o = own_(['pistol', 'smg', 'revolver']); addAmmo(o.length ? pick_(o) : 'pistol', it.n); }
   else if (it.k === 'bolts') { if (!addAmmo('crossbow', it.n)) { it = { k: 'ammo', n: 3 }; addAmmo('pistol', 3); } }
   else if (it.k === 'huntammo') { if (!addAmmo('hunting', it.n)) { it = { k: 'ammo', n: 3 }; addAmmo('pistol', 3); } }
@@ -2204,8 +2206,9 @@ function showMenu() { return showTitle();
 addEventListener('keydown', e => {
   if (state === 'boot' || state === 'title') { titleKey(e); return; }
   if (state === 'cut') { if (cine && cine.choose) { const i = parseInt(e.key, 10); if (i >= 1 && i <= cine.choose.n) cine.choose.done(i - 1); } if (e.code === 'Enter' || e.code === 'Space') { skipCut(); e.preventDefault(); } return; }
-  if (state === 'play' && e.code === 'KeyM' && !e.repeat) { mapOpen = !mapOpen; return; }
-  if (state === 'play' && mapOpen && e.code === 'Escape') { mapOpen = false; return; }
+  if (state === 'play' && mapOpen && !e.repeat && mapKey(e)) { e.preventDefault(); return; }
+  if (state === 'play' && e.code === 'KeyM' && !e.repeat) { mapOpen = !mapOpen; MAPXF.pick = null; MAPXF.on = mapOpen; if (mapOpen) { wasLocked = false; try { document.exitPointerLock(); } catch (er) {} } else lock(); return; }
+  if (state === 'play' && mapOpen && e.code === 'Escape') { mapOpen = false; MAPXF.on = false; lock(); return; }
   if (state === 'play' && mapOpen && e.code === 'KeyZ') { MAPZ.on = !MAPZ.on; return; }
   if (state === 'choice') { const i = parseInt(e.key, 10); if (i >= 1 && i <= 3) end(true, ['cordon', 'union', 'halden'][i - 1]); return; }
   if (state !== 'play') return;
@@ -2265,6 +2268,7 @@ addEventListener('mousemove', e => {
 });
 glc.addEventListener('mousedown', e => {
   if (state !== 'play') return;
+  if (mapOpen) { mapClick(e); return; }
   initAudio();
   if (e.button === 2) { if (locked) mouse.ads = true; else mouse.drag = true; return; }
   if (!locked) { const was = lockFailed; lockFailed = false; lock(); if (was) { mouse.down = true; return; } return; }
@@ -2691,7 +2695,7 @@ async function lvlStart(li) {
   beep(700, .08, 'triangle', .04); stopMusic();
   await new Promise(r => { fadeTo(1, .6); setTimeout(r, 650); });
   titleEl.classList.remove('on'); endEl.classList.remove('on'); cine = null; initAudio();
-  if (sv.look) { LOOK = sv.look; await loadLook(LOOK); }
+  LOOK = sv.look || LOOK || 'PM1'; await loadLook(LOOK);
   newGame(sv.bg, false);
   Object.assign(story, JSON.parse(JSON.stringify(sv.story))); story.timer = null; story.party = [];
   P.x = sv.P.x; P.y = sv.P.y; yaw = sv.P.yaw; P.hp = sv.P.hp; collide(P);
@@ -3220,14 +3224,16 @@ async function missionFinish() {
 }
 function missionFail(why) { toast(why + ' Retrying from the last checkpoint step.'); if (story.m) { story.m.entered = false; story.m.t = 0; } }
 function mTarget() { const s = missionStep(); if (!s) return null; const a = s.at ? s.at() : null, m = story.m; let tx = typeof s.text === 'function' ? s.text() : s.text;
-  if ((s.t === 'survive' || s.t === 'race') && m.entered === true) { tx += '  ' + Math.max(0, Math.ceil(m.t)) + 's'; if (s.t === 'survive' && !s.anywhere && a && dist(P, a) >= (s.r || 160)) tx += ' (paused: get back to the marker)'; } if (s.t === 'collect' && s._its) tx += '  (' + s._its.filter(i => i.looted).length + '/' + s._its.length + ')'; if (s.t === 'clear' && a && m.entered === true) { let left = 0; for (const z of zombies) if (z.hp > 0 && z.clr === m.clrId) left++; tx += '  (' + left + ' left)'; }
+  if ((s.t === 'survive' || s.t === 'race' || (s.t === 'custom' && s.secs)) && m.entered === true) { tx += '  ' + Math.max(0, Math.ceil(m.t)) + 's'; if (s.t === 'survive' && !s.anywhere && a && dist(P, a) >= (s.r || 160)) tx += ' (paused: get back to the marker)'; } if (s.t === 'collect' && s._its) tx += '  (' + s._its.filter(i => i.looted).length + '/' + s._its.length + ')'; if (s.t === 'clear' && a && m.entered === true) { let left = 0; for (const z of zombies) if (z.hp > 0 && z.clr === m.clrId) left++; tx += '  (' + left + ' left)'; }
   tx = MISSIONS[m.id].n + ': ' + tx; return a ? { x: a.x, y: a.y, text: tx } : { x: P.x, y: P.y, text: tx, none: true }; }
 function missionTick(dt) {
   const m = story.m; if (!m || !m.id || cine) return; const s = missionStep(); if (!s) return;
   if (m.entered === 'cut') return;
   if (!m.entered) { m.entered = true; m.t = s.secs || 0; m.wt = s.wave || 0; if (s.enter) s.enter(); if (s.t === 'clear') { const a0 = s.at ? s.at() : null; m.clrId = Math.random(); if (a0) for (const z of zombies) if (z.hp > 0 && Math.hypot(z.x - a0.x, z.y - a0.y) < (s.cr || 700)) z.clr = m.clrId; }   /* build 40: only the dead that were there when you arrived count; latecomers do not keep the number climbing */ if (s.t === 'item' || s.t === 'collect') toast('Look for the glowing case' + (s.t === 'collect' ? 's' : '') + ' and hold E to take ' + (s.t === 'collect' ? 'them' : 'it') + '.'); }
   const a = s.at ? s.at() : null, near = a && dist(P, a) < (s.r || 160);
+  if (s.tick && s.t !== 'survive') { s.tick(dt, m); if (!story.m || story.m !== m || !m.entered) return; }
   switch (s.t) {
+    case 'custom': if (s.check && s.check(dt, m)) missionNext(); break;
     case 'goto': if (near && (!s.foot || !driving)) { if (s.cut) { m.entered = 'cut'; s.cut().then(() => { if (story.m === m) missionNext(); }); } else missionNext(); } break;
     case 'item': if (s.it && s.it.looted) missionNext(); break;
     case 'survive': if (!near && !s.anywhere) break; m.t -= dt; m.wt -= dt; if (m.wt <= 0 && s.wave) { m.wt = s.wave; horde(s.n || 6, a.x, a.y, s.run || .3); if (s.onWave) s.onWave(); } if (s.tick) s.tick(dt); if (m.t <= 0) missionNext(); break;
@@ -3537,7 +3543,7 @@ function update(dt) {
       if (prog >= 1) { target.ref.state = 'ready'; S.hotwire += 1; prog = 0; progMode = null; toast('Hotwired. Hotwire skill up.'); beep(700, .2, 'triangle', .06); }
     }
   } else { prog = Math.max(0, prog - dt * 2); if (prog === 0) progMode = null; }
-  P.target = target; tdoorTick(dt); safeTick(dt); stuckTick(dt); roadTick(dt); wdropTick(dt); if (NET.on) havenTick(dt); vilTick(dt); if (driving) carDamageTick(driving, dt); gasTick(dt); bottleTick(dt); stealthTick(dt); iaTick(dt); prTick(dt); convoyTick(dt); lvlTick(); intTick(dt); missionTick(dt); sweetTick(dt); towerFloorsTick(dt); updateLamps(dt); geyserTick(dt);
+  P.target = target; tdoorTick(dt); safeTick(dt); stuckTick(dt); roadTick(dt); wdropTick(dt); wptTick(); if (driving) humveeTick(dt); if (NET.on) havenTick(dt); vilTick(dt); if (driving) carDamageTick(driving, dt); gasTick(dt); bottleTick(dt); stealthTick(dt); iaTick(dt); prTick(dt); convoyTick(dt); lvlTick(); intTick(dt); missionTick(dt); sweetTick(dt); towerFloorsTick(dt); updateLamps(dt); geyserTick(dt);
 
   // zombies
   const baseDet = 240 * (1 - .15 * pk('quiet')) * (bgKey === 'hunter' ? 0.7 : 1) * (sprinting ? 1.5 : 1);
@@ -3554,7 +3560,7 @@ function update(dt) {
     z.cd = Math.max(0, z.cd - dt); z.atkT = Math.max(0, (z.atkT || 0) - dt); z.hitT = Math.max(0, (z.hitT || 0) - dt); z.alertT = Math.max(0, (z.alertT || 0) - dt);
     const d = dist(z, T_);
     if ((z.lv | 0) !== (T_.lv | 0)) { if (z.state === 'chase') z.state = 'wander'; }
-    else if (z.state === 'chase') { if (d > zDet(z, det) * 1.7) z.state = 'wander'; } else if (d < zDet(z, det) && (noise > .6 || d < det * .3 || !segBlocked(z.x, z.y, T_.x, T_.y))) { z.state = 'chase'; z.feed = false; z.alertT = z.run ? 0.7 : 1.1; z.stag = Math.max(z.stag || 0, z.alertT * 0.8); scream(d, Math.atan2(z.y - T_.y, z.x - T_.x) - yaw); }
+    else if (z.state === 'chase') { if (d > zDet(z, det) * 1.7) z.state = 'wander'; } else if (d < zDet(z, det) && (noise > .6 || d < det * .3 || !segBlocked(z.x, z.y, T_.x, T_.y)) && !(z.sleep && noise < 1.3 && d > 40)) { z.state = 'chase'; z.feed = false; z.alertT = z.run ? 0.7 : 1.1; z.stag = Math.max(z.stag || 0, z.alertT * 0.8); scream(d, Math.atan2(z.y - T_.y, z.x - T_.x) - yaw); }
     z.moving = false;
     if (zMod(z, d, dt)) {}
     else if (z.stag > 0) { z.stag -= dt; z.moving = false; }
@@ -3737,7 +3743,7 @@ function drawHUD() {
   }
 
   if (!driving && W_().zoom && adsK > .85) { const r = Math.min(VW, VH) * .42; ctx.save(); ctx.fillStyle = '#000'; ctx.beginPath(); ctx.rect(0, 0, VW, VH); ctx.arc(VW / 2, VH / 2, r, 0, Math.PI * 2, true); ctx.fill('evenodd'); ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(VW / 2 - r, VH / 2); ctx.lineTo(VW / 2 + r, VH / 2); ctx.moveTo(VW / 2, VH / 2 - r); ctx.lineTo(VW / 2, VH / 2 + r); ctx.stroke(); ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(VW / 2 - r, VH / 2); ctx.lineTo(VW / 2 - r * .12, VH / 2); ctx.moveTo(VW / 2 + r * .12, VH / 2); ctx.lineTo(VW / 2 + r, VH / 2); ctx.moveTo(VW / 2, VH / 2 + r * .12); ctx.lineTo(VW / 2, VH / 2 + r); ctx.stroke(); const vg = ctx.createRadialGradient(VW / 2, VH / 2, r * .7, VW / 2, VH / 2, r); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.7)'); ctx.fillStyle = vg; ctx.beginPath(); ctx.arc(VW / 2, VH / 2, r, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
-  drawHUD2(); roadHUD(); netHUD(); arsenalHUD();
+  drawHUD2(); roadHUD(); netHUD(); arsenalHUD(); wptHUD(); humveeHUD();
   if (driving) {
     text('FUEL', VW / 2 - 80, VH - 64, '#b9c8c4', 11); bar(VW / 2 - 50, VH - 72, 130, 7, driving.fuel / 100, driving.fuel > 20 ? '#e0a030' : '#e04030');
     text('ENGINE', VW / 2 - 92, VH - 50, '#b9c8c4', 11); bar(VW / 2 - 50, VH - 58, 130, 7, driving.hp / 100, driving.hp > 35 ? '#6fd3b0' : '#e04030'); if (driving.hp <= 0) text('ENGINE DEAD', VW / 2, VH - 86, '#e04030', 12, 'center');
@@ -3909,7 +3915,7 @@ function physicsStep(dt) {
       const A = active[i], B = active[j]; if (Math.abs(A.x - B.x) > A.hl + B.hl + 8 || Math.abs(A.y - B.y) > A.hl + B.hl + 8) continue;
       const hit = satBox(A, B); if (hit) { const J = impulse(A, B, hit.n, hit.d, hit.p, .25, .5); if (J > 0) { const dv = J * A.im * S3; crashFx(dv, hit.p.x, hit.p.y); if (dv > 2) { A.hp = Math.max(0, A.hp - dv * 3); B.hp = Math.max(0, B.hp - dv * 3); } } }
     }
-    for (const c of active) { if (c !== driving && !c.ai && Math.abs(c.vx) + Math.abs(c.vy) + Math.abs(c.w) * 40 < 2) { c.vx = c.vy = c.w = 0; continue; } const J = carCollide(c); if (J > 0 && c === driving) { const dv = J * c.im * S3; crashFx(dv, c.x, c.y); if (dv > 3) c.lastCrash = performance.now(); if (dv > 4) { c.hp = Math.max(0, c.hp - (dv - 3) * 1.8 * (1 - .35 * pk('road')) * (1 - .28 * vu('armor')) * (c.myTruck ? .75 : 1)); carCrashDamage(c, dv); } } }
+    for (const c of active) { if (c !== driving && !c.ai && Math.abs(c.vx) + Math.abs(c.vy) + Math.abs(c.w) * 40 < 2) { c.vx = c.vy = c.w = 0; continue; } const J = carCollide(c); if (J > 0 && c === driving) { const dv = J * c.im * S3; crashFx(dv, c.x, c.y); if (dv > 3) c.lastCrash = performance.now(); if (dv > 4) { c.hp = Math.max(0, c.hp - (dv - 3) * 1.8 * (1 - .35 * pk('road')) * (1 - .28 * vu('armor')) * (c.myTruck ? .75 : 1) * (c.armorK || 1)); carCrashDamage(c, dv); } } }
   }
   // vehicles vs zombies: momentum transfer, knockdowns, kills
   if (driving) {
@@ -5382,6 +5388,13 @@ function npcScriptMove(n, dt) {
   if (npcMove(n, n.goal.x, n.goal.y, n.goal.sp, dt) || Math.hypot(n.goal.x - n.x, n.goal.y - n.y) < 6) { const g = n.goal; n.goal = null; if (g.res) g.res(); }
 }
 const _sq2 = new THREE.Quaternion(), _ax = new THREE.Vector3(1, 0, 0);
+const _leanQ = new THREE.Quaternion(), _leanAx = new THREE.Vector3(), _hq0 = new THREE.Quaternion(), _hq1 = new THREE.Quaternion(), _hq2 = new THREE.Quaternion(), _hf = new THREE.Vector3(), _hr = new THREE.Vector3();
+// turn a head in the world's frame (nod = look down, tilt = roll), whatever way the rig's head bone happens to be oriented
+function headPose(n, head) {
+  n.m.updateMatrixWorld(true); const pq = head.parent.getWorldQuaternion(_hq0), wq = _hq1.copy(pq).multiply(head.quaternion);
+  _hf.set(Math.cos(n.a), 0, Math.sin(n.a)); _hr.set(-Math.sin(n.a), 0, Math.cos(n.a));   // forward and its horizontal side axis
+  if (n.headNod) wq.premultiply(_hq2.setFromAxisAngle(_hr, n.headNod)); if (n.headTilt) wq.premultiply(_hq2.setFromAxisAngle(_hf, n.headTilt));
+  head.quaternion.copy(pq.invert()).multiply(wq); }
 function syncNPCs(dt) {
   const t = performance.now() / 1000;
   for (const n of npcs) {
@@ -5394,9 +5407,9 @@ function syncNPCs(dt) {
       n.m.position.set(c.x * S3 + f.x * s[0] + r.x * s[1], -0.02 + vehOf(c).eye, c.y * S3 + f.y * s[0] + r.y * s[1]); n.m.rotation.y = -c.a; an = 'Sit';
       n.x = c.x; n.y = c.y;
     } else {
-      if (n.lift > 0 && (n.mode === 'car' || n.party)) n.lift = 0;
+      if (n.lift > 0 && (n.mode === 'car' || n.party) && !n.kiss) n.lift = 0;
       if (n.lift > 0 && !n.kiss && !cars.some(c => Math.hypot(c.x - n.x, c.y - n.y) < 60)) { n.lift = Math.max(0, n.lift - 9 * (dt || .016)); }
-      n.m.position.set(n.x * S3, (n.lift || 0) + lvH(n), n.y * S3); n.m.rotation.y = -n.a;
+      n.m.position.set(n.x * S3, (n.lift || 0) + lvH(n), n.y * S3); n.m.rotation.set(0, -n.a, 0); if (n.lean) n.m.quaternion.premultiply(_leanQ.setFromAxisAngle(_leanAx.set(-Math.sin(n.a), 0, Math.cos(n.a)), -n.lean));
       if (n.force) an = n.force;
       else if (n.mode === 'down') an = 'Down';
       else if (n.healT > 0) an = 'Heal';
@@ -5410,7 +5423,7 @@ function syncNPCs(dt) {
     if (an === 'Fire' && u.cur === 'Fire' && n.fireFx > .12) u.acts.Fire.reset().play();
     setAnim(u, an, ts, an === 'Fire' ? .04 : .25); u.mixer.update(dt);
     if (n.gun) n.gun.visible = !(n.m.userData.skirt || n.m.userData.wed) && n.mode !== 'car' && an !== 'Sit' && an !== 'Heal' && an !== 'Down';
-    u.eyesC = n.eyes || 0; if (u.head && (n.headTilt || n.headNod)) { u.head.rotation.z += n.headTilt || 0; u.head.rotation.x += n.headNod || 0; }
+    u.eyesC = n.eyes || 0; if (u.head && (n.headTilt || n.headNod)) headPose(n, u.head);
     if (u.face && u.face.length) faceTick(u, speaking === n.ch || (n.isMe && speaking === 'YOU'), dt, t, n.mood || 0);
     else if (u.jaw && speaking === n.ch) { const lv = curSrc ? voLevel() : -1, a = lv >= 0 ? clamp(lv * 2.2, 0, .24) : 0.04 + 0.16 * Math.abs(Math.sin(t * 17)) * Math.abs(Math.sin(t * 5.3 + 1)); u.jaw.quaternion.multiply(_sq2.setFromAxisAngle(_ax, -a)); }
   }
@@ -5564,7 +5577,9 @@ function wait(s) { return new Promise(res => { if (!cine || cine.skip) { res(); 
 function shot(a, b, dur, ease) { if (!cine) return Promise.resolve(); cine.shot = { a, b: b || a, dur: dur || 1, t: 0, ease: ease === undefined ? 1 : ease }; return dur ? wait(dur) : Promise.resolve(); }
 function fadeTo(v, s) { fadeEl.style.transition = 'opacity ' + (s || 0) + 's'; fadeEl.style.opacity = v; return s ? wait(s) : Promise.resolve(); }
 async function tcard(t, sm, s) { tcardEl.innerHTML = esc(t) + (sm ? '<small>' + esc(sm) + '</small>' : ''); tcardEl.classList.add('on'); await wait(s); tcardEl.classList.remove('on'); await wait(1.2); }
-function walkTo(n, x, y, sp) { return new Promise(res => { if (!n) { res(); return; } if (cine && cine.skip) { n.x = x; n.y = y; res(); return; } n.mode = 'script'; n.goal = { x, y, sp: sp || 70, res }; }); }
+function walkTo(n, x, y, sp) { return new Promise(res => { if (!n) { res(); return; } if (cine && cine.skip) { n.x = x; n.y = y; res(); return; } n.mode = 'script'; const g = { x, y, sp: sp || 70, res }; n.goal = g;
+  // never let a cutscene hang on someone who cannot get there (a car, a wall, the player): after a fair time, step them into place
+  const lim = (Math.hypot(x - n.x, y - n.y) / (sp || 70) * 1.6 + 1.5) * 1000; setTimeout(() => { if (n.goal === g) { n.x = x; n.y = y; n.goal = null; res(); } }, lim); }); }
 function choose(opts) {
   return new Promise(res => {
     if (cine && cine.skip) { res(0); return; }
@@ -6264,13 +6279,21 @@ async function fpKiss0(n) {
 async function duoKiss(a_, b_) {
   const mx = (a_.x + b_.x) / 2, my = (a_.y + b_.y) / 2, ang = Math.atan2(b_.y - a_.y, b_.x - a_.x);
   a_.mode = b_.mode = 'script'; a_.kiss = b_.kiss = 1; romanceMusic(true);
-  await Promise.all([walkTo(a_, mx - Math.cos(ang) * 7, my - Math.sin(ang) * 7, 45), walkTo(b_, mx + Math.cos(ang) * 7, my + Math.sin(ang) * 7, 45)]);
-  a_.x = mx - Math.cos(ang) * 3.6; a_.y = my - Math.sin(ang) * 3.6; b_.x = mx + Math.cos(ang) * 3.6; b_.y = my + Math.sin(ang) * 3.6;
-  a_.a = ang; b_.a = ang + Math.PI; a_.force = b_.force = 'Idle';
-  let t = 0; cine.tick = dt => { t += dt; const k = clamp(t / 2, 0, 1); a_.headTilt = .25 * k; b_.headTilt = -.25 * k; a_.headNod = b_.headNod = .14 * k; a_.eyes = b_.eyes = clamp((t - .7) / .7, 0, 1); a_.mood = b_.mood = 1; };
-  const side = ang + Math.PI / 2, d = 38;
-  await shot([mx + Math.cos(side) * d, my + Math.sin(side) * d, 1.62, mx, my, 1.58], [mx + Math.cos(side + .5) * d * .8, my + Math.sin(side + .5) * d * .8, 1.6, mx, my, 1.6], 5);
-  cine.tick = null; for (const q of [a_, b_]) { q.headTilt = 0; q.headNod = 0; q.eyes = 0; q.kiss = 0; }
+  await Promise.all([walkTo(a_, mx - Math.cos(ang) * 9, my - Math.sin(ang) * 9, 45), walkTo(b_, mx + Math.cos(ang) * 9, my + Math.sin(ang) * 9, 45)]);
+  // face to face, half a metre apart (bodies never pass through each other), each leaning in from the ankles
+  const H = 3.9; a_.x = mx - Math.cos(ang) * H; a_.y = my - Math.sin(ang) * H; b_.x = mx + Math.cos(ang) * H; b_.y = my + Math.sin(ang) * H;
+  a_.a = ang; b_.a = ang + Math.PI; a_.force = b_.force = 'Idle'; a_.goal = b_.goal = null;
+  // the taller one bends their head down, the shorter one lifts theirs
+  const hy = n => { const u = n.m && n.m.userData; if (!u || !u.head) return 1.6; n.m.updateMatrixWorld(true); return u.head.getWorldPosition(new THREE.Vector3()).y; };
+  const dh = clamp(hy(a_) - hy(b_), -.35, .35), tilt = Math.atan2(dh, .3), eyeH = (hy(a_) + hy(b_)) / 2 + .02;
+  let t = 0; cine.tick = dt => { t += dt; const k = clamp(t / 2, 0, 1), e = k * k * (3 - 2 * k);
+    a_.headTilt = .22 * e; b_.headTilt = -.22 * e; a_.headNod = (.06 + tilt) * e; b_.headNod = (.06 - tilt) * e; a_.lean = (.07 + Math.max(0, dh) * .05) * e; b_.lean = (.065 + Math.max(0, -dh) * .05) * e; a_.lift = Math.min(.06, Math.max(0, -dh) * .3) * e; b_.lift = Math.min(.06, Math.max(0, dh) * .3) * e;   // the shorter one goes up on their toes
+    a_.eyes = b_.eyes = clamp((t - .9) / .7, 0, 1); a_.mood = b_.mood = 1; };
+  // profile shot from whichever side has a clear line (cars, walls, trees and buildings are checked), pulled in if something is close
+  const free = sd => { const ex = mx + Math.cos(sd) * 40, ey = my + Math.sin(sd) * 40; let f = 40; try { f = camRay(mx, my, ex, ey); } catch (e) {} for (const c of cars) { if (!c.m) continue; for (let t = 6; t <= 40; t += 3) if (Math.hypot(mx + Math.cos(sd) * t - c.x, my + Math.sin(sd) * t - c.y) < Math.max(c.hl, c.hw) * .9) { f = Math.min(f, t - 3); break; } } return f; };
+  let side = ang + Math.PI / 2; const fa = free(side), fb = free(side + Math.PI); if (fb > fa) side += Math.PI; const d = clamp(Math.max(fa, fb) - 4, 14, 34), sw = fb > fa ? -.45 : .45;
+  await shot([mx + Math.cos(side) * d, my + Math.sin(side) * d, eyeH + .05, mx, my, eyeH - .03], [mx + Math.cos(side + sw * .25) * d * .72, my + Math.sin(side + sw * .25) * d * .72, eyeH, mx, my, eyeH - .02], 5.2);   // a slow push-in that stays in profile
+  cine.tick = null; for (const q of [a_, b_]) { q.headTilt = 0; q.headNod = 0; q.eyes = 0; q.kiss = 0; q.lean = 0; q.lift = 0; }
 }
 async function cutDawn() {
   if (story._cutDawn) return; story._cutDawn = 1; const C = CAMPFIRE;
@@ -6348,8 +6371,9 @@ function meVisible() {
   return !!(driving && chaseCam);
 }
 // two-person kiss with you on screen
+async function ensureMe() { if (ME && ME.m && ME.m.parent) return true; try { await loadLook(LOOK || 'PM1'); spawnMe(); } catch (e) {} return !!ME; }   // a save or a quick start can skip the creator: load the body on demand
 async function meKiss(n) {
-  if (!ME) return fpKiss0(n);
+  if (!(await ensureMe())) return fpKiss0(n);
   ME.x = P.x; ME.y = P.y; ME.a = Math.atan2(n.y - P.y, n.x - P.x); ME.mode = 'script';
   await duoKiss(ME, n);
   ME.mode = 'me'; P.x = ME.x; P.y = ME.y; yaw = ME.a;
@@ -6359,7 +6383,7 @@ async function meKiss(n) {
 // tender, non-explicit nights: sit together, talk, kiss, fade to black
 async function intimateNight(n, place, lines, after) {
   const cx = place.x, cy = place.y;
-  romanceMusic(true); await fadeTo(1, 1.2); await tcard(place.title, place.sub, 2);
+  romanceMusic(true); await ensureMe(); await fadeTo(1, 1.2); await tcard(place.title, place.sub, 2);
   P.x = cx - 14; P.y = cy; n.x = cx + 14; n.y = cy; n.mode = 'script'; n.a = Math.PI; n.force = 'Sit'; n.kiss = 1;
   if (ME) { ME.mode = 'script'; ME.x = P.x; ME.y = P.y; ME.a = 0; ME.force = 'Sit'; ME.kiss = 1; }
   await fadeTo(0, 1.4);
@@ -6698,6 +6722,7 @@ function drawBigMap() {
   const o = objTarget(); if (o) { ctx.strokeStyle = '#e9c46a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(ox + o.x * k, oy + o.y * k, 8 + Math.sin(performance.now() / 200) * 2, 0, 6.283); ctx.stroke(); ctx.fillStyle = '#e9c46a'; ctx.fillText(o.text, ox + o.x * k, oy + o.y * k + 24); }
   npcs.forEach(n => { if (!n.party) return; ctx.fillStyle = CAST[n.ch].col; ctx.beginPath(); ctx.arc(ox + n.x * k, oy + n.y * k, 3, 0, 6.283); ctx.fill(); });
   ctx.save(); ctx.translate(ox + P.x * k, oy + P.y * k); ctx.rotate(driving ? driving.a : yaw); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(9, 0); ctx.lineTo(-5, -5); ctx.lineTo(-5, 5); ctx.closePath(); ctx.fill(); ctx.restore();
+  mapDrawExtras(ox, oy, k);
   ctx.textAlign = 'left'; ctx.fillStyle = '#dfe6e3'; ctx.font = '300 22px Segoe UI,Roboto,Arial,sans-serif'; ctx.fillText('CALDER COUNTY', ox + 12, oy + 30);
   ctx.font = '12px ui-monospace,monospace'; ctx.fillStyle = '#8b9a96'; ctx.fillText('[M] close   [Z] ' + (big ? 'county only' : 'whole region'), ox + 12, oy + 50);
 }
@@ -7104,7 +7129,7 @@ async function campBegin(L) {
   if (driving) exitCar(); if (TF.t) { try { towerClose(); } catch (e) {} }
   state = 'play'; setStage(CAMPI); initAudio();
   if (!PG.MIA) await loadLook('MIA');
-  ensureCast(); if (typeof needCast === 'function') await needCast(); try { myTruckEnsure(); } catch (e) {} story.homeBound = !!(C.homeBound && C.homeBound());
+  ensureCast(); if (typeof needCast === 'function') await needCast(); try { myTruckEnsure(); } catch (e) {} try { humveeEnsure(); lmodApply(L); } catch (e) {} story.homeBound = !!(C.homeBound && C.homeBound());
   const d = story.fort ? { x: 47500, y: 11700, a: -Math.PI / 2 } : houseDoor('warehouse', 160); P.x = d.x; P.y = d.y; P.lv = 0; P.lvf = 0; yaw = d.a + Math.PI; P.hp = 100; collide(P); fortUpkeep();
   clearZombies(P.x, P.y, 1400); campParty(C.party); lock(); garageIA();
   campSaveNow('L' + L);
@@ -7656,6 +7681,7 @@ const brief = (k, r) => BRIEF[k][Math.floor(r() * BRIEF[k].length)];
 function realKind(t, kd) { const hi = townHouse(t, kd); const nm = hi >= 0 ? bName(hi).split('#')[0] : kd; return KNAME[nm] ? nm : kd; }
 function oPick(type, L, r) { const S = oSettles(type).slice().sort((a, b) => Math.hypot(a.x0 - 40000, a.y0 - 12500) - Math.hypot(b.x0 - 40000, b.y0 - 12500)); if (!S.length) return null; const max = Math.max(1, Math.min(S.length, Math.floor(3 + (L - 20) * .8))); return S[Math.floor(r() * max)]; }
 function genJob(L, k, kind, r) {
+  if (BRIEF2[kind]) { const id2 = genJob2(L, k, kind, r); if (id2) return id2; kind = 'supply'; }
   const t = GTOWNS[Math.floor(r() * GTOWNS.length)], t2 = GTOWNS[Math.floor(r() * GTOWNS.length)], kd = GKINDS[Math.floor(r() * GKINDS.length)], T = tc(t);
   const id = 'g' + L + '_' + k, DF = 1 + (L - 1) * .065, hn = Math.round(8 + DF * 1.2), B = brief(kind, r), dur = Math.round(Math.min(150, 40 + L * .45));
   const intro = () => { bark(B[0], B[1], true); };
@@ -7696,7 +7722,7 @@ function genJob(L, k, kind, r) {
   return id;
 }
 function genLevel(L) {
-  const r = rngL(L), kinds = ['supply', 'rescue', 'clear', 'outpost', 'parts', 'race', 'nests'].concat(L >= 22 ? ['expedition', 'farmrun'] : []).concat(L >= 40 ? ['campraid', 'expedition'] : []), nj = 3 + (L > 60 ? 1 : 0) + (L > 130 ? 1 : 0), jobs = [];
+  const r = rngL(L), kinds = ['supply', 'rescue', 'clear', 'outpost', 'parts', 'race', 'nests'].concat(L >= 3 ? ['demolition', 'blackout', 'stealth', 'lure', 'gauntlet', 'hunt', 'gasleak', 'demolition', 'stealth', 'hunt'] : []).concat(L >= 22 ? ['expedition', 'farmrun'] : []).concat(L >= 40 ? ['campraid', 'expedition'] : []), nj = 3 + (L > 60 ? 1 : 0) + (L > 130 ? 1 : 0), jobs = [];
   const left = kinds.filter((q, i) => kinds.indexOf(q) === i); if (L >= 101) left.push('farmrun', 'expedition');
   for (let k = 0; k < nj; k++) { const kd = left.splice(Math.floor(r() * left.length), 1)[0]; jobs.push(genJob(L, k, kd, r)); }
   if (L % 7 === 0) jobs.push(genJob(L, nj, 'moon', r));
@@ -8253,7 +8279,7 @@ function netUI() {
     h += '<div style="display:flex;justify-content:space-between;align-items:flex-end"><div><div class="tag">Crew · chapter ' + C.ch + '</div><div style="font:700 20px Segoe UI">' + esc_(C.name) + '</div><div class="muted">' + C.done + ' missions done · ' + C.fails + ' failed</div></div><div style="text-align:right"><div class="muted">Invite code</div><div class="code">' + C.code + '</div></div></div>' +
       '<div style="margin:10px 0">' + C.online.map(p => '<span class="pl' + (p.ready ? ' r' : '') + '">' + esc_(p.name) + (p.pid === NET.pid ? ' (you)' : '') + (p.ready ? ' ✓' : '') + '</span>').join('') + '</div>' +
       '<div class="cols"><div><h3>Operations <span class="muted">' + (C.ops || []).length + ' of ' + (C.maxOps || 3) + ' squads out</span></h3>' + (C.ops || []).map(o => '<div class="card story"><div class="tag">' + esc_(o.type) + ' · threat ' + o.threat + '</div><b>' + esc_(o.name) + '</b> <span class="muted">' + esc_(o.stage) + '</span><div class="muted">Squad: ' + o.squad.map(esc_).join(', ') + (o.bonus ? ' · ' + esc_(o.bonus) : '') + '</div>' + (!o.full && !(C.online.find(q => q.pid === NET.pid) || {}).op ? '<span class="b gold" data-a="joinop" data-o="' + o.id + '">Join this squad</span>' : '') + '</div>').join('') +
-      '<div class="muted" style="margin:6px 0 2px">Deploy takes you plus everyone at Haven marked Ready. Split up: the rest can take a different contract.</div>' +
+      '<div class="muted" style="margin:6px 0 2px">Go wherever you like: deploy on any contract, join any squad that is out, or stay home. The map (M) shows every contract and squad.</div>' +
       C.board.map(m => '<div class="card' + (m.story ? ' story' : '') + '"><div class="tag">' + (m.story ? 'Story · chapter ' + m.ch : m.type) + (m.night ? ' · night' : '') + '</div><b>' + esc_(m.name) + '</b> <span class="muted">' + esc_(m.town) + '</span>' + (m.brief ? '<div class="muted" style="margin:4px 0">' + esc_(m.brief) + '</div>' : '') + (m.warn ? '<div class="muted" style="color:#e98a6a">' + esc_(m.warn) + '</div>' : '') +
         (m.taken ? '<div class="muted" style="color:#9fd6e6">A squad is out on this one.</div>' : m.locked ? '<div class="muted">Needs ' + Object.entries(m.need).map(([k, v]) => k === 'radio' ? 'Radio level ' + v : v + ' missions done').join(' and ') + '</div>' : '<div><select id="t_' + m.mid.replace(/[^a-z0-9]/gi, '') + '"><option value="normal">Normal</option><option value="hard">Hard (×1.6 pay)</option><option value="nightmare">Nightmare (×2.4)</option></select> <span class="b gold" data-a="start" data-m="' + m.mid + '">Deploy</span></div>') + '</div>').join('') +
       ((C.ops || []).length ? '' : '<span class="b" data-a="refresh">New contracts</span>') + '</div><div><h3>Haven <span class="muted">' + (C.settlers || 6) + ' settlers</span></h3><div class="res">' + Object.entries(C.res).map(([k, v]) => '<span>' + k + ' <b>' + v + '</b></span>').join('') + '</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin:8px 0">' +
@@ -8261,7 +8287,7 @@ function netUI() {
       '<div class="muted">Upgrades are built in person, at the command table in Haven.</div><span class="b gold" data-a="haven">' + (NET.worldReady ? 'Back to Haven' : 'Enter Haven') + '</span>' +
       '<h3>Radio log</h3><div class="log">' + C.log.slice().reverse().map(l => '<div>' + esc_(l.m) + '</div>').join('') + '</div></div></div>' +
       '<div style="margin-top:10px"><input id="chat" placeholder="Say something to your crew" style="width:60%"> <span class="b" data-a="chat">Send</span>' + NET.chat.map(c => '<div class="muted"><b>' + esc_(c.n) + '</b> ' + esc_(c.m) + '</div>').join('') + '</div>' + msgs +
-      '<div><span class="b" data-a="ready">' + (C.online.find(p => p.pid === NET.pid && p.ready) ? 'Not ready' : 'Ready') + '</span><span class="b" data-a="leave">Leave crew room</span>' + (NET.worldReady ? '' : '<span class="b" data-a="back">Title screen</span>') + '</div>';
+      '<div><span class="b" data-a="leave">Leave crew room</span>' + (NET.worldReady ? '' : '<span class="b" data-a="back">Title screen</span>') + '</div>';
   } else if (NET.screen === 'results' && NET.results) {
     const R = NET.results; h += '<div class="tag">' + (R.win ? 'Mission complete' : 'Mission failed') + '</div><div style="font:700 26px Segoe UI;margin:6px 0">' + esc_(R.name) + '</div>' + (R.why ? '<div class="muted">' + esc_(R.why) + '</div>' : '') + (R.done ? '<div style="margin:10px 0;color:#e9c46a">' + esc_(R.done) + '</div>' : '') +
       (R.win ? '<div class="res">' + Object.entries(R.reward).map(([k, v]) => '<span>+' + v + ' <b>' + k + '</b></span>').join('') + '</div>' : '') + '<table>' + Object.values(R.stats).map(s => '<tr><td>' + esc_(s.name) + '</td><td>' + s.kills + '</td><td>' + s.xp + ' XP total</td></tr>').join('') + '</table>' + (R.bonus ? '<div class="muted" style="margin:6px 0;color:' + (R.bonusMet ? '#7fe0a0' : '#8fa0a0') + '">' + esc_(R.bonus) + (R.bonusMet ? ' · done, +50% pay' : ' · missed') + '</div>' : '') + '<span class="b gold" data-a="haven">Back to Haven</span><span class="b" data-a="tocrew">Mission board</span>';
@@ -8275,7 +8301,7 @@ function netUI() {
     else if (A === 'create') netSend({ t: 'crew.create', name: q('#cn').value.trim() || 'Unnamed Crew' });
     else if (A === 'join') netSend({ t: 'crew.join', code: a.dataset.c });
     else if (A === 'joincode') netSend({ t: 'crew.join', code: q('#cc').value.trim().toUpperCase() });
-    else if (A === 'start') { const sel = q('#t_' + a.dataset.m.replace(/[^a-z0-9]/gi, '')); netSend({ t: 'mission.start', mid: a.dataset.m, tier: sel ? sel.value : 'normal' }); }
+    else if (A === 'start') { const sel = q('#t_' + a.dataset.m.replace(/[^a-z0-9]/gi, '')); netSend({ t: 'mission.start', mid: a.dataset.m, tier: sel ? sel.value : 'normal', solo: 1 }); }
     else if (A === 'joinmission') { if (NET.busy) { netSend({ t: 'mission.join' }); } }
     else if (A === 'joinop') netSend({ t: 'mission.join', id: a.dataset.o });
     else if (A === 'haven') netEnterHaven();
@@ -8788,7 +8814,7 @@ const HVB = [   // the buildings, in the order the build cards show them
   { k: 'power', n: 'Power', ic: 'ϟ', d: 'A generator, then solar and wind. Lights the walls at night.', fx: lv => lv ? lv * 3 + ' panels' + (lv >= 3 ? ' and a wind turbine' : '') + ', floodlights' : 'nothing yet', at: { x: 6500, y: 4040 }, cam: [80, 600, -560] },
   { k: 'workshop', n: 'Workshop', ic: '⚒', d: 'Better guns for everyone who deploys.', fx: lv => '+' + 6 * lv + '% weapon damage · ' + ['pistol', 'shotgun', '+ rifle', '+ hunting rifle', '+ hunting rifle', '+ SMG'][lv] + ' issued', at: { x: 6800, y: 3160 }, cam: [520, 620, 420] },
   { k: 'infirmary', n: 'Infirmary', ic: '✚', d: 'More health and bandages when you head out.', fx: lv => '+' + 10 * lv + ' health, ' + (2 + lv) + ' bandages', at: { x: 5980, y: 3160 }, cam: [260, 600, 520] },
-  { k: 'garage', n: 'Garage', ic: '⛟', d: 'Tougher vehicles for convoys.', fx: lv => '+' + 20 * lv + '% vehicle armor', at: { x: 5850, y: 3980 }, cam: [380, 560, -420] },
+  { k: 'garage', n: 'Garage', ic: '⛟', d: 'Tougher vehicles for convoys. Level 4 restores an M1 Humvee with a roof gun.', fx: lv => '+' + 20 * lv + '% vehicle armor' + (lv >= 4 ? ' · Humvee at the gate' : ''), at: { x: 5850, y: 3980 }, cam: [380, 560, -420] },
   { k: 'radio', n: 'Radio', ic: '📡', d: 'Reach further: new towns and the next chapter.', fx: lv => 'chapter ' + Math.min(5, 1 + lv) + ' towns in range', at: { x: 6150, y: 3420 }, cam: [300, 700, 380] }
 ];
 let HM_ = null;
@@ -9136,7 +9162,9 @@ function netLoadout() {   // the workshop issues guns; anything you have found y
   const B = (NET.crew && NET.crew.b) || {}, W = B.workshop || 0, give = (id, mag, am) => { if (P.wp[id] && !P.wp[id].has) giveWeapon(id, mag, am); };
   wpFix(); if (W >= 1) give('shotgun', 6, 18); if (W >= 2) give('rifle', 20, 40); if (W >= 3) give('hunting', 5, 15); if (W >= 5) give('smg', 30, 60);
   for (const id of NET.armory || []) if (WPN[id]) { const w = WPN[id]; give(id, w.melee ? 0 : w.cap, w.melee ? 0 : Math.round(w.cap * 1.5)); }
-  INSPECT = null; INSPECT_PEND = null; WBAN = null; if (curW !== 'pistol' && P.wp.pistol) switchWeapon('pistol'); }
+  INSPECT = null; INSPECT_PEND = null; WBAN = null; if (curW !== 'pistol' && P.wp.pistol) switchWeapon('pistol');
+  if ((B.garage || 0) >= 4 && !cars.some(c => c.kind === 'Car_humvee')) humveeSpawnAt(HVGATE.x + 260, HVGATE.y - 200, 0);   // the garage's legendary: an M1 Humvee with the roof gun, parked outside the gate
+}
 function makeElite(z, look) {   // armoured, red-eyed, four times the health; they drop the good stuff
   z.elite = 1; if (!look) { z.hp *= 4.5; z.max = z.hp; z.sp = Math.max(z.sp, 70) * 1.1; } z.r = 14;
   if (z.m) { z.m.scale.multiplyScalar(1.16); const sp = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xff2a1a, blending: THREE.AdditiveBlending, transparent: true, opacity: .9, depthWrite: false })); sp.scale.set(.32, .12, 1); sp.position.set(0, 1.62, .1); z.m.add(sp);
@@ -9150,6 +9178,215 @@ function nestMesh(it) {   // a pulsing mound of flesh with a red beam over it
   g.position.set(it.x * S3, 0, it.y * S3); world3.add(g); it.mesh = g; MITEMS.push(it); }
 function nestBurn(it) { if (!it.mesh) return; const p = it.mesh.position; const fire = new THREE.PointLight(0xff6a1a, 3, 14); fire.position.set(p.x, 1, p.z); world3.add(fire); for (let i = 0; i < 16; i++) setTimeout(() => havenPuff(p.x + rnd(-1, 1), .5, p.z + rnd(-1, 1), 0), i * 90);
   if (typeof igniteAt === 'function') try { igniteAt(it.x, it.y, 0); } catch (e) {} setTimeout(() => world3 && world3.remove(fire), 4000); if (actx) try { nb(actx.currentTime, 1.2, 'lowpass', 500, .7, 1.4, .8, 0, .7); } catch (e) {} }
+
+/* ======================= BUILD 44: WAYPOINTS, MAP MARKERS, THE HUMVEE, NEW KINDS OF JOB ======================= */
+/* ---------- waypoints: click anywhere on the map, follow the diamond ---------- */
+let WPT = null; const MAPXF = { ox: 0, oy: 0, k: 1, on: false };
+function wptSet(x, y, label) { WPT = { x, y, label: label || null, t: performance.now() }; beep(880, .06, 'triangle', .04); beep(1320, .06, 'triangle', .03); if (WPT.m) world3.remove(WPT.m); wptBeam(); }
+function wptClear() { if (WPT && WPT.m) world3.remove(WPT.m); WPT = null; beep(440, .06, 'triangle', .03); }
+function wptBeam() { if (!WPT || !world3) return; const g = new THREE.Group(); const beam = new THREE.Mesh(new THREE.CylinderGeometry(.18, .55, 60, 12, 1, true), new THREE.MeshBasicMaterial({ color: 0x6fd3ff, transparent: true, opacity: .22, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+  beam.position.y = 30; g.add(beam); const ring = new THREE.Mesh(new THREE.RingGeometry(1.4, 1.8, 32), new THREE.MeshBasicMaterial({ color: 0x6fd3ff, transparent: true, opacity: .6, side: THREE.DoubleSide, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.y = .08; g.add(ring);
+  g.position.set(WPT.x * S3, 0, WPT.y * S3); world3.add(g); WPT.m = g; }
+function wptTick() { if (!WPT) return; if (!WPT.m || !WPT.m.parent) wptBeam(); if (Math.hypot(P.x - WPT.x, P.y - WPT.y) < 70) { toast('You have arrived' + (WPT.label ? ': ' + WPT.label : '.')); wptClear(); } }
+const _wv = new THREE.Vector3();
+function wptHUD() {   // a diamond on screen pinned to the edge when off-screen, plus distance; also on the minimap
+  if (!WPT || state !== 'play' || mapOpen) return; ctx.save();
+  _wv.set(WPT.x * S3, 1.8, WPT.y * S3).project(camera); let sx = (_wv.x * .5 + .5) * VW, sy = (-_wv.y * .5 + .5) * VH; const behind = _wv.z > 1;
+  if (behind) { sx = VW - sx; sy = VH - 40; } const off = behind || sx < 30 || sx > VW - 30 || sy < 60 || sy > VH - 60; sx = clamp(sx, 30, VW - 30); sy = clamp(sy, 60, VH - 60);
+  ctx.translate(sx, sy); ctx.fillStyle = '#6fd3ff'; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, -9); ctx.lineTo(7, 0); ctx.lineTo(0, 9); ctx.lineTo(-7, 0); ctx.closePath(); ctx.stroke(); ctx.fill();
+  font(11, 700); ctx.textAlign = 'center'; ctx.fillStyle = '#dff6ff'; ctx.fillText(Math.round(Math.hypot(P.x - WPT.x, P.y - WPT.y) * S3) + ' m', 0, 23); if (WPT.label && !off) { font(10, 600); ctx.fillText(WPT.label, 0, -15); }
+  ctx.restore();
+  // minimap dot (same frame as the minimap)
+  const mw = 200, mh = 150, mx = VW - mw - 22, my = 20, k = mw / 6000; let ux = mx + mw / 2 + (WPT.x - P.x) * k, uy = my + mh / 2 + (WPT.y - P.y) * k; ux = clamp(ux, mx + 5, mx + mw - 5); uy = clamp(uy, my + 5, my + mh - 5);
+  ctx.fillStyle = '#6fd3ff'; ctx.beginPath(); ctx.moveTo(ux, uy - 5); ctx.lineTo(ux + 4, uy); ctx.lineTo(ux, uy + 5); ctx.lineTo(ux - 4, uy); ctx.closePath(); ctx.fill();
+}
+/* ---------- missions on the map ---------- */
+const ONT = { 'HARBOR ROW': { x: 1200, y: 2000 }, 'MILLBROOK': { x: 8340, y: 5650 }, 'GREYWATER': { x: 3200, y: 950 }, 'PINE RIDGE': { x: 11640, y: 2100 }, 'SEAVIEW': { x: 5340, y: 8850 }, 'HOLLIS': { x: 11640, y: 11050 }, 'FAIRHAVEN': { x: 14640, y: 8850 }, 'ASHFORD': { x: 23090, y: 5650 }, 'CALDER': { x: 23090, y: 25590 }, 'BRAMBLE': { x: 14640, y: 21590 }, 'KESTREL': { x: 8340, y: 25590 }, 'NEW HALDEN': { x: 29000, y: 19500 }, 'MARSH END': { x: 35090, y: 8850 }, 'RIDGEWAY': { x: 31090, y: 2100 }, 'GRANITE FALLS': { x: 38790, y: 25590 } };
+const MTYPE = { scavenge: ['#e9c46a', 'S'], airdrop: ['#7fe0a0', 'A'], defend: ['#ff9a6a', 'D'], clear: ['#ff6a6a', 'C'], convoy: ['#9fd6e6', 'V'], siege: ['#ff4a4a', '!'], job: ['#e9c46a', 'J'], op: ['#c27bff', '◆'] };
+function mapMarkers() {   // everything worth going to, with a position: open contracts, squads already out, open jobs
+  const out = [];
+  if (NET.on && NET.crew) {
+    const seen = {}; for (const m of NET.crew.board || []) { if (m.locked) continue; const T = ONT[m.town]; if (!T) continue; const n = seen[m.town] = (seen[m.town] || 0) + 1, a = n * 1.9;
+      out.push({ x: T.x + Math.cos(a) * 260 * (n > 1), y: T.y + Math.sin(a) * 260 * (n > 1), name: m.name, sub: (m.story ? 'Story · ' : '') + m.type + (m.night ? ' · night' : ''), type: m.type, mid: m.mid, taken: m.taken, brief: m.brief }); }
+    for (const o of NET.crew.ops || []) { const T = ONT[o.town]; if (!T) continue; out.push({ x: T.x + 120, y: T.y - 160, name: o.name, sub: 'Squad out: ' + o.squad.join(', ') + ' · ' + o.stage, type: 'op', op: o.id, full: o.full }); }
+    const H_ = HAVEN(); out.push({ x: H_.x, y: H_.y, name: 'HAVEN', sub: 'Home', type: 'home' });
+  } else if (typeof MISSIONS !== 'undefined') {
+    for (const id in MISSIONS) { const M = MISSIONS[id]; if (M.camp || !missionOpen(id)) continue; let p = null; try { const s0 = M.steps && M.steps[0]; p = s0 && s0.at ? s0.at() : null; } catch (e) {} if (!p) continue; out.push({ x: p.x, y: p.y, name: M.n, sub: 'Job from ' + CAST[M.giver].name, type: 'job', job: id }); }
+  }
+  return out;
+}
+function mapDrawExtras(ox, oy, k) {
+  MAPXF.ox = ox; MAPXF.oy = oy; MAPXF.k = k; MAPXF.on = true; const t = performance.now() / 1000;
+  const ms = mapMarkers(); MAPXF.ms = ms;
+  for (const m of ms) { const x = ox + m.x * k, y = oy + m.y * k, c = m.type === 'home' ? '#ffffff' : (MTYPE[m.type] || MTYPE.job)[0], hot = MAPXF.pick === m;
+    ctx.globalAlpha = m.taken ? .4 : 1; ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.beginPath(); ctx.arc(x, y, hot ? 12 : 9, 0, 6.283); ctx.fill(); ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, (hot ? 12 : 9) + (m.type === 'op' ? Math.sin(t * 4) * 2 : 0), 0, 6.283); ctx.stroke();
+    font(10, 800); ctx.textAlign = 'center'; ctx.fillStyle = c; ctx.fillText(m.type === 'home' ? '⌂' : (MTYPE[m.type] || MTYPE.job)[1], x, y + 4); if (hot || k > .02) { font(10, 600); ctx.fillStyle = 'rgba(235,235,225,.9)'; ctx.fillText(m.name, x, y - 15); } ctx.globalAlpha = 1; }
+  if (WPT) { const x = ox + WPT.x * k, y = oy + WPT.y * k; ctx.fillStyle = '#6fd3ff'; ctx.beginPath(); ctx.moveTo(x, y - 9); ctx.lineTo(x + 7, y); ctx.lineTo(x, y + 9); ctx.lineTo(x - 7, y); ctx.closePath(); ctx.fill(); ctx.strokeStyle = 'rgba(111,211,255,.35)'; ctx.setLineDash([4, 5]); ctx.beginPath(); ctx.moveTo(ox + P.x * k, oy + P.y * k); ctx.lineTo(x, y); ctx.stroke(); ctx.setLineDash([]); }
+  // the picked marker's card
+  const p = MAPXF.pick; if (p) { const x = Math.min(VW - 300, ox + p.x * k + 18), y = Math.max(70, Math.min(VH - 150, oy + p.y * k - 40)); ctx.fillStyle = 'rgba(10,14,16,.92)'; ctx.fillRect(x, y, 280, 104); ctx.fillStyle = (MTYPE[p.type] || MTYPE.job)[0]; ctx.fillRect(x, y, 3, 104);
+    ctx.textAlign = 'left'; font(10, 700); ctx.fillText(String(p.sub || '').toUpperCase().slice(0, 44), x + 12, y + 18); font(15, 700); ctx.fillStyle = '#fff'; ctx.fillText(p.name.slice(0, 32), x + 12, y + 38);
+    font(11, 400); ctx.fillStyle = '#9aa8a8'; const act = []; if (p.mid && !p.taken && !NET.mission) act.push('[ENTER] deploy'); if (p.op && !p.full && !NET.mission) act.push('[J] join squad'); if (p.job) act.push('[ENTER] take the job'); act.push('[W] waypoint');
+    ctx.fillText(act.join('   '), x + 12, y + 60); ctx.fillText(Math.round(Math.hypot(P.x - p.x, P.y - p.y) * S3) + ' m away', x + 12, y + 80); }
+  font(11, 400); ctx.textAlign = 'left'; ctx.fillStyle = '#8b9a96'; ctx.fillText('Click: set a waypoint or pick a mission   ·   Right click / [X]: clear waypoint', ox + 12, oy + 68);
+}
+function mapClick(e) {
+  if (!MAPXF.on) return; const mx = e.clientX, my = e.clientY, wx = (mx - MAPXF.ox) / MAPXF.k, wy = (my - MAPXF.oy) / MAPXF.k;
+  if (e.button === 2) { wptClear(); MAPXF.pick = null; return; }
+  let best = null, bd = 16; for (const m of MAPXF.ms || []) { const d = Math.hypot(MAPXF.ox + m.x * MAPXF.k - mx, MAPXF.oy + m.y * MAPXF.k - my); if (d < bd) { bd = d; best = m; } }
+  if (best) { MAPXF.pick = best; wptSet(best.x, best.y, best.name); click(1200, .2); return; }
+  MAPXF.pick = null; if (wx > -5000 && wy > -5000) wptSet(wx, wy, null);
+}
+function mapKey(e) {   // keys while the map is open
+  const p = MAPXF.pick;
+  if (e.code === 'KeyX') { wptClear(); MAPXF.pick = null; return true; }
+  if (e.code === 'KeyW' && p) { wptSet(p.x, p.y, p.name); return true; }
+  if (e.code === 'Enter' && p) { if (p.mid && !p.taken && NET.on && !NET.mission) { const tier = 'normal'; netSend({ t: 'mission.start', mid: p.mid, tier, solo: 1 }); mapOpen = false; MAPXF.pick = null; toast('Deploying: ' + p.name); }
+    else if (p.job && missionOpen(p.job)) { missionStart(p.job); mapOpen = false; MAPXF.pick = null; } return true; }
+  if (e.code === 'KeyJ' && p && p.op && NET.on && !NET.mission) { netSend({ t: 'mission.join', id: p.op }); mapOpen = false; MAPXF.pick = null; return true; }
+  return false;
+}
+
+/* ---------- the M1 Humvee: armoured, heavy, a roof gun that follows your aim ---------- */
+VEH.Car_humvee = { hl: 54, hw: 23, kg: 3400, wr: .42, eye: .2, acc: 430, top: 650, wb: 66, name: 'M1 Humvee', col: 0x4a5236, cam: 1.0 };
+function humveeDress(out) {   // armour, turret ring and the M2 on top of an SUV chassis
+  const g = new THREE.Group(), od = new THREE.MeshStandardMaterial({ color: 0x4a5236, roughness: .8, metalness: .25 }), dk = new THREE.MeshStandardMaterial({ color: 0x23261c, roughness: .7, metalness: .4 }), st = new THREE.MeshStandardMaterial({ color: 0x2a2c2e, roughness: .4, metalness: .8 });
+  const B = (m, w, h, d, x, y, z) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.castShadow = true; g.add(o); return o; };
+  B(od, 4.7, .5, 2.3, 0, 1.05, 0); B(od, 2.6, .75, 2.15, -.25, 1.65, 0); B(dk, 2.4, .05, 2.2, -.25, 2.04, 0);   // body tub, cabin, roof
+  for (const s of [-1, 1]) { B(dk, .4, .45, .9, 2.25, .9, s * .55); B(od, 1.1, .1, .5, 1.75, 1.32, s * 1.0); B(od, 1.1, .1, .5, -1.85, 1.32, s * 1.0); B(dk, 2.4, .5, .06, -.25, 1.7, s * 1.09); }   // grille halves, fenders, armoured doors
+  B(st, .15, .5, 2.3, 2.45, .85, 0); for (let i = -2; i <= 2; i++) B(st, .1, .35, .08, 2.52, .85, i * .45);   // bull bar
+  const spare = new THREE.Mesh(new THREE.TorusGeometry(.38, .14, 8, 16), new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: .9 })); spare.position.set(-2.42, 1.2, 0); spare.rotation.y = Math.PI / 2; g.add(spare);
+  // the turret: a ring with a shield, and the gun on a pivot that turns with your aim
+  const ring = new THREE.Mesh(new THREE.CylinderGeometry(.62, .62, .18, 20), dk); ring.position.set(-.35, 2.15, 0); g.add(ring);
+  const piv = new THREE.Group(); piv.position.set(-.35, 2.25, 0); g.add(piv);
+  const sh = new THREE.Mesh(new THREE.CylinderGeometry(.75, .75, .6, 16, 1, true, -1.1, 2.2), od); sh.material.side = THREE.DoubleSide; sh.position.y = .35; sh.rotation.y = Math.PI / 2; piv.add(sh);
+  const gun = new THREE.Group(); gun.position.set(0, .45, 0); piv.add(gun);
+  const body = new THREE.Mesh(new THREE.BoxGeometry(.75, .2, .22), st); body.position.x = .1; gun.add(body);
+  const brl = new THREE.Mesh(new THREE.CylinderGeometry(.045, .05, 1.2, 10), st); brl.rotation.z = Math.PI / 2; brl.position.x = .95; gun.add(brl);
+  const jk = new THREE.Mesh(new THREE.CylinderGeometry(.07, .07, .5, 10), dk); jk.rotation.z = Math.PI / 2; jk.position.x = .55; gun.add(jk);
+  const box = new THREE.Mesh(new THREE.BoxGeometry(.3, .22, .2), od); box.position.set(-.05, -.05, .2); gun.add(box);
+  for (const s of [-1, 1]) { const h = new THREE.Mesh(new THREE.CylinderGeometry(.025, .025, .25, 6), st); h.position.set(-.35, 0, s * .08); h.rotation.z = Math.PI / 2; gun.add(h); }
+  const flash = new THREE.Sprite(new THREE.SpriteMaterial({ map: MUZTEX, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false })); flash.scale.set(.9, .9, 1); flash.position.x = 1.65; flash.visible = false; gun.add(flash);
+  // hide the SUV's own body panels so the armour reads clearly; wheels, glass and lights stay
+  out.traverse(o => { if (o.isMesh && o.material && /C_paint/.test(o.material.name || '')) o.visible = false; });
+  out.add(g); out.userData.turret = piv; out.userData.tgun = gun; out.userData.tflash = flash; out.userData.humvee = true; out.scale.set(1.04, 1, 1.12);
+  return out;
+}
+const HMV = { cd: 0, heat: 0 };
+function humveeTick(dt) {   // aim with the mouse, hold fire to shoot the roof gun
+  const c = driving; if (!c || c.kind !== 'Car_humvee' || !c.m) return; const u = c.m.userData; if (!u.turret) return;
+  camera.getWorldDirection(_wv); const aim = Math.atan2(_wv.z, _wv.x), rel = aim - c.a; u.turret.rotation.y = -Math.atan2(Math.sin(rel), Math.cos(rel)); u.tgun.rotation.z = clamp(Math.asin(clamp(_wv.y, -1, 1)) + .08, -.25, .45);
+  HMV.cd -= dt; HMV.heat = Math.max(0, HMV.heat - dt * .35); if (u.tflash.visible && HMV.cd < .05) u.tflash.visible = false;
+  if (!(mouse.down || keys.KeyF) || HMV.cd > 0 || HMV.heat >= 1) return;
+  HMV.cd = .085; HMV.heat += .022; if (HMV.heat >= 1) toast('The gun is overheating. Let it cool.');
+  u.tflash.visible = true; u.tflash.material.rotation = Math.random() * 6; weaponSound('ak'); camShake = Math.max(camShake, .05); noise = Math.max(noise, 3);
+  const tw = new THREE.Vector3(); u.tgun.getWorldPosition(tw); const ox = tw.x / S3, oy = tw.z / S3, spr = .025;
+  const a = aim + rnd(-spr, spr); let best = null, bd = 1600;
+  for (const z of zombies) { if (z.hp <= 0 || (z.lv | 0)) continue; const dx = z.x - ox, dy = z.y - oy, d = Math.hypot(dx, dy); if (d > bd || d < 20) continue; let da = Math.atan2(dy, dx) - a; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(da) * d > 26) continue; if (segBlocked(ox, oy, z.x, z.y)) continue; bd = d; best = z; }
+  const end = best ? new THREE.Vector3(best.x * S3, 1.2, best.y * S3) : new THREE.Vector3(tw.x + Math.cos(a) * 70, tw.y + _wv.y * 70, tw.z + Math.sin(a) * 70);
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([tw.clone(), end]), M.tracer); scene.add(line); tracers.push({ line, t: .05 });
+  if (best) { best.hp -= 3.2 * (best.elite ? .7 : 1); best.byP = true; best.lastHead = Math.random() < .15; best.state = 'chase'; best.stag = .35; best.hitT = .3; blood(best.x, best.y, 1.4, 6); PR.hit = .15; PR.hitK = best.hp <= 0; const k = 9 / Math.max(1, bd); best.x += (best.x - ox) * k * .3; best.y += (best.y - oy) * k * .3; }
+}
+function humveeEnsure() {   // once earned, the Humvee waits at home at the start of every level
+  if (!story || !story.humvee || !cars || !world3) return; if (cars.some(c => c.kind === 'Car_humvee')) return;
+  const b = typeof BASE === 'function' ? BASE() : { x: 780, y: 2100 }; const c = mkCar(b.x + (story.fort ? -160 : 260), b.y + (story.fort ? 120 : 70), story.fort ? -Math.PI / 2 : 0, 100, 0x4a5236, 'Car_humvee'); c.state = 'ready'; c.armorK = .35; carFree(c);
+  c.m = buildCarMesh(c.col, false, c.kind); c.m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); world3.add(c.m); cars.push(c); }
+function humveeSpawnAt(x, y, a) { const c = mkCar(x, y, a, 100, 0x4a5236, 'Car_humvee'); c.state = 'ready'; c.armorK = .35; carFree(c); c.m = buildCarMesh(c.col, false, c.kind); c.m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); world3.add(c.m); cars.push(c); return c; }
+function humveeHUD() { const c = driving; if (!c || c.kind !== 'Car_humvee' || state !== 'play') return; ctx.save(); const x = VW / 2, y = VH - 120; font(10, 700); ctx.textAlign = 'center'; ctx.fillStyle = '#e9c46a'; ctx.fillText('M2 · HOLD FIRE OR F', x, y - 8);
+  ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(x - 80, y, 160, 6); ctx.fillStyle = HMV.heat > .8 ? '#ff5a4a' : '#e9c46a'; ctx.fillRect(x - 80, y, 160 * HMV.heat, 6);
+  ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(VW / 2, VH / 2, 10, 0, 6.283); ctx.moveTo(VW / 2 - 16, VH / 2); ctx.lineTo(VW / 2 - 6, VH / 2); ctx.moveTo(VW / 2 + 6, VH / 2); ctx.lineTo(VW / 2 + 16, VH / 2); ctx.stroke(); ctx.restore(); }
+
+/* ---------- Level 50: Iron Horse. The Guard depot, and the Humvee ---------- */
+CAMP[50] = { n: 'Iron Horse', sub: 'The National Guard depot', diff: 1, party: ['REY', 'ELI'], jobs: ['c50depot', 'c50hold', 'c50home'],
+  d: 'A National Guard depot past the county line. One Humvee left in the motor pool, with the gun still on it.',
+  intro: async () => { gather(['REY', 'ELI', 'DAR']); await talk([['REY', "Guard depot, east of the line. They pulled out in the first week. The motor pool still has one Humvee, turret and all."], ['ELI', "A Humvee. With a gun on the roof. I'm not crying, you're crying."], ['DAR', "Bring it home in one piece. And bring them home in one piece too."]]); } };
+const DEPOT = () => { let best = null; try { const S = oSettles('camp'); if (S && S.length) best = S.slice().sort((a, b) => Math.hypot(a.x0 - 45000, a.y0 - 9000) - Math.hypot(b.x0 - 45000, b.y0 - 9000))[0]; } catch (e) {} return best ? { x: best.x0 + 2500, y: best.y0 + 2400 } : { x: 41000, y: 9000 }; };
+CJ(50, 'c50depot', { n: 'The Depot', d: 'Get into the motor pool.',
+  steps: [G('Drive east to the Guard depot', DEPOT, { r: 500 }), CL('The depot is crawling. Clear the motor pool', DEPOT, 22, .4, { husk: .5 }),
+    IT('Get the Humvee running (the keys are in the guard shack)', () => { const d = DEPOT(); return { x: d.x - 220, y: d.y + 80 }; }, 'Take the keys', 'Keys, and a fuel card. Somebody planned ahead.')] });
+CJ(50, 'c50hold', { n: 'Motor Pool', d: 'Hold the depot while the Humvee warms up.',
+  steps: [SC(() => campCut(async () => { const d = DEPOT(); const h = humveeSpawnAt(d.x + 120, d.y + 40, Math.PI); story.humveeCar = cars.indexOf(h); shot([d.x + 300, d.y + 220, 2.6, d.x + 120, d.y + 40, 1.2], [d.x + 220, d.y + 160, 2.2, d.x + 120, d.y + 40, 1.4], 4);
+      await talk([['ELI', "Oh she's beautiful. Look at her. Look at that gun."], ['REY', "Engine's cold. Five minutes to warm up the glow plugs. And everything heard us open the gate."]]); })),
+    SV('Hold the motor pool while the engine warms up', DEPOT, 120, 12, 9, .45, { r: 800, tick: dt => { const d = DEPOT(); alliesFire(dt, d.x, d.y, 2); } })] });
+CJ(50, 'c50home', { n: 'Iron Horse', d: 'Drive the Humvee home. Use the gun.',
+  steps: [{ t: 'custom', text: 'Get in the Humvee', at: () => { const h = cars.find(c => c.kind === 'Car_humvee'); return h ? { x: h.x, y: h.y } : DEPOT(); }, check: () => driving && driving.kind === 'Car_humvee', enter() { toast('Hold fire (or F) while driving to use the roof gun.'); } },
+    { t: 'custom', text: () => story.fort ? 'Drive the Humvee to Fort Hope' : 'Drive the Humvee to the harbor', at: BASE, r: 300, check() { const a = BASE(); return driving && driving.kind === 'Car_humvee' && Math.hypot(driving.x - a.x, driving.y - a.y) < 300; },
+      enter() { if (typeof ROAD !== 'undefined' && ROAD.force) try { ROAD.force('horde'); } catch (e) {} }, tick(dt, m) { m.rt = (m.rt || 0) - dt; if (m.rt <= 0 && driving) { m.rt = 22; try { ROAD.force(['horde', 'pileup', 'ambush'][Math.floor(Math.random() * 3)]); } catch (e) {} } } }],
+  outro: () => { story.humvee = 1; toast('LEGENDARY VEHICLE UNLOCKED: M1 Humvee. It waits at home at the start of every level.'); beep(523, .3, 'triangle', .06); setTimeout(() => beep(784, .4, 'triangle', .06), 160); } });
+
+/* ---------- new kinds of job, so levels stop repeating ---------- */
+// level modifiers: one twist per generated level
+const LMODS = [
+  { k: 'fog', n: 'Sea fog', d: 'Fog rolls in off the bay. You will hear them before you see them.', on() { WXS.kind = 'fog'; } },
+  { k: 'storm', n: 'Storm front', d: 'Rain all level. Noise carries less, and so does your sight.', on() { WXS.kind = 'rain'; } },
+  { k: 'night', n: 'Night operation', d: 'This one happens in the dark.', on() { TOD.h = 22.5; } },
+  { k: 'runners', n: 'Fast movers', d: 'More runners than usual.', on() { story.lmodRun = .25; } },
+  { k: 'husks', n: 'Hardened dead', d: 'Husks everywhere. Aim for the head.', on() { story.lmodHusk = .3; } },
+  { k: 'scarce', n: 'Short on rounds', d: 'Ammo is scarce. Melee where you can.', on() { story.lmodScarce = 1; } },
+  { k: 'clear', n: 'Clear skies', d: 'Nothing strange today. Enjoy it.', on() {} }
+];
+function lmodFor(L) { const r = rngL(L * 7 + 3); return L < 4 ? null : LMODS[Math.floor(r() * LMODS.length)]; }
+function lmodApply(L) { story.lmodRun = 0; story.lmodHusk = 0; story.lmodScarce = 0; const m = lmodFor(L); if (!m || !campLevel(L) || !campLevel(L).gen) return null; m.on(); story.lmod = m.k; setTimeout(() => toast('LEVEL TWIST · ' + m.n + ': ' + m.d), 2500); return m; }
+const BRIEF2 = {
+  demolition: [['REY', "There's a bridge the hordes keep using to reach our side. Three charges on the supports, then get clear. Far clear."], ['NAD', "If we drop the overpass, the herd has to go around the long way. I made charges. Please don't drop them."]],
+  blackout: [['NAD', "The substation tripped. Three breakers in three buildings, in the dark. Then hold the transformer while it spins up."], ['DAR', "Lights out across town. Get them back on and the dead lose interest. Mostly."]],
+  stealth: [['REY', "There's a stash in a building the dead are sleeping in. Go quiet. Knife only, if you can."], ['SAM', "Do not wake them. I mean it. One shot and the whole street comes."]],
+  lure: [['OZZ', "There's a horde walking towards the harbor. Big one. Somebody has to honk at it and drive the other way. That somebody is you."], ['REY', "We can't fight that many. We can lead them away. Loud, slow, and then fast."]],
+  gauntlet: [['ELI', "Three checkpoints, three towns, one clock. Supplies at each one. We're calling it the Gauntlet. I'm calling it, anyway."], ['DAR', "The traders want the goods at three drop points before dark. Drive like you stole it."]],
+  hunt: [['SAM', "Something big has been dragging bodies off the roads. It's not like the others. Track it, and put it down."], ['REY', "A brute that thinks. It's killed three scavengers. We find it before it finds us."]],
+  gasleak: [['JUN', "The gas main under town is leaking. Three valves. If it finds a spark, the whole street goes up. With you on it."], ['NAD', "Close the valves. Quickly. I'm not being dramatic, it's chemistry."]]
+};
+function genJob2(L, k, kind, r) {   // returns an id, or null to fall back to the classic kinds
+  const t = GTOWNS[Math.floor(r() * GTOWNS.length)], T = tc(t), id = 'g' + L + '_' + k, DF = 1 + (L - 1) * .065, hn = Math.round(8 + DF * 1.2), B = BRIEF2[kind][Math.floor(r() * BRIEF2[kind].length)];
+  const intro = () => bark(B[0], B[1], true); let n, d, steps;
+  const CTR = TD(t, 'gas'), PTS = HDOORS(t, 3);
+  switch (kind) {
+    case 'demolition': { n = 'Bring It Down: ' + T; d = 'Rig the overpass in ' + T + ' and get clear before it blows.';
+      let blast = null; steps = [G('Drive to ' + T, CTR, { r: 260 }), CO('Plant charges on the supports', PTS, 'Plant the charge', 'Charge set. Timer armed.', { onGet: (c, its) => { const it = its.filter(i => i.looted).pop(); if (it) horde(Math.round(hn * .5), it.x, it.y, .4); } }),
+        { t: 'custom', text: 'Get clear! 200 m from the charges', secs: 30, anywhere: true, at() { if (!blast) { const p = PTS(); blast = { x: (p[0].x + p[1].x + p[2].x) / 3, y: (p[0].y + p[1].y + p[2].y) / 3 }; } const a = Math.atan2(P.y - blast.y, P.x - blast.x); return { x: blast.x + Math.cos(a) * 4200, y: blast.y + Math.sin(a) * 4200 }; },
+          tick(dt, m) { m.t -= dt; if (m.t <= 0) { demolish(blast.x, blast.y); hurt(60); missionFail('You were too close when it went up.'); } }, check() { return blast && Math.hypot(P.x - blast.x, P.y - blast.y) > 4000; } },
+        { t: 'custom', text: 'Watch it go', at: () => blast || CTR(), anywhere: true, enter() { const b = blast || CTR(); demolish(b.x, b.y); }, check: (dt, m) => (m.t += dt) > 3 }]; break; }
+    case 'blackout': { n = 'Blackout: ' + T; d = 'Get the power back on in ' + T + ', in the dark.';
+      steps = [G('Drive to ' + T + ' (it is getting dark)', CTR, { r: 260, enter() { TOD.h = Math.max(TOD.h, 20.5); } }), CO('Reset the three breakers', () => HDOORS(t, 3)().map(p => ({ x: p.x + 10, y: p.y - 30 })), 'Throw the breaker', 'Clunk. Something hums.', { onGet: (c, its) => { const it = its.filter(i => i.looted).pop(); if (it) { horde(Math.round(hn * .6), it.x, it.y, .45); flareAt(it.x, it.y); } } }),
+        SV('Hold the transformer while it spins up', CTR, Math.round(Math.min(150, 50 + L * .5)), 11, 6 + Math.floor(DF / 2), .45, { r: 650, onWave() { if (Math.random() < .4) toast('The hum is drawing them in.'); } })]; break; }
+    case 'stealth': { n = 'Quiet Hands'; d = 'A stash in ' + T + ', in a building full of sleeping dead. Get it without waking them.';
+      const spot = () => TD(t, 'warehouse', 80)(); let loud = false;
+      steps = [G('Get to the building in ' + T + ' (stay quiet: no gunfire near it)', spot, { r: 200, foot: true }), (st_ => { const e0 = st_.enter; st_.enter = function () { e0.call(this); this.wake(); }; return st_; })(IT('Take the stash without waking them', () => { const s = spot(); return { x: s.x + 40, y: s.y + 20 }; }, 'Take it, quietly', 'Got it. Nobody stirred.', {
+          wake() { const s = spot(); const z0 = zombies.length; horde(Math.round(hn * .8), s.x, s.y, 0); for (let i = z0; i < zombies.length; i++) { const z = zombies[i]; z.state = 'wander'; z.feed = true; z.sleep = 1; z.goal = null; z.sp *= .7; } },
+          tick(dt, m) { if (!loud && noise > 1.3 && Math.hypot(P.x - spot().x, P.y - spot().y) < 900) { loud = true; toast('They heard you. The whole building is awake.'); const s = spot(); horde(Math.round(hn * 1.2), s.x, s.y, .6); for (const z of zombies) if (z.sleep) { z.sleep = 0; z.state = 'chase'; } } } })),
+        G(() => loud ? 'Get out. Fast.' : 'Slip away. Back to the car.', () => { const s = spot(); return { x: s.x + 600, y: s.y + 400 }; }, { r: 220 }), { t: 'custom', text: '', at: () => ({ x: P.x, y: P.y }), anywhere: true, check: () => { if (!loud) { gainXP(150, 'SILENT'); toast('Silent. Not one of them woke up.'); } return true; } }]; break; }
+    case 'lure': { n = 'Pied Piper'; d = 'A horde is walking on the harbor. Lead it away with a car and a horn.';
+      const start = () => { const b = BASE(); return { x: b.x + 2200, y: b.y + 900 }; }, far = () => { const b = BASE(); return { x: b.x + 9000, y: b.y + 5200 }; }; let herd = [];
+      steps = [G('Drive out to meet the horde (take a car)', start, { r: 400 }), { t: 'custom', text: 'Lead the horde away (drive slow enough that they follow)', at: far, r: 500, enter() { const s = start(); const z0 = zombies.length; horde(Math.round(hn * 2.2), s.x + 300, s.y + 300, .2); herd = zombies.slice(z0); },
+        tick(dt, m) { for (const z of herd) if (z.hp > 0) { z.goal = { x: P.x, y: P.y, t: 3 }; z.state = 'chase'; } m.lose = herd.filter(z => z.hp > 0 && Math.hypot(z.x - P.x, z.y - P.y) < 1600).length; },
+        check(dt, m) { const f = far(); return Math.hypot(P.x - f.x, P.y - f.y) < 500 && (m.lose || 0) >= Math.min(6, herd.length * .3); } }, G('Lose them, then head home', BASE, { r: 300 })]; break; }
+    case 'gauntlet': { const ts = [t, GTOWNS[(GTOWNS.indexOf(t) + 3) % GTOWNS.length], GTOWNS[(GTOWNS.indexOf(t) + 7) % GTOWNS.length]]; n = 'The Gauntlet'; d = 'Three drop points against the clock: ' + ts.map(tc).join(', ') + '.';
+      steps = ts.map((q, i) => RC('Drop point ' + (i + 1) + ' of 3: ' + tc(q), TD(q, 'gas'), Math.round(70 + i * 15), { r: 260, failMsg: 'Too slow. The traders left.', enter() { try { ROAD.force(['ambush', 'horde', 'pileup'][i]); } catch (e) {} } })); break; }
+    case 'hunt': { n = 'Apex'; d = 'A brute that hunts the hunters. Track it through ' + T + ' and put it down.';
+      const sight = i => () => { const p = PTS()[i]; return { x: p.x + 60, y: p.y + 60 }; }; let boss = null;
+      steps = [G('Follow the drag marks to the first kill', sight(0), { r: 200, enter() { const p = sight(0)(); for (let i = 0; i < 5; i++) splat(p.x + rnd(-80, 80), p.y + rnd(-80, 80)); } }), G('It went this way. Follow the blood', sight(1), { r: 200, enter() { const p = sight(1)(); for (let i = 0; i < 8; i++) splat(p.x + rnd(-120, 120), p.y + rnd(-120, 120)); toast('Something big moved through here. Recently.'); } }),
+        { t: 'custom', text: 'Kill the Apex', at: () => boss && boss.hp > 0 ? { x: boss.x, y: boss.y } : sight(2)(), r: 99999, anywhere: true, enter() { const p = sight(2)(); const z0 = zombies.length; horde(1, p.x, p.y, 0); boss = zombies[z0]; if (boss) { makeSpecial(boss, 'brute'); makeElite(boss); boss.hp *= 2.2; boss.max = boss.hp; boss.apex = 1; boss.boss = 1; boss.state = 'chase'; } horde(Math.round(hn * .6), p.x, p.y, .5); toast('THE APEX. It knows you are here.'); },
+          check: () => !boss || boss.hp <= 0 }]; break; }
+    case 'gasleak': { n = 'Gas Leak'; d = 'Three valves under ' + T + '. Close them before something sparks.';
+      steps = [G('Drive to ' + T, CTR, { r: 260 }), { t: 'custom', text: 'Close all three valves', at() { const L_ = (this._its || []).filter(i => !i.looted).sort((a, b) => Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y)); return L_[0] ? { x: L_[0].x, y: L_[0].y } : CTR(); }, anywhere: true, secs: Math.round(Math.max(75, 140 - L * .2)),
+        enter() { this._its = PTS().map(p => iaAdd(p.x, p.y, 'mitem', { r: 22, lbl: 'Close the valve', got: 'Hissing stops.', lv: 0 })); toast('No gunfire near the valves. One spark is enough.'); },
+        tick(dt, m) { m.t -= dt; const open = this._its.filter(i => !i.looted); if (noise > 1.3 && open.some(i => Math.hypot(i.x - P.x, i.y - P.y) < 500)) { m.t -= dt * 8; camShake = Math.max(camShake, .05); } if (m.t <= 0) { const c = CTR(); demolish(c.x, c.y, 1); missionFail('The gas found a spark.'); for (const i of this._its) if (!i.looted) i.gone = true; } if (Math.random() < dt * .25) horde(2, P.x + rnd(-600, 600), P.y + rnd(-600, 600), .3); },
+        check() { return this._its && this._its.every(i => i.looted); } }]; break; }
+    default: return null;
+  }
+  CJ(L, id, { n, d, intro, steps, gen: 1, outro: () => { const q = DONE[(L + k) % DONE.length]; bark(q[0], q[1], true); fortGain(kind === 'gauntlet' ? 'supply' : kind === 'hunt' ? 'clear' : 'parts'); } });
+  return id;
+}
+function flareAt(x, y) { const g = new THREE.PointLight(0xff4a2a, 1.6, 20); g.position.set(x * S3, 1, y * S3); world3.add(g); setTimeout(() => world3 && world3.remove(g), 9000); }
+function demolish(x, y, gas) {   // the set piece: a fireball, a shockwave, and everything near it on the ground
+  const c = new THREE.Vector3(x * S3, 2, y * S3), L = new THREE.PointLight(0xffa040, 8, 160); L.position.copy(c); world3.add(L);
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), new THREE.MeshBasicMaterial({ color: 0xffb050, transparent: true, opacity: .9, blending: THREE.AdditiveBlending, depthWrite: false })); ball.position.copy(c); world3.add(ball);
+  let t = 0; const id = setInterval(() => { t += .05; ball.scale.setScalar(1 + t * 32); ball.material.opacity = Math.max(0, .9 - t * .55); L.intensity = Math.max(0, 8 - t * 5); for (let i = 0; i < 3; i++) havenPuff(c.x + rnd(-8, 8) * t, 1 + t * 8, c.z + rnd(-8, 8) * t, 0); if (t > 1.8) { clearInterval(id); world3.remove(ball); world3.remove(L); } }, 50);
+  const d = Math.hypot(P.x - x, P.y - y); camShake = Math.max(camShake, clamp(1.2 - d / 4000, .15, 1.2));
+  if (actx) try { nb(actx.currentTime, 2.6, 'lowpass', 180, .7, 2.2, 1.6, 0, 1); nb(actx.currentTime, .4, 'lowpass', 900, .8, 1.6, .3, 0, .8); } catch (e) {}
+  for (const z of zombies) { const dz = Math.hypot(z.x - x, z.y - y); if (dz < 1400) { z.hp -= dz < 700 ? 99 : 4; z.byP = true; z.down = 2; } }
+  if (!gas) toast('The overpass comes down. That road is closed for good.');
+}
+{ const _h0 = horde; horde = function (n, x, y, run) { const b = zombies.length; const out = _h0(n, x, y, Math.min(.8, (run || 0) + ((story && story.lmodRun) || 0))); if (story && story.lmodHusk) for (let i = b; i < zombies.length; i++) if (Math.random() < story.lmodHusk) huskify(zombies[i]); return out; }; }
 
 /* ======================= BUILD 38: SKIN, EYES, HAIR ======================= */
 function skinShader(m) {   // soft red scatter at grazing angles and a warmer diffuse: skin stops looking like painted plastic
