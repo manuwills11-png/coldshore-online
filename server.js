@@ -51,21 +51,106 @@ const upNeed = (b, lv) => { const n = BUILDINGS[b].need || {}; let r = null; for
 const settlersOf = c => 6 + 6 * (c.b.housing || 0);
 const MAX_OPS = 6, MAX_SQUAD = 6;   // no rules about who goes where: anyone can run their own operation or join any squad
 
-/* ---------------- story ---------------- */
-const STORY = [
-  { id: 's1a', ch: 1, name: 'First Drop', type: 'airdrop', town: 'HARBOR ROW', brief: "WARDEN: Good morning, Harbor Row. There's a crate coming down on your street. Consider it a handshake.", done: "WARDEN: You share well. I like that in a group." },
-  { id: 's1b', ch: 1, name: 'Lights On', type: 'defend', town: 'HARBOR ROW', brief: "The generator at Haven needs ten minutes of peace to warm up. The dead hear engines.", done: "Haven has power. Somewhere out there, WARDEN's radio is still on." },
-  { id: 's1c', ch: 1, name: 'Harbor Sweep', type: 'clear', town: 'HARBOR ROW', brief: "Make Harbor Row ours. Clear the street.", done: "WARDEN: A clean street. Now let's see what you do with a dirty one." },
-  { id: 's2a', ch: 2, need: { radio: 1 }, name: 'Cold Case', type: 'scavenge', town: 'MILLBROOK', n: 1, brief: "WARDEN: A black case, Millbrook clinic district. Do not open it.", done: "The case is cold. Not refrigerated cold. Cold like it's been somewhere." },
-  { id: 's2b', ch: 2, need: { radio: 1 }, name: 'Mast', type: 'defend', town: 'PINE RIDGE', brief: "WARDEN: Hold the Pine Ridge mast while I borrow it. Five minutes.", done: "WARDEN: Thank you. You won't hear from the Pine Ridge group again. Don't worry about them." },
-  { id: 's2c', ch: 2, need: { radio: 1 }, name: 'Burn It', type: 'clear', town: 'GREYWATER', brief: "WARDEN: Something is nesting under the Greywater church. Burn it out.", done: "Every nest you burn, the next horde is bigger. Someone should write that down." },
-  { id: 's3a', ch: 3, need: { radio: 2, done: 6 }, name: 'Ledger', type: 'scavenge', town: 'FAIRHAVEN', n: 3, brief: "A rival crew kept notes on WARDEN. Their pages are scattered through Fairhaven.", done: "The ledger lists settlements, dates, horde sizes. Haven is on it. With a question mark." },
-  { id: 's3b', ch: 3, need: { radio: 2, done: 6 }, name: 'Taken', type: 'airdrop', town: 'ASHFORD', brief: "The Ashford crew put up a flare. Get there before WARDEN's dead do.", done: "Nobody left at Ashford. Just the flare, and the crate WARDEN dropped on it." },
-  { id: 's3c', ch: 3, need: { radio: 2, done: 6 }, name: 'Night Shift', type: 'defend', town: 'CALDER', night: true, secs: 360, brief: "Hold Calder through the dark. WARDEN wants to see how long you last.", done: "WARDEN: Six minutes. The Bramble group made four." },
-  { id: 's4a', ch: 4, need: { radio: 3, done: 12 }, name: 'Signal Trace', type: 'scavenge', town: 'KESTREL', n: 3, brief: "Three relay boxes, three bearings. Bring them home and we'll know where WARDEN sits.", done: "The bearings cross over New Halden. The tower." },
-  { id: 's4b', ch: 4, need: { radio: 3, done: 12 }, name: 'Halden Tower', type: 'clear', town: 'NEW HALDEN', brief: "Clear the street around Halden Tower. The transmitter is up there.", done: "WARDEN: You found me. Come up, then. Bring everyone." },
-  { id: 's5a', ch: 5, need: { radio: 4, done: 16 }, name: 'Last Drop', type: 'siege', town: 'HARBOR ROW', secs: 420, brief: "WARDEN: One last experiment. Everything I have, against everything you built.", done: "Haven stands. The radio is quiet. For now, the county is yours." }
+/* ---------------- story: hand-built operations (build 56) ----------------
+   No random contracts any more. Twelve operations, written one by one, each built around a thing a squad has to do together:
+   cover the one who is working, escort the one who is carrying, split up and act at the same moment, bait the horde away,
+   build the choke point before the wave, keep the machine alive, pull a friend off a grabber. Solo players get a fair version of each. */
+const OPS = [
+  // ---- Chapter 1: Static ----
+  { id: 'o1', ch: 1, name: 'First Light', town: 'GREYWATER', site: 'grey', tips: ['Cover the cutter', 'Escort the carrier'],
+    brief: "WARDEN: Hello, Haven. You don't know me. I know you. The Greywater clinic still has a vaccine fridge with a live battery. Cut the cage, carry it home. The dead love the hum.",
+    done: "WARDEN: You kept the carrier alive. Most groups drop the fridge and run. Interesting.",
+    stages: [{ k: 'travel', txt: 'Get to the Greywater clinic' },
+      { k: 'crack', secs: 14, cover: 1, txt: 'Cut the pharmacy cage (hold E). The torch stalls while the dead are close: one cuts, the rest cover' },
+      { k: 'carry', item: 'fridge', heavy: 1, to: 'haven', txt: 'Carry the fridge to Haven. The carrier cannot shoot, and moves faster with a friend beside them' }] },
+  { id: 'o2', ch: 1, name: 'Two Hands', town: 'PINE RIDGE', site: 'kcld', tips: ['Go quietly', 'Split up together', 'Guard the transmitter'],
+    brief: "WARDEN: KCLD's mast reaches every radio in the county. Its breakers were wired by a paranoid man: two switches in two rooms, thrown at the same moment. Go quietly. Screamers carry.",
+    done: "WARDEN: Now we can talk whenever I like. That's a gift. Say thank you.",
+    stages: [{ k: 'travel', quiet: 1, txt: 'Get to KCLD quietly. If a screamer sees you, the whole hill hears it' },
+      { k: 'twokey', n: 2, secs: 8, txt: 'Throw both breakers at the same moment: one of you on each switch, holding E together' },
+      { k: 'hold', secs: 150, prot: 'transmitter', txt: 'Keep the transmitter alive while it boots. They will go for it, not you' },
+      { k: 'extract', txt: 'Get everyone back to Haven' }] },
+  { id: 'o3', ch: 1, name: 'The Flare', town: 'MILLBROOK', tips: ['Bait the horde', 'Loot fast', 'Keep the flare lit'],
+    brief: "WARDEN: Millbrook's warehouse row is full of tinned food and full of the dead. You can't fight that many. You can make them look the other way.",
+    done: "WARDEN: Fire and noise. You're learning how they think. So am I.",
+    stages: [{ k: 'travel', txt: 'Get to the Millbrook warehouses' },
+      { k: 'collect', n: 5, lure: 1, lsecs: 50, txt: 'Light the flare (hold E) to pull the horde to it, then loot the five caches while they watch it. When it burns out, they turn around' },
+      { k: 'extract', txt: 'Get the food back to Haven' }] },
+  // ---- Chapter 2: The Experiment ----
+  { id: 'o4', ch: 2, need: { radio: 1 }, name: 'Hold the Door', town: 'SEAVIEW', tips: ['Build before you fight', 'Brutes break barricades', 'Two carry faster'],
+    brief: "A family is boarded up in a Seaview house. They need two minutes to pack the kids and the old man. Their doors won't last two minutes. Build better ones.",
+    done: "WARDEN: Six more mouths. Do you have the food for that? We'll see.",
+    stages: [{ k: 'travel', txt: 'Find the house in Seaview' },
+      { k: 'build', n: 3, txt: 'Barricade the three ways in (hold E at each marker) before the wave. Walls make them come the long way round' },
+      { k: 'hold', secs: 120, brute: 1, txt: 'Hold the house while they pack. Brutes smash barricades: kill them first' },
+      { k: 'carry', item: 'stretcher', heavy: 1, to: 'haven', txt: "Carry the grandfather home on the stretcher. Walk with whoever's carrying" }] },
+  { id: 'o5', ch: 2, need: { radio: 1 }, name: 'Grabbers', town: 'HOLLIS', site: 'motel', grab: 1, tips: ['Never wander off', 'Shoot the grabber, not your friend', 'Pinned? Mash E'],
+    brief: "WARDEN: I've been breeding something. It hides, it waits, and it holds on. It can't kill you on its own. It doesn't have to. The Route 9 motel is full of them.",
+    done: "WARDEN: Nobody left behind. That's the part that keeps surprising me.",
+    stages: [{ k: 'travel', txt: 'Get to the Route 9 motel. Stay close: grabbers pin anyone on their own' },
+      { k: 'clear', txt: 'Clear the motel lot. If a friend is pinned, shoot it off them. If you are pinned, mash E' },
+      { k: 'collect', n: 3, nest: 1, txt: 'Burn the nests in the rooms (hold E). The smoke brings more' },
+      { k: 'extract', txt: 'Get everyone back to Haven' }] },
+  { id: 'o6', ch: 2, need: { radio: 1 }, name: 'Lights Out', town: 'CALDER', night: true, grab: 1, tips: ['Three corners, one moment', 'The transformer is the target'],
+    brief: "Calder's substation can power Haven's floodlights for a month. Three breakers in three corners of the yard, and the yard is dark. WARDEN's grabbers love the dark.",
+    done: "WARDEN: Nice lights. Now I can see you too.",
+    stages: [{ k: 'travel', txt: 'Get to the Calder substation in the dark' },
+      { k: 'twokey', n: 3, secs: 6, txt: 'Throw the breakers together, one of you on each (fewer of you, fewer breakers)' },
+      { k: 'hold', secs: 160, prot: 'transformer', txt: 'Keep the transformer alive while it spins up' },
+      { k: 'extract', txt: 'Get everyone back to Haven' }] },
+  // ---- Chapter 3: Signal Trace ----
+  { id: 'o7', ch: 3, need: { radio: 2 }, name: 'Black Box', town: 'ASHFORD', site: 'hangar', tips: ['Cover the worker', 'Bait, then grab', 'Escort the box'],
+    brief: "A Guard helicopter came down on the airfield east of Ashford. Its black box logged every radio bearing it heard on the way down. One of them is WARDEN.",
+    done: "WARDEN: You took my box. Keep it. It only proves I was there.",
+    stages: [{ k: 'travel', txt: 'Get to the crash on the airfield' },
+      { k: 'crack', secs: 16, cover: 1, txt: 'Pry the black box out of the wreck (hold E). Cover whoever is prying' },
+      { k: 'collect', n: 2, lure: 1, lsecs: 40, txt: 'Light the flare to pull the runway horde off you, then grab the two fuel cans for the drive home' },
+      { k: 'carry', item: 'box', to: 'haven', txt: 'Carry the black box home. It beeps. They follow the beep' }] },
+  { id: 'o8', ch: 3, need: { radio: 2 }, name: 'Choke Point', town: 'FAIRHAVEN', tips: ['Race the horde', 'Build the wall', 'Then bring the street down'],
+    brief: "WARDEN's horde is walking west, toward Haven, and it has to cross Fairhaven to get there. Stop it at one street, with everything you've got. Then bring the street down on it.",
+    done: "WARDEN: You broke my parade. That was a lot of work, you know.",
+    stages: [{ k: 'travel', secs: 240, txt: 'Get to Fairhaven before the horde does' },
+      { k: 'build', n: 4, txt: 'Barricade the street: four markers, and the wave is minutes out' },
+      { k: 'hold', secs: 180, brute: 2, big: 1, txt: 'Hold the barricade against the horde' },
+      { k: 'collect', n: 3, txt: 'Plant the three charges on the buildings' },
+      { k: 'extract', txt: 'Get clear and get home before it blows' }] },
+  { id: 'o9', ch: 3, need: { radio: 2 }, name: 'Apex', town: 'BRAMBLE', grab: 1, tips: ['Focus the Apex', 'Free pinned friends fast'],
+    brief: "WARDEN: Meet my best one. He was a firefighter. He is very, very strong now, and he brought friends who hold on.",
+    done: "WARDEN: You killed him. I'll make another. Will you?",
+    stages: [{ k: 'travel', txt: 'Track the Apex to Bramble' },
+      { k: 'clear', boss: 1, txt: 'Kill the Apex and its pack. Grabbers will try to split you up' },
+      { k: 'collect', n: 3, nest: 1, txt: 'Burn the nests it was guarding' },
+      { k: 'extract', txt: 'Get everyone back to Haven' }] },
+  // ---- Chapter 4: WARDEN ----
+  { id: 'o10', ch: 4, need: { radio: 3 }, name: 'Station Nine', town: 'GREYWATER', site: 'stn9', grab: 1, tips: ['Quiet in', 'Two cards, one moment', 'Cover the drives'],
+    brief: "The bearings cross at Station Nine, under the Halden facility. The doors take two key cards turned at once. Then the servers. Then whatever WARDEN left awake down there.",
+    done: "WARDEN: So now you know where I was. I'm not there any more. Come home. I'm already there.",
+    stages: [{ k: 'travel', quiet: 1, txt: 'Get to Station Nine without waking the place' },
+      { k: 'twokey', n: 2, secs: 10, txt: 'Turn both key cards at the same moment' },
+      { k: 'hold', secs: 120, brute: 1, txt: 'Hold the lobby while the blast doors cycle' },
+      { k: 'crack', secs: 18, cover: 1, txt: 'Pull the server drives (hold E). Cover whoever is pulling' },
+      { k: 'extract', txt: 'Get the drives home' }] },
+  { id: 'o11', ch: 4, need: { radio: 3 }, name: 'The Choir', town: 'MILLBROOK', grab: 1, tips: ['Escort the fuel', 'Wall up Haven', 'Save the generator'],
+    brief: "WARDEN's last broadcast is a sound the dead can't ignore, and it's pointed at Haven. Everything in the county is coming. Fuel for the floodlights, walls on the gates, then stand.",
+    done: "WARDEN: Still standing. I'm turning the broadcast off. Not for you. The batteries died.",
+    stages: [{ k: 'travel', txt: 'Get to the Millbrook fuel depot' },
+      { k: 'carry', item: 'drum', heavy: 1, to: 'haven', txt: "Carry the fuel drum home for Haven's floodlights" },
+      { k: 'build', n: 4, at: 'haven', txt: "Barricade Haven's approaches before the choir arrives" },
+      { k: 'hold', secs: 240, at: 'haven', prot: 'generator', brute: 2, big: 1, txt: 'Keep the floodlight generator alive until the broadcast stops' }] },
+  { id: 'o12', ch: 4, need: { radio: 3 }, name: 'Last Drop', town: 'HARBOR ROW', site: 'lite', grab: 1, tips: ['Everything you learned'],
+    brief: "WARDEN is in the lighthouse, broadcasting from the lamp room. One way up, two locks to release together, and the whole harbor of the dead between you and him.",
+    done: "The lamp room is empty except for a tape recorder on a loop. The voice on it is yours, from the Greywater job. Somebody is still listening.",
+    stages: [{ k: 'travel', quiet: 1, txt: 'Get to the lighthouse' },
+      { k: 'build', n: 3, txt: 'Barricade the lighthouse yard' },
+      { k: 'twokey', n: 2, secs: 8, txt: 'Release both door locks together' },
+      { k: 'hold', secs: 150, brute: 2, big: 1, txt: 'Hold the yard while the doors grind open' },
+      { k: 'clear', boss: 1, txt: "Kill WARDEN's last Apex" },
+      { k: 'extract', txt: 'Get everyone home' }] }
 ];
+// Haven comes under attack every few operations: a fixed, built siege, not a random job
+const SIEGE = { id: 'siege', name: 'Siege: Haven', town: 'HARBOR ROW', tips: ['Build first', 'Save the generator'], brief: 'Something stirred the county up. A horde is walking at Haven. Wall up and keep the generator running.',
+  stages: [{ k: 'build', n: 4, at: 'haven', txt: "Barricade Haven's approaches" }, { k: 'hold', secs: 200, at: 'haven', prot: 'generator', brute: 1, txt: 'Keep the generator alive' }] };
+const opById = id => id === 'siege' ? SIEGE : OPS.find(o => o.id === id);
 const CONTRACT_TYPES = ['scavenge', 'airdrop', 'defend', 'clear', 'convoy', 'rescue', 'hunt', 'gauntlet', 'blackout', 'demolition'];
 const TYPE_TEXT = { scavenge: 'Scavenge', airdrop: 'Airdrop', defend: 'Defend', clear: 'Clear', convoy: 'Convoy', siege: 'Siege', rescue: 'Rescue', hunt: 'Hunt', gauntlet: 'Gauntlet', blackout: 'Blackout', demolition: 'Demolition' };
 // contract names: a different call-sign every time
@@ -90,25 +175,28 @@ function farmTick(c) {   // Haven keeps working while you are away: the farm gro
     if (hs) c.res.scrap = Math.min(300 + 150 * hs, c.res.scrap + Math.floor(hrs * 4 * hs));
     if (c.b.power) c.res.fuel = Math.max(0, c.res.fuel - Math.floor(hrs * c.b.power * .5)); }
   c.farmT = now(); }
-function chapterOf(c) { let ch = 1; for (const s of STORY) if (c.storyDone.includes(s.id)) ch = Math.max(ch, s.ch); return ch; }
-function storyNext(c) { for (const s of STORY) { if (c.storyDone.includes(s.id)) continue; const nd = s.need || {}; const ok = (!nd.radio || c.b.radio >= nd.radio) && (!nd.done || c.done >= nd.done); return { s, ok, need: nd }; } return null; }
-function threatOf(c, players, tier) { return +(1 + .25 * c.done + .4 * Math.max(0, players - 1) + (TIERS[tier] || TIERS.normal).bonus).toFixed(1); }
+function chapterOf(c) { let ch = 1; for (const o of OPS) if (c.storyDone.includes(o.id)) ch = Math.max(ch, o.ch); return ch; }
+function opNeedOk(c, o) { const nd = o.need || {}; return !nd.radio || (c.b.radio || 0) >= nd.radio; }
+function storyNext(c) { for (const o of OPS) if (!c.storyDone.includes(o.id)) return { s: o, ok: opNeedOk(c, o), need: o.need || {} }; return null; }
+// difficulty comes from where the operation sits in the story, the squad size and the tier, plus a little for experience
+function threatOf(c, players, tier, op) { const ch = (op && op.ch) || chapterOf(c); return +(1 + .7 * (ch - 1) + .45 * Math.max(0, players - 1) + Math.min(1.5, .04 * c.done) + (TIERS[tier] || TIERS.normal).bonus).toFixed(1); }
 function unlockedTowns(c) { const maxCh = 1 + Math.min(4, c.b.radio); return Object.keys(TOWNS).filter(t => TOWNS[t].ch <= maxCh); }
-function rewardOf(type, threat, tier) {
-  const k = (TIERS[tier] || TIERS.normal).pay * (1 + .15 * threat), base = { rescue: { meds: 12, food: 20, scrap: 15 }, hunt: { ammo: 45, scrap: 25 }, gauntlet: { fuel: 25, food: 25, scrap: 20 }, blackout: { fuel: 20, scrap: 35, ammo: 10 }, demolition: { scrap: 45, ammo: 20 }, scavenge: { scrap: 30, food: 20, meds: 6 }, airdrop: { ammo: 40, meds: 10, food: 10 }, defend: { scrap: 25, ammo: 25, fuel: 8 }, clear: { scrap: 35, ammo: 20 }, convoy: { fuel: 30, scrap: 20, food: 15 }, siege: { scrap: 60, ammo: 40, meds: 20 } }[type];
+const OPPAY = { 1: { scrap: 35, food: 20, meds: 8, ammo: 25 }, 2: { scrap: 50, food: 25, meds: 12, fuel: 20, ammo: 30 }, 3: { scrap: 65, food: 30, meds: 15, fuel: 30, ammo: 40 }, 4: { scrap: 85, food: 40, meds: 20, fuel: 40, ammo: 50 } };
+function rewardOf(op, threat, tier, replay) {
+  const k = (TIERS[tier] || TIERS.normal).pay * (1 + .12 * threat) * (replay ? .7 : 1), base = OPPAY[op.ch || 1] || OPPAY[1];
   const r = {}; for (const x in base) r[x] = Math.round(base[x] * k); return r; }
 function makeBoard(c) {
-  const towns = unlockedTowns(c), list = [];
-  const sn = storyNext(c); if (sn) list.push({ mid: 'story:' + sn.s.id, story: true, locked: !sn.ok, need: sn.need, name: sn.s.name, type: sn.s.type, town: sn.s.town, brief: sn.s.brief, ch: sn.s.ch });
-  const types = CONTRACT_TYPES.slice().sort(() => Math.random() - .5).slice(0, 6);   // six different kinds of job every time
-  for (let i = 0; i < 6; i++) { const type = types[i], town = towns[Math.floor(Math.random() * towns.length)];
-    list.push({ mid: 'c:' + rid(4), name: 'Op ' + opName() + ' (' + TYPE_TEXT[type] + ', ' + town[0] + town.slice(1).toLowerCase() + ')', via: [towns[Math.floor(Math.random() * towns.length)], towns[Math.floor(Math.random() * towns.length)]], type, town: type === 'convoy' && town === 'HARBOR ROW' ? 'MILLBROOK' : town, night: Math.random() < .25 }); }
-  if (c.done > 0 && c.done % 5 === 4 && !list.some(m => m.type === 'siege')) list.push({ mid: 'c:' + rid(4), name: 'Siege: Haven', type: 'siege', town: 'HARBOR ROW', warn: 'Skipping it costs a building level.' });
+  const list = [];
+  const sn = storyNext(c); if (sn) list.push({ mid: 'story:' + sn.s.id, story: true, locked: !sn.ok, need: sn.need, name: sn.s.name, type: 'operation', town: sn.s.town, brief: sn.s.brief, ch: sn.s.ch, night: !!sn.s.night, tips: sn.s.tips, steps: sn.s.stages.map(x => x.txt.split('.')[0]) });
+  if (c.done > 0 && c.done % 4 === 3) list.push({ mid: 'siege:' + rid(3), story: false, name: SIEGE.name, type: 'siege', town: SIEGE.town, brief: SIEGE.brief, tips: SIEGE.tips, warn: 'Skipping it costs a building level.', steps: SIEGE.stages.map(x => x.txt) });
+  // every finished operation stays on the board to replay, harder if you like, for supplies
+  for (const o of OPS) if (c.storyDone.includes(o.id)) list.push({ mid: 'replay:' + o.id, replay: true, name: o.name, type: 'replay · chapter ' + o.ch, town: o.town, brief: o.brief, ch: o.ch, night: !!o.night, tips: o.tips });
   c.board = list; c.boardT = now(); save(); return list;
 }
 function opView(M) { return { id: M.id, mid: M.mid, name: M.name, type: M.type, town: M.town, tier: M.tier, threat: M.threat, stage: M.stage >= 0 && M.stages[M.stage] ? M.stages[M.stage].txt : 'Deploying', squad: [...M.squad].map(pid => (M.names[pid] || '?')), full: M.squad.size >= MAX_SQUAD, bonus: M.bonus.txt }; }
 function crewView(c, room) {
   farmTick(c); crewFix(c);
+  if (!c.board || c.board.some(m => !/^(story|replay|siege):/.test(m.mid || ''))) makeBoard(c);   // boards from before build 56 held random contracts
   const busy = new Set(room ? [...room.ops.values()].map(M => M.mid) : []);
   return { code: c.code, name: c.name, res: c.res, b: c.b, done: c.done, fails: c.fails, ch: chapterOf(c), storyDone: c.storyDone, settlers: settlersOf(c),
     board: (c.board || makeBoard(c)).map(m => busy.has(m.mid) ? Object.assign({}, m, { taken: true }) : m),
@@ -133,7 +221,7 @@ function setHost(room, M, p, reason) { M.host = p ? p.pid : null; bop(room, M, {
 
 /* ---------------- missions ---------------- */
 const BONUS = [
-  { k: 'nodown', txt: 'Bonus: nobody goes down' }, { k: 'fast', txt: 'Bonus: done inside 9 minutes', secs: 540 }, { k: 'elite', txt: 'Bonus: kill an elite', n: 1 }, { k: 'kills', txt: 'Bonus: 60 kills between you', n: 60 }
+  { k: 'nodown', txt: 'Bonus: nobody goes down' }, { k: 'fast', txt: 'Bonus: done inside 9 minutes', secs: 540 }, { k: 'elite', txt: 'Bonus: kill an elite', n: 1 }, { k: 'kills', txt: 'Bonus: 60 kills between you', n: 60 }, { k: 'together', txt: 'Bonus: nobody gets pinned for long and nobody bleeds out', n: 0 }
 ];
 function startMission(room, starter, mid, tier, squadPids) {
   const c = DB.crews[room.code]; if (!c) return;
@@ -143,25 +231,22 @@ function startMission(room, starter, mid, tier, squadPids) {
   if ([...room.ops.values()].some(M => M.mid === mid)) return send(starter, { t: 'err', m: 'Another squad already took that contract.' });
   if (entry.locked) return send(starter, { t: 'err', m: 'Locked: ' + JSON.stringify(entry.need) });
   const squad = [starter, ...(squadPids || []).map(pid => room.players.get(pid)).filter(q => q && q !== starter && !q.op)].slice(0, MAX_SQUAD);
-  const tierN = TIERS[tier] ? tier : 'normal', story = entry.story ? STORY.find(s => 'story:' + s.id === mid) : null, type = entry.type;
-  const threat = threatOf(c, squad.length, tierN), T = TOWNS[entry.town] || TOWNS['HARBOR ROW'];
+  const tierN = TIERS[tier] ? tier : 'normal', kind = mid.split(':')[0], opId = kind === 'siege' ? 'siege' : mid.split(':')[1], op = opById(opId);
+  if (!op) return send(starter, { t: 'err', m: 'Unknown operation.' });
+  const threat = threatOf(c, squad.length, tierN, op), T = TOWNS[op.town] || TOWNS['HARBOR ROW'];
   const bonus = BONUS[crypto.randomInt(BONUS.length)];
-  const M = { id: rid(4), mid, story: story ? story.id : null, name: entry.name, type, town: entry.town, tier: tierN, threat, night: !!(entry.night || (story && story.night)), seed: crypto.randomInt(1e9),
-    T, stage: -1, stages: [], pts: {}, claims: {}, kills: {}, elites: 0, downs: 0, started: now(), t: 0, tAll: 0, waveT: 0, holdT: 0, left: null, crack: 0, reward: rewardOf(type, threat, tierN), brief: story ? story.brief : entry.brief || null, done: story ? story.done : null, ended: false,
+  const M = { id: rid(4), mid, op: op.id, story: kind === 'story' ? op.id : null, name: op.name, type: kind === 'siege' ? 'siege' : 'operation', town: op.town, site: op.site || null, grab: !!op.grab, tier: tierN, threat,
+    night: !!op.night, seed: crypto.randomInt(1e9), T, stage: -1, stages: [], pts: {}, claims: {}, kills: {}, elites: 0, downs: 0, alarms: 0, started: now(), t: 0, tAll: 0, waveT: 0, holdT: 0, left: null, crack: 0,
+    reward: rewardOf(op, threat, tierN, kind === 'replay'), brief: op.brief, done: kind === 'story' ? op.done : null, ended: false, bars: [], cargo: null, ohp: null, lureT: 0, lureHold: 0,
     squad: new Set(squad.map(q => q.pid)), names: Object.fromEntries(squad.map(q => [q.pid, q.name])), host: null, bonus };
-  const n = clampN((story && story.n) || Math.round(3 + squad.length * 1.2 + threat * .3), 1, 12);
-  const nests = clampN(Math.round(1 + threat / 2.5), 1, 5);
-  // the objective chain; every mission ends with getting everyone home
-  if (type === 'scavenge') M.stages = [{ k: 'travel', txt: 'Get to ' + entry.town }, { k: 'collect', n, txt: story && story.n === 1 ? 'Find the case' : 'Collect supply caches' }, { k: 'extract', txt: 'Get everyone back to Haven' }];
-  if (type === 'airdrop') M.stages = [{ k: 'travel', txt: 'Reach the drop zone in ' + entry.town }, { k: 'crack', secs: 10 + Math.round(threat), txt: 'Crack the crate open (hold E at the crate)' }, { k: 'extract', txt: 'Get everyone back to Haven' }];
-  if (type === 'defend' || type === 'siege') M.stages = [{ k: 'travel', txt: type === 'siege' ? 'Man the barricade at Haven' : 'Get to the point in ' + entry.town }, { k: 'hold', secs: (story && story.secs) || (type === 'siege' ? 300 : 180 + Math.round(threat * 10)), txt: 'Hold the point' }, ...(type === 'siege' ? [] : [{ k: 'extract', txt: 'Get everyone back to Haven' }])];
-  if (type === 'clear') M.stages = [{ k: 'travel', txt: 'Get to ' + entry.town }, { k: 'clear', txt: 'Clear the infestation' }, { k: 'collect', n: nests, nest: 1, txt: 'Burn the nests (hold E at each)' }, { k: 'extract', txt: 'Get everyone back to Haven' }];
-  if (type === 'rescue') M.stages = [{ k: 'travel', txt: 'Find the survivors in ' + entry.town }, { k: 'crack', secs: 8, txt: 'Get them out of the house (hold E at the door)' }, { k: 'hold', secs: 90 + Math.round(threat * 8), txt: 'Hold the house while they pack' }, { k: 'extract', txt: 'Get everyone back to Haven' }];
-  if (type === 'hunt') M.stages = [{ k: 'travel', txt: 'Track the Apex to ' + entry.town }, { k: 'clear', boss: 1, txt: 'Kill the Apex and its pack' }, { k: 'extract', txt: 'Get everyone back to Haven' }];
-  if (type === 'gauntlet') { const via = (entry.via || []).filter(v => TOWNS[v] && v !== entry.town).slice(0, 2); M.stages = [...via.map((v, i) => ({ k: 'travel', town: v, secs: 150, txt: 'Checkpoint ' + (i + 1) + ': ' + v[0] + v.slice(1).toLowerCase() + ' (against the clock)' })), { k: 'travel', secs: 150, txt: 'Final checkpoint: ' + entry.town }, { k: 'crack', secs: 6, txt: 'Unload the goods (hold E)' }, { k: 'extract', txt: 'Get everyone back to Haven' }]; }
-  if (type === 'blackout') { M.night = true; M.stages = [{ k: 'travel', txt: 'Get to ' + entry.town + ' in the dark' }, { k: 'collect', n: 3, txt: 'Throw the three breakers' }, { k: 'hold', secs: 100 + Math.round(threat * 8), txt: 'Hold the transformer while it spins up' }, { k: 'extract', txt: 'Get everyone back to Haven' }]; }
-  if (type === 'demolition') M.stages = [{ k: 'travel', txt: 'Get to the overpass in ' + entry.town }, { k: 'collect', n: 3, txt: 'Plant the charges' }, { k: 'extract', txt: 'Get clear and get home before it blows' }];
-  if (type === 'convoy') M.stages = [{ k: 'travel', txt: 'Drive to the pickup in ' + entry.town, drive: 1 }, { k: 'crack', secs: 6, txt: 'Load the truck (hold E at the pickup)' }, { k: 'extract', txt: 'Drive the load back to Haven' }];
+  // copy the hand-written stages and size the ones that depend on how many of you there are
+  const SQ = squad.length;
+  M.stages = op.stages.map(x => Object.assign({}, x));
+  for (const st of M.stages) {
+    if (st.k === 'twokey') st.need = Math.max(1, Math.min(st.n || 2, SQ));
+    if (st.k === 'collect' && !st.nest && !st.lure) st.n = clampN(st.n + (SQ >= 3 ? 1 : 0), 1, 8);
+    if (st.k === 'hold') st.secs = Math.round(st.secs * ((TIERS[tierN] || TIERS.normal).bonus ? 1.15 : 1));
+  }
   room.ops.set(M.id, M);
   for (const p of squad) { p.op = M.id; p.loaded = false; p.down = false; p.dead = false; p.ready = false; }
   bop(room, M, { t: 'mission.load', m: publicMission(M), seed: M.seed, armory: armoryOf(starter) });
@@ -170,40 +255,67 @@ function startMission(room, starter, mid, tier, squadPids) {
   c.log.push({ t: now(), m: squad.map(q => q.name).join(', ') + ' headed out: ' + M.name + '.' }); crewUpdate(room);
 }
 function armoryOf(p) { const pr = DB.profiles[p.pid]; return pr && pr.armory ? Object.keys(pr.armory) : []; }
-function publicMission(M) { return { id: M.id, name: M.name, type: M.type, town: M.town, tier: M.tier, threat: M.threat, night: M.night, brief: M.brief, stages: M.stages.map(s => s.txt), stage: M.stage, pts: M.pts, claims: M.claims, reward: M.reward, T: M.T, bonus: M.bonus.txt }; }
+function publicMission(M) { const op = opById(M.op) || {}; return { id: M.id, name: M.name, type: M.type, town: M.town, tier: M.tier, threat: M.threat, night: M.night, brief: M.brief, stages: M.stages.map(s => s.txt), stage: M.stage, pts: M.pts, claims: M.claims, reward: M.reward, T: M.T, bonus: M.bonus.txt, tips: op.tips || [], grab: M.grab, bars: M.bars }; }
 function goMission(room, M) {
   if (!M || M.go || M.ended) return; M.go = true; clearTimeout(M.loadTimer);
   setHost(room, M, pickHost(room, M) || squadOf(room, M)[0], 'start');
   // ask the host to work out the concrete spots (it has the real map)
-  const h = room.players.get(M.host); if (h) send(h, { t: 'needpts', type: M.type, town: M.town, T: M.T, n: (M.stages.find(s => s.k === 'collect') || {}).n || 0, nests: (M.stages.find(s => s.nest) || {}).n || 0 });
+  const need = { n: 0, nests: 0, keys: 0, bars: 0, hbars: 0, lure: 0, item: 0 };
+  for (const st of M.stages) { if (st.k === 'collect') { if (st.nest) need.nests = Math.max(need.nests, st.n); else need.n = Math.max(need.n, st.n); if (st.lure) need.lure = 1; }
+    if (st.k === 'twokey') need.keys = Math.max(need.keys, st.n || 2); if (st.k === 'build') { if (st.at === 'haven') need.hbars = Math.max(need.hbars, st.n); else need.bars = Math.max(need.bars, st.n); } if (st.k === 'carry') need.item = 1; }
+  const h = room.players.get(M.host); if (h) send(h, Object.assign({ t: 'needpts', type: M.type, town: M.town, T: M.T, site: M.site }, need));
   M.ptsTimer = setTimeout(() => { if (!M.pts.haven) setPoints(room, M, { haven: HAVEN_PT, center: { x: M.T.x, y: M.T.y }, caches: [] }); }, 25000);
   bop(room, M, { t: 'mission.go' });
 }
 const HAVEN_PT = { x: 6400, y: 3560 };
+const ring = (c, n, r, a0) => Array.from({ length: n }, (_, i) => ({ x: Math.round(c.x + Math.cos((a0 || 0) + i * 6.283 / n) * r), y: Math.round(c.y + Math.sin((a0 || 0) + i * 6.283 / n) * r) }));
 function setPoints(room, M, pts) {
   if (!M || M.pts.haven) return; clearTimeout(M.ptsTimer);
-  M.pts = { haven: pts.haven || HAVEN_PT, center: pts.center || { x: M.T.x, y: M.T.y }, caches: (pts.caches || []).slice(0, 12), nests: (pts.nests || []).slice(0, 6) };
+  const center = pts.center || { x: M.T.x, y: M.T.y }, haven = pts.haven || HAVEN_PT;
+  M.pts = { haven, center, caches: (pts.caches || []).slice(0, 12), nests: (pts.nests || []).slice(0, 6), keys: (pts.keys || []).slice(0, 4), bars: (pts.bars || []).slice(0, 6), hbars: (pts.hbars || []).slice(0, 6),
+    lure: pts.lure || null, item: pts.item || null };
+  // fallbacks, so a stage never ends up with nothing to do
+  const most = f => Math.max(0, ...M.stages.filter(f).map(s => s.n || 2));   // only invent spots when the host could not find enough real ones
+  const nk = Math.min(M.squad.size, most(s => s.k === 'twokey')), nb = most(s => s.k === 'build' && s.at !== 'haven'), nh = most(s => s.k === 'build' && s.at === 'haven');
+  if (nk && M.pts.keys.length < nk) M.pts.keys = M.pts.keys.concat(ring(center, 3, 320, .4)).slice(0, Math.max(nk, M.pts.keys.length));
+  if (nb && M.pts.bars.length < Math.min(nb, 2)) M.pts.bars = ring(center, nb, 260, .2);
+  if (nh && M.pts.hbars.length < Math.min(nh, 2)) M.pts.hbars = ring(haven, nh, 300, .2);
+  if (M.stages.some(s => s.lure) && !M.pts.lure) M.pts.lure = { x: center.x + 700, y: center.y };
+  if (!M.pts.item) M.pts.item = { x: center.x + 40, y: center.y + 40 };
   if (M.type === 'siege') M.pts.center = M.pts.haven;
-  const coll = M.stages.find(s => s.k === 'collect' && !s.nest); if (coll) coll.n = Math.min(coll.n, M.pts.caches.length || 1);
-  const ns = M.stages.find(s => s.nest); if (ns) { if (M.pts.nests.length) ns.n = Math.min(ns.n, M.pts.nests.length); else M.stages = M.stages.filter(s => !s.nest); }
+  for (const st of M.stages) {
+    if (st.k === 'collect' && !st.nest) st.n = Math.min(st.n, M.pts.caches.length || 1);
+    if (st.k === 'build') st.n = Math.min(st.n, (st.at === 'haven' ? M.pts.hbars : M.pts.bars).length);
+    if (st.k === 'twokey') { st.need = Math.min(st.need, M.pts.keys.length); }
+  }
+  const ns = M.stages.find(s => s.nest); if (ns && !M.pts.nests.length) M.stages = M.stages.filter(s => !s.nest); else if (ns) ns.n = Math.min(ns.n, M.pts.nests.length);
   nextStage(room, M);
 }
-function stageTarget(M, s) { if (!s) return null; if (s.town && TOWNS[s.town]) return { x: TOWNS[s.town].x, y: TOWNS[s.town].y }; if (s.k === 'travel' || s.k === 'crack' || s.k === 'hold' || s.k === 'clear') return M.pts.center; if (s.k === 'extract') return M.pts.haven; return null; }
-function stageMsg(M, s) { return { t: 'stage', i: M.stage, txt: s.txt, k: s.k, target: stageTarget(M, s), n: s.n || 0, secs: s.secs || 0, nest: s.nest ? 1 : 0, caches: s.k === 'collect' ? (s.nest ? M.pts.nests : M.pts.caches).slice(0, s.n) : null, claims: M.claims }; }
+function stagePts(M, s) { if (!s) return []; if (s.k === 'collect') return s.nest ? M.pts.nests : M.pts.caches; if (s.k === 'build') return s.at === 'haven' ? M.pts.hbars : M.pts.bars; if (s.k === 'twokey') return M.pts.keys.slice(0, s.need); return []; }
+function stageTarget(M, s) { if (!s) return null; if (s.at === 'haven') return M.pts.haven; if (s.town && TOWNS[s.town]) return { x: TOWNS[s.town].x, y: TOWNS[s.town].y };
+  if (s.k === 'carry') return s.to === 'haven' ? M.pts.haven : M.pts.center;
+  if (s.k === 'twokey') { const k = M.pts.keys.slice(0, s.need); return k.length ? { x: Math.round(k.reduce((a, p) => a + p.x, 0) / k.length), y: Math.round(k.reduce((a, p) => a + p.y, 0) / k.length) } : M.pts.center; }
+  if (s.k === 'travel' || s.k === 'crack' || s.k === 'hold' || s.k === 'clear' || s.k === 'build') return M.pts.center; if (s.k === 'extract') return M.pts.haven; return null; }
+function stageMsg(M, s) { return { t: 'stage', i: M.stage, txt: s.txt, k: s.k, target: stageTarget(M, s), n: s.n || 0, need: s.need || 0, secs: s.secs || 0, nest: s.nest ? 1 : 0, bar: s.k === 'build' ? 1 : 0,
+  caches: (s.k === 'collect' || s.k === 'build') ? stagePts(M, s).slice(0, s.n) : null, keys: s.k === 'twokey' ? stagePts(M, s) : null, claims: M.claims, quiet: s.quiet ? 1 : 0, cover: s.cover ? 1 : 0,
+  lure: s.lure ? M.pts.lure : null, lureT: M.lureT, prot: s.prot || null, ohp: M.ohp, cargo: M.cargo, item: s.item || null, heavy: s.heavy ? 1 : 0, bars: M.bars }; }
 function nextStage(room, M) {
   M.stage++; const s = M.stages[M.stage];
   if (!s) return endMission(room, M, true);
-  M.t = 0; M.holdT = 0; M.crack = 0; M.waveT = 0; M.left = null; M.claims = {};
-  const th = M.threat, elite = Math.floor(th / 2.5);
+  M.t = 0; M.holdT = 0; M.crack = 0; M.waveT = 6; M.left = null; M.claims = {}; M.lureT = 0; M.lureHold = 0; M.jam = 0; M.ohp = s.prot ? 100 : null;
+  if (s.k === 'carry') M.cargo = { x: M.pts.item.x, y: M.pts.item.y, pid: null, item: s.item || 'crate', heavy: s.heavy ? 1 : 0 }; else M.cargo = null;
+  const th = M.threat, elite = Math.floor(th / 2.5), grab = M.grab ? Math.max(1, Math.round(th / 2)) : 0, c = M.pts.center;
   // spawn directives for the sim host
-  if (s.k === 'travel' && M.type !== 'siege' && M.type !== 'defend') hostDo(room, M, { k: 'infest', x: M.pts.center.x, y: M.pts.center.y, r: Math.min(900, M.T.r * .6), n: Math.round(12 + th * 4.5), run: Math.min(.55, .06 * th), spec: th >= 2.5, tag: 'town', elite: Math.max(0, elite - 1) });
-  if (s.k === 'clear') hostDo(room, M, { k: 'horde', x: M.pts.center.x, y: M.pts.center.y, r: 420, n: Math.round((s.boss ? 10 : 16) + th * (s.boss ? 3 : 5.5)), run: Math.min(.55, .07 * th), spec: th >= 2, tag: 'clear', brute: Math.floor(th / 3), elite, boss: s.boss ? 1 : 0 });
-  if (s.k === 'crack') hostDo(room, M, { k: 'wave', x: M.pts.center.x, y: M.pts.center.y, n: Math.round(8 + th * 2.4), run: Math.min(.55, .07 * th), spec: th >= 2.5, tag: 'wave', elite: elite ? 1 : 0 });
-  if (s.k === 'extract' && th >= 2) hostDo(room, M, { k: 'chase', n: Math.round(4 + th * 1.5), run: Math.min(.7, .1 * th), tag: 'wave' });   // the walk home is not free any more
+  if (s.k === 'travel' && M.type !== 'siege') hostDo(room, M, { k: 'infest', x: c.x, y: c.y, r: Math.min(900, M.T.r * .6), n: Math.round(14 + th * 4.5), run: Math.min(.5, .05 * th), spec: th >= 2, scream: s.quiet ? 2 : 0, tag: 'town', elite: Math.max(0, elite - 1), grab });
+  if (s.k === 'clear') hostDo(room, M, { k: 'horde', x: c.x, y: c.y, r: 420, n: Math.round((s.boss ? 12 : 18) + th * (s.boss ? 3.5 : 5.5)), run: Math.min(.55, .07 * th), spec: th >= 2, tag: 'clear', brute: Math.floor(th / 3), elite, boss: s.boss ? 1 : 0, grab: grab + (s.boss ? 1 : 0) });
+  if (s.k === 'crack') hostDo(room, M, { k: 'wave', x: c.x, y: c.y, n: Math.round(8 + th * 2.4), run: Math.min(.55, .07 * th), spec: th >= 2.5, tag: 'wave', elite: elite ? 1 : 0, grab: Math.min(1, grab) });
+  if (s.k === 'extract' && th >= 1.5) hostDo(room, M, { k: 'chase', n: Math.round(4 + th * 1.6), run: Math.min(.7, .1 * th), tag: 'wave' });
+  if (s.k === 'collect' && s.lure) hostDo(room, M, { k: 'horde', x: c.x, y: c.y, r: 500, n: Math.round(30 + th * 8), run: .1, spec: false, tag: 'lure', grab: 0 });   // the crowd you have to bait away
   bop(room, M, stageMsg(M, s));
 }
 function hostDo(room, M, d) { const h = room.players.get(M.host); if (h) send(h, { t: 'do', d, threat: M.threat, b: (DB.crews[room.code] || {}).b }); }
 function alivePlayers(room, M) { return squadOf(room, M).filter(p => p.loaded && !p.down && !p.dead && p.st); }
+function waveAt(room, M, x, y, mul, extra) { const th = M.threat; hostDo(room, M, Object.assign({ k: 'wave', x, y, n: Math.round((6 + th * 2.2) * (mul || 1)), run: Math.min(.6, .06 * th), spec: th >= 2.5, tag: 'wave', grab: M.grab && Math.random() < .5 ? 1 : 0 }, extra || {})); }
 function missionTick(room, M, dt) {
   if (!M || !M.go || M.ended || M.stage < 0) return;
   const s = M.stages[M.stage], tgt = stageTarget(M, s), alive = alivePlayers(room, M), all = squadOf(room, M).filter(p => p.loaded);
@@ -211,25 +323,47 @@ function missionTick(room, M, dt) {
   if (all.length && all.every(p => p.down || p.dead)) return endMission(room, M, false, 'The whole squad went down.');
   if (!squadOf(room, M).length) return endMission(room, M, false, 'Everyone left.');
   if (!all.length) return;
-  const near = (r) => alive.filter(p => dist(p.st, tgt) < r);
-  if (s.k === 'travel') { if (near(s.drive ? 260 : 350).length) nextStage(room, M); else if (s.secs) { bop(room, M, { t: 'prog', v: Math.min(1, M.t / s.secs), secs: Math.max(0, Math.round(s.secs - M.t)) }); if (M.t > s.secs) return endMission(room, M, false, 'Too slow. The checkpoint closed.'); } }
-  else if (s.k === 'collect') { const got = Object.keys(M.claims).length; if (got >= s.n) nextStage(room, M);
-    if (s.nest) { M.waveT -= dt; if (M.waveT <= 0) { const p = alive[0]; if (p) hostDo(room, M, { k: 'wave', x: p.st.x, y: p.st.y, n: Math.round(5 + M.threat * 1.6), run: Math.min(.6, .08 * M.threat), spec: true, tag: 'wave' }); M.waveT = Math.max(16, 34 - M.threat * 2); } } }
-  else if (s.k === 'crack') { const at = near(90).filter(p => p.st.use); if (at.length) { M.crack += dt * Math.min(2, at.length); bop(room, M, { t: 'prog', v: Math.min(1, M.crack / s.secs) }); } if (M.crack >= s.secs) nextStage(room, M); }
+  const near = (r, at) => alive.filter(p => dist(p.st, at || tgt) < r);
+  if (s.k === 'travel') { if (near(s.drive ? 260 : 350).length) nextStage(room, M); else if (s.secs) { bop(room, M, { t: 'prog', v: Math.min(1, M.t / s.secs), secs: Math.max(0, Math.round(s.secs - M.t)) }); if (M.t > s.secs) return endMission(room, M, false, 'Too slow. The horde got there first.'); } }
+  else if (s.k === 'collect' || s.k === 'build') { const got = Object.keys(M.claims).length; if (got >= s.n) return nextStage(room, M);
+    if (s.lure && M.pts.lure) {   // the flare: someone holds E at it to light it, it burns for a while, then the horde turns round
+      const atL = near(80, M.pts.lure).filter(p => p.st.use);
+      if (M.lureT <= 0 && atL.length) { M.lureHold += dt; bop(room, M, { t: 'prog', v: Math.min(1, M.lureHold / 2), lure: 1 }); if (M.lureHold >= 2) { M.lureT = s.lsecs || 45; M.lureHold = 0; hostDo(room, M, { k: 'lure', on: 1, x: M.pts.lure.x, y: M.pts.lure.y }); bop(room, M, { t: 'lure', on: 1, secs: M.lureT }); } }
+      else if (!atL.length) M.lureHold = 0;
+      if (M.lureT > 0) { M.lureT -= dt; if (M.lureT <= 0) { M.lureT = 0; hostDo(room, M, { k: 'lure', on: 0 }); bop(room, M, { t: 'lure', on: 0 }); const p = alive[0]; if (p) waveAt(room, M, p.st.x, p.st.y, .8); } else if (Math.round(M.lureT * 4) % 4 === 0) bop(room, M, { t: 'lure', on: 1, secs: Math.round(M.lureT) }); } }
+    else if (s.nest || s.k === 'build') { M.waveT -= dt; if (M.waveT <= 0) { const p = alive[Math.floor(Math.random() * alive.length)]; if (p) waveAt(room, M, p.st.x, p.st.y, s.k === 'build' ? .6 : .8, { spec: true }); M.waveT = s.k === 'build' ? Math.max(18, 30 - M.threat * 2) : Math.max(16, 34 - M.threat * 2); } } }
+  else if (s.k === 'crack') {
+    const at = near(90).filter(p => p.st.use); const jam = s.cover && (M.nearZ || 0) > 0;
+    if (at.length && !jam) M.crack += dt * Math.min(1.6, .8 + .4 * at.length);
+    bop(room, M, { t: 'prog', v: Math.min(1, M.crack / s.secs), jam: jam && at.length ? 1 : 0 });
+    M.waveT -= dt; if (M.waveT <= 0) { waveAt(room, M, tgt.x, tgt.y, .7); M.waveT = Math.max(14, 24 - M.threat * 1.5); }
+    if (M.crack >= s.secs) nextStage(room, M); }
+  else if (s.k === 'twokey') {   // every switch needs someone on it, holding E, at the same moment
+    const keys = stagePts(M, s), manned = keys.map(k => alive.some(p => p.st.use && dist(p.st, k) < 75)), ok = manned.every(Boolean);
+    if (ok) M.crack += dt; else M.crack = Math.max(0, M.crack - dt * .5);
+    bop(room, M, { t: 'prog', v: Math.min(1, M.crack / s.secs), keys: manned.map(b => b ? 1 : 0) });
+    M.waveT -= dt; if (M.waveT <= 0) { const k = keys[Math.floor(Math.random() * keys.length)]; if (k) waveAt(room, M, k.x, k.y, .55); M.waveT = Math.max(12, 22 - M.threat * 1.5); }
+    if (M.crack >= s.secs) nextStage(room, M); }
+  else if (s.k === 'carry') {
+    const C = M.cargo; if (C.pid) { const q = room.players.get(C.pid); if (!q || q.op !== M.id || q.down || !q.st) { if (q && q.st) { C.x = q.st.x; C.y = q.st.y; } C.pid = null; bop(room, M, { t: 'cargo', c: C, why: q && q.down ? q.name + ' dropped it' : '' }); } else { C.x = q.st.x; C.y = q.st.y; } }
+    M.cargoT = (M.cargoT || 0) - dt; if (M.cargoT <= 0) { M.cargoT = .5; bop(room, M, { t: 'cargo', c: C }); }
+    if (dist(C, tgt) < 240) return nextStage(room, M);
+    M.waveT -= dt; if (M.waveT <= 0) { hostDo(room, M, { k: 'chase', n: Math.round(3 + M.threat * 1.3), run: Math.min(.6, .08 * M.threat), tag: 'wave', at: { x: C.x, y: C.y }, grab: M.grab && Math.random() < .35 ? 1 : 0 }); M.waveT = Math.max(15, 26 - M.threat * 1.6); } }
   else if (s.k === 'hold') {
     const inside = near(380).length; if (inside) M.holdT += dt; else M.outT = (M.outT || 0) + dt;
     if ((M.outT || 0) > 25 && M.type === 'siege') return endMission(room, M, false, 'Haven was overrun.');
     if (inside) M.outT = 0;
-    M.waveT -= dt; if (M.waveT <= 0) { const th = M.threat * (1 + M.holdT / s.secs * .8), walls = M.type === 'siege' ? (DB.crews[room.code].b.walls || 0) : 0, last = M.holdT > s.secs * .75;
-      hostDo(room, M, { k: 'wave', x: tgt.x, y: tgt.y, n: Math.round((7 + th * 2.5) * (1 - .1 * walls) * (last ? 1.4 : 1)), run: Math.min(.6, .06 * th), spec: th >= 2.5, tag: 'wave', brute: th >= 5 ? 1 + (last ? 1 : 0) : 0, elite: last && th >= 3 ? 1 : 0 }); M.waveT = Math.max(12, 26 - th); }
-    bop(room, M, { t: 'prog', v: Math.min(1, M.holdT / s.secs), secs: Math.max(0, Math.round(s.secs - M.holdT)) });
+    if (s.prot && M.ohp !== null && M.ohp <= 0) return endMission(room, M, false, 'The ' + s.prot + ' was destroyed.');
+    M.waveT -= dt; if (M.waveT <= 0) { const th = M.threat * (1 + M.holdT / s.secs * .8), walls = M.type === 'siege' || s.at === 'haven' ? (DB.crews[room.code].b.walls || 0) : 0, last = M.holdT > s.secs * .75;
+      hostDo(room, M, { k: 'wave', x: tgt.x, y: tgt.y, n: Math.round((7 + th * 2.5) * (1 - .1 * walls) * (last ? 1.4 : 1) * (s.big ? 1.35 : 1)), run: Math.min(.6, .06 * th), spec: th >= 2.5, tag: 'wave', brute: (s.brute || 0) + (th >= 5 ? 1 : 0) + (last && s.brute ? 1 : 0), elite: last && th >= 3 ? 1 : 0, grab: M.grab ? 1 : 0, prot: s.prot ? .45 : 0, bars: 1 }); M.waveT = Math.max(11, 25 - th); }
+    bop(room, M, { t: 'prog', v: Math.min(1, M.holdT / s.secs), secs: Math.max(0, Math.round(s.secs - M.holdT)), ohp: M.ohp });
     if (M.holdT >= s.secs) nextStage(room, M);
   }
   else if (s.k === 'clear') { if (M.left !== null) { bop(room, M, { t: 'left', n: M.left }); if (M.left <= 0 && M.t > 4) nextStage(room, M); } }
   else if (s.k === 'extract') { if (alive.length && alive.every(p => dist(p.st, tgt) < 320)) nextStage(room, M); }
 }
 function bonusMet(M) { const b = M.bonus, k = Object.values(M.kills).reduce((a, x) => a + x, 0);
-  return b.k === 'nodown' ? M.downs === 0 : b.k === 'fast' ? M.tAll <= b.secs : b.k === 'elite' ? M.elites >= b.n : b.k === 'kills' ? k >= b.n : false; }
+  return b.k === 'nodown' ? M.downs === 0 : b.k === 'fast' ? M.tAll <= b.secs : b.k === 'elite' ? M.elites >= b.n : b.k === 'kills' ? k >= b.n : b.k === 'together' ? M.downs <= 1 : false; }
 function endMission(room, M, win, why) {
   if (!M || M.ended) return; M.ended = true; clearTimeout(M.loadTimer); clearTimeout(M.ptsTimer);
   const c = DB.crews[room.code], players = squadOf(room, M);
@@ -238,7 +372,7 @@ function endMission(room, M, win, why) {
     if (win) { for (const k in M.reward) { const v = Math.round(M.reward[k] * (bonus ? 1.5 : 1)); c.res[k] = (c.res[k] || 0) + v; paid[k] = v; } c.done++; if (M.story && !c.storyDone.includes(M.story)) c.storyDone.push(M.story); }
     else { c.fails++; for (const k in c.res) { const loss = Math.floor(c.res[k] * .05); c.res[k] -= loss; } if (M.type === 'siege') { const ks = Object.keys(c.b).filter(k => c.b[k] > 0); if (ks.length) { const k = ks[Math.floor(Math.random() * ks.length)]; c.b[k]--; c.log.push({ t: now(), m: BUILDINGS[k].name + ' lost a level in the siege.' }); } } }
     c.log.push({ t: now(), m: (win ? 'Completed ' : 'Failed ') + M.name + ' (threat ' + M.threat + ')' + (bonus ? ' with the bonus' : '') }); if (c.log.length > 50) c.log.shift();
-    c.board = (c.board || []).filter(m => m.mid !== M.mid); if (c.board.filter(m => !m.story).length < 3 || M.story) makeBoard(c, room);
+    makeBoard(c);
   }
   const stats = {};
   for (const p of players) { const k = M.kills[p.pid] || 0, prof = DB.profiles[p.pid] || (DB.profiles[p.pid] = { name: p.name, xp: 0, kills: 0, missions: 0 }); prof.name = p.name; prof.kills += k; prof.xp += k * 10 + (win ? Math.round(200 * M.threat * (TIERS[M.tier] || TIERS.normal).pay * (bonus ? 1.5 : 1)) : 40); if (win) prof.missions++; stats[p.pid] = { name: p.name, kills: k, xp: prof.xp }; p.op = null; p.loaded = false; }
@@ -351,8 +485,18 @@ function handle(p, m) {
     case 'pdmg': if (M && p.pid === M.host) { for (const [pid, n] of (m.list || [])) { const q = room.players.get(pid); if (q && q.op === M.id) send(q, { t: 'pdmg', n }); } } return;
     case 'spawnreq': if (M) { const h = room.players.get(M.host); if (h && h !== p) send(h, { t: 'spawnreq', list: (m.list || []).slice(0, 12) }); } return;
     case 'left': if (M && p.pid === M.host) M.left = m.n | 0; return;
-    case 'claim': { if (!M) return; const s = M.stages[M.stage]; if (!s || s.k !== 'collect') return; const pts = s.nest ? M.pts.nests : M.pts.caches; const i = m.i | 0, pt = pts[i]; if (!pt || M.claims[i] || i >= s.n) return; if (!p.st || dist(p.st, pt) > 90) return;
-      M.claims[i] = p.pid; bop(room, M, { t: 'claimed', i, pid: p.pid, name: p.name, got: Object.keys(M.claims).length, n: s.n, nest: s.nest ? 1 : 0 }); return; }
+    case 'claim': { if (!M) return; const s = M.stages[M.stage]; if (!s || (s.k !== 'collect' && s.k !== 'build')) return; const pts = stagePts(M, s); const i = m.i | 0, pt = pts[i]; if (!pt || M.claims[i] || i >= s.n) return; if (!p.st || dist(p.st, pt) > 90) return;
+      if (s.lure && M.lureT <= 0 && M.pts.lure && dist(p.st, M.pts.lure) > 400) { /* looting while the horde is not baited is allowed: it is just much harder */ }
+      M.claims[i] = p.pid; let bar = null; if (s.k === 'build') { bar = { i: M.bars.length, x: pt.x, y: pt.y, cx: stageTarget(M, s).x, cy: stageTarget(M, s).y }; M.bars.push(bar); }
+      bop(room, M, { t: 'claimed', i, pid: p.pid, name: p.name, got: Object.keys(M.claims).length, n: s.n, nest: s.nest ? 1 : 0, bar }); return; }
+    // build 56: co-op mechanics
+    case 'mon': if (M && p.pid === M.host) { M.nearZ = m.n | 0; if (m.ohp !== undefined && M.ohp !== null) M.ohp = Math.max(0, Math.min(M.ohp, +m.ohp || 0)); } return;
+    case 'cargo.grab': { if (!M || !M.cargo || M.cargo.pid || !p.st || p.down) return; if (dist(p.st, M.cargo) > 90) return; M.cargo.pid = p.pid; bop(room, M, { t: 'cargo', c: M.cargo, why: p.name + ' picked it up' }); return; }
+    case 'cargo.drop': { if (!M || !M.cargo || M.cargo.pid !== p.pid) return; if (p.st) { M.cargo.x = p.st.x; M.cargo.y = p.st.y; } M.cargo.pid = null; bop(room, M, { t: 'cargo', c: M.cargo, why: p.name + ' put it down' }); return; }
+    case 'alarm': { if (!M || p.pid !== M.host) return; const s = M.stages[M.stage]; if (!s || !s.quiet || (M.alarmT && now() - M.alarmT < 20000)) return; M.alarmT = now(); M.alarms++;
+      const x = +m.x, y = +m.y; if (isFinite(x) && isFinite(y)) waveAt(room, M, x, y, 1.6, { run: Math.min(.7, .1 * M.threat), spec: true }); bop(room, M, { t: 'chat', name: '', m: 'A screamer went off. Everything on the hill heard it.' }); return; }
+    case 'pin': if (M && p.pid === M.host) { const q = room.players.get(m.pid); if (q && q.op === M.id) send(q, { t: 'pin', on: m.on ? 1 : 0, nid: m.nid | 0 }); bop(room, M, { t: 'pinned', pid: m.pid, on: m.on ? 1 : 0 }, p); } return;
+    case 'bk': if (M && p.pid === M.host) { const i = m.i | 0; M.bars = M.bars.filter(b => b.i !== i); bop(room, M, { t: 'bk', i }, p); } return;
     case 'revive': if (M) { const q = room.players.get(m.pid); if (q && q.op === M.id && q.down && p.st && q.st && dist(p.st, q.st) < 80) { send(q, { t: 'revived', by: p.name }); bop(room, M, { t: 'chat', name: '', m: p.name + ' picked up ' + q.name + '.' }); } } return;
     case 'car': if (M) bop(room, M, { t: 'car', pid: p.pid, c: m.c }, p); else bhaven(room, { t: 'car', pid: p.pid, c: m.c }, p); return;
     case 'ping': { if (!isFinite(m.x) || !isFinite(m.y)) return; const o = { t: 'ping', pid: p.pid, name: p.name, x: Math.round(m.x), y: Math.round(m.y) }; if (M) bop(room, M, o, p); else bhaven(room, o, p); return; }
@@ -364,7 +508,8 @@ function handle(p, m) {
   }
 }
 let last = now();
-setInterval(() => { const t = now(), dt = (t - last) / 1000; last = t; for (const r of rooms.values()) for (const M of [...r.ops.values()]) missionTick(r, M, dt); }, 250);
+const TSCALE = Math.min(20, +process.env.CS_TSCALE || 1);   // tests only: run mission clocks faster
+setInterval(() => { const t = now(), dt = (t - last) / 1000 * TSCALE; last = t; for (const r of rooms.values()) for (const M of [...r.ops.values()]) missionTick(r, M, dt); }, 250);
 
 loadDB().then(() => server.listen(PORT, () => console.log('ColdShore Online on :' + PORT + '  public=' + PUBLIC + '  saves=' + (useSB ? 'supabase' : DBF))));
 module.exports = { server };

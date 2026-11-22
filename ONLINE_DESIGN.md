@@ -4,48 +4,54 @@ Co-op for 1 to 6 players. You run a crew out of a shared settlement, take missio
 
 ## The story
 
-Three weeks after the quarantine, a voice comes over every radio in the county. It calls itself WARDEN. It promises airdrops of food, medicine and ammunition to any group that does its jobs: recover a black case from a clinic, hold a relay mast for ten minutes, burn a nest under a church. Your crew sets up in the empty warehouses of Harbor Row, which you name **Haven**, and takes the deal.
+Three weeks after the quarantine, a voice comes over every radio in the county. It calls itself WARDEN. It sends your crew on jobs and watches how you do them. Your crew sets up in the empty warehouses of Harbor Row, which you name **Haven**, and takes the work.
 
-The jobs get stranger. The cases are cold to the touch. Every nest you burn makes the next horde bigger. By the third chapter the crew realises that WARDEN is not feeding survivors. It is running an experiment on them, using the dead to test which groups hold together. The last chapter is a siege on Haven itself, and a choice: keep taking WARDEN's drops, or find the transmitter in New Halden and pull the plug.
+The jobs get stranger. WARDEN is breeding things, steering hordes with sound, and testing which groups hold together. The last operation goes up the lighthouse to find out who has been talking to you.
 
-| Chapter | Name | Unlocks at | Story operations |
-|---|---|---|---|
-| 1 | Haven | Start | **First Drop**: recover WARDEN's first airdrop. **Lights On**: restore the generator at Haven. **Harbor Sweep**: clear Harbor Row. |
-| 2 | The Offer | Radio 1 | **Cold Case**: recover a black case from the Millbrook clinic. **Mast**: hold the Pine Ridge relay mast. **Burn It**: destroy a nest under the Greywater church. |
-| 3 | Pattern | Radio 2, 6 missions done | **Ledger**: find WARDEN's ledger in Fairhaven. **Taken**: rescue the crew of another settlement. **Night Shift**: hold Calder through a whole night. |
-| 4 | The Tower | Radio 3, 12 missions done | **Signal Trace**: triangulate from three masts. **Halden Tower**: clear floors in New Halden to reach the roof. |
-| 5 | Warden | Radio 4, Chapter 4 done | **Last Drop**: siege on Haven, then the transmitter. The ending is a crew vote: keep the drops or cut the signal. |
+## Operations (build 56)
 
-Between story operations, the mission board always offers **contracts**: procedurally generated missions in any unlocked town. Contracts pay supplies and keep the threat curve moving.
+There are no random contracts any more. Online is **twelve hand-built operations** in four chapters. Each one is designed around something the squad has to do together. Finished operations stay on the board, so you can replay them on Hard or Nightmare for supplies, and every few operations Haven itself comes under siege.
 
-## Mission types (objectives)
+The design follows two references. **Left 4 Dead** was tuned so that it can't be beaten without cooperation, and its specials punish players who wander off. **The Last of Us** paces each chapter as setup, a new place, a new problem, strain, then relief. Every operation brings in one new co-op mechanic, then later operations combine them.
 
-Every mission ends the same way: **get everyone still alive back to the extraction point** (Haven, or a pickup marked on the map). Downed players can be revived by a teammate. A mission fails if the whole crew is down at once, or if a defence point falls.
+| # | Chapter | Operation | Town | What the squad has to do |
+|---|---|---|---|---|
+| 1 | Static | **First Light** | Greywater clinic | One player cuts the pharmacy cage while the others keep the dead off them (the cut stalls while zombies are near). Then one carries the vaccine fridge home and the rest escort them. |
+| 2 | Static | **Two Hands** | KCLD, Pine Ridge | Quiet approach (a screamer that sees you brings a horde). Split up and throw two breakers at the same moment. Then protect the transmitter, which the dead attack instead of you. |
+| 3 | Static | **The Flare** | Millbrook warehouses | Light a flare to pull a huge horde away, loot five caches while they watch it, and relight it when it burns out. |
+| 4 | The Experiment (Radio 1) | **Hold the Door** | Seaview | Build three barricades on the approaches before the wave. Hold while brutes smash them. Carry the grandfather home on a stretcher. |
+| 5 | The Experiment | **Grabbers** | Route 9 motel, Hollis | Introduces the **grabber**, which pins one player until a teammate shoots it off (or the pinned player mashes E). Clear the lot, burn the nests. |
+| 6 | The Experiment | **Lights Out** | Calder substation, at night | Three breakers in three corners of a dark yard, thrown together, with grabbers hunting anyone alone. Then save the transformer. |
+| 7 | Signal Trace (Radio 2) | **Black Box** | Airfield east of Ashford | Cover the one prying out the black box, bait the runway horde with a flare, then escort the beeping box home. |
+| 8 | Signal Trace | **Choke Point** | Fairhaven | Race the horde to town, build a four-barricade wall, hold it against a huge wave with brutes, plant charges, get clear. |
+| 9 | Signal Trace | **Apex** | Bramble | Boss hunt: the Apex and its grabbers. |
+| 10 | WARDEN (Radio 3) | **Station Nine** | Under the Halden facility | Quiet entry, two key cards turned together, hold the lobby, cover whoever pulls the server drives. |
+| 11 | WARDEN | **The Choir** | Millbrook to Haven | Carry fuel home, barricade Haven, then keep the floodlight generator alive through the biggest siege. |
+| 12 | WARDEN | **Last Drop** | The lighthouse | Everything at once: barricades, a two-key door, a hold, the last Apex. |
 
-| Type | Objective | What makes it hard |
+### Co-op mechanics
+
+| Mechanic | How it works | Solo |
 |---|---|---|
-| **Scavenge** | Find and collect N supply caches hidden in the houses of a town (N grows with crew size). | Caches are spread out, so the crew splits or takes longer. The town is infested. |
-| **Airdrop** | A crate falls somewhere in a town. Reach it first, crack it open (hold E, 10 s), then extract. | A flare on the crate draws every zombie in the area. Rivals' runners arrive at higher threat. |
-| **Defend** | Hold a point (relay mast, generator, barricade) for 3 to 6 minutes. At least one player must stay inside the circle. | Waves grow every minute, with specials (screamers, bloaters, brutes). |
-| **Clear** | Wipe out an infested zone, including its nest. | The nest keeps spawning until destroyed. Brutes guard it. |
-| **Convoy** | Drive to a town, pick up the load, drive it back. | Road hordes, pile-ups and grab attempts on every leg. A low-health truck slows the run. |
-| **Rescue** | Crack a trapped survivor out (hold E at the door), then hold the spot until they're on their feet. | Every second at the door makes noise. |
-| **Hunt** | Track down and kill an apex brute: a huge elite with more than double health. | It hits hard and calls the pack. |
-| **Gauntlet** | Run a timed route through several towns. Miss a checkpoint's clock and the run fails. | No time to loot. Roads are blocked. |
-| **Blackout** | At night: collect the fuses, then hold the substation while the lights come back. | Dark, fast runners, flashlights only. |
-| **Demolition** | Collect the charges, plant them, then get out before they go. | Blast radius and the horde it pulls. |
-| **Siege** | WARDEN's experiment comes to Haven. Defend the settlement through waves. | Damage to Haven lowers building levels if you lose. Walls and watchtowers decide how much help you get. |
+| **Cover** | A cutting or prying job only progresses while no zombie is within reach of the work point. Two working together go a bit faster. | Clear the area, then work. |
+| **Two keys** | Switches 300+ units apart must each have someone on them holding E at the same moment. Progress drains if anyone lets go. Waves come at the switches. | One switch. |
+| **Carry** | Pick up the objective with E (E again to put it down). The carrier can't shoot or sprint and moves at 55% speed, or 82% with a teammate beside them. If the carrier goes down, it drops. Runners come for it. | Slow and exposed. |
+| **Flare** | Hold E at the flare to light it. The horde walks to it for 40 to 50 seconds. When it burns out, they turn round and come for you. | Light it, loot, relight it. |
+| **Barricades** | Hold E at each marker to build a wall. Zombies have to go round. Brutes smash through fast, and crowds wear walls down. | Same. |
+| **Protect** | A machine with health that part of every wave goes for. If it dies, the operation fails. | Same. |
+| **Quiet** | During a quiet approach, a screamer going off brings a horde. | Same. |
+| **Grabbers** | A hunched special that lunges and pins one player. The pinned player can't move or shoot and takes damage until it's killed. | Mash E seven times to throw it off. |
 
-Clear missions end with **nests**: flesh mounds spread around the town. Hold E at each one to burn it while waves keep coming.
+Every operation ends with getting everyone home. A downed player is picked up by a teammate holding E. If the whole squad is down at once, the operation fails.
 
-**Bonus objective:** every operation rolls one bonus: nobody goes down, finish inside 9 minutes, kill an elite, or 60 kills between the squad. Meeting it pays 50% more supplies and XP.
+**Bonus objective:** every operation rolls one bonus: nobody goes down, finish inside 9 minutes, kill an elite, 60 kills between you, or nobody bleeds out. Meeting it pays 50% more.
 
 ## Free choice: who goes where
 
 There are no rules about who goes where. Every player picks for themselves.
 
-- **Deploy** on any contract takes only you. Anyone else can **join** your squad whenever they like, from the board or from the map, or start a different contract of their own.
-- Every open contract and every squad already out is marked on the map (M), at its town. Click one to see it, then press Enter to deploy, J to join or W to set a waypoint.
+- **Deploy** on any operation takes only you. Anyone else can **join** your squad whenever they like, from the board or from the map, or start a different operation of their own.
+- Every open operation and every squad already out is marked on the map (M), at its town. Click one to see it, then press Enter to deploy, J to join or W to set a waypoint.
 - Clicking anywhere else on the map sets a waypoint: a diamond on screen with the distance, a beam in the world and a dot on the minimap. Right-click or X clears it.
 - Each squad has its own sim host, its own zombies and its own objectives. Players at Haven see each other walking around.
 - Pulling out of an operation with others still in it leaves the squad running.
@@ -127,7 +133,7 @@ Online, any weapon you pick up goes into your **armory** on the server, and you 
 
 Each mission has a **threat** level that sets zombie numbers, how many are runners, how often specials appear, and how hard they hit.
 
-`threat = 1 + 0.25 × missions completed + 0.4 × (players − 1) + tier bonus`
+`threat = 1 + 0.7 × (chapter − 1) + 0.45 × (players − 1) + 0.04 × operations done (max 1.5) + tier bonus`
 
 Tier bonus is 0 for Normal, +1.5 for Hard and +3 for Nightmare. Harder tiers pay out more.
 

@@ -2127,7 +2127,8 @@ function fireRay(yw, pt, w) {
   if (w.pellets === 1 || Math.random() < .35) { const geo = new THREE.BufferGeometry().setFromPoints([o, e]); const line = new THREE.Line(geo, M.tracer); scene.add(line); tracers.push({ line, t: 0.07 }); }
 }
 function shoot() {
-  if (NET.down) return;
+  if (NET.down || NET.pinned) return;
+  if (NET.carrying) { if (!shoot.tt || performance.now() - shoot.tt > 1500) { shoot.tt = performance.now(); toast('Your hands are full. E to put it down.'); } return; }
   if (driving || P.cd > 0 || P.rl > 0 || (INSPECT && INSPECT.t < 1.4)) return;
   const w = Object.assign({ id: curW }, W_());
   if (w.melee) {
@@ -2692,7 +2693,17 @@ const LEVELS = [
 ];
 const SAVEKEY = 'coldshore.save.v1';
 const LVL = { data: null, pending: null, card: null };
-function lvlLoad() { if (LVL.data) return LVL.data; try { LVL.data = JSON.parse(localStorage.getItem(SAVEKEY) || 'null'); } catch (e) { LVL.data = null; } if (!LVL.data || !LVL.data.levels) LVL.data = { levels: {}, last: null, best: -1 }; return LVL.data; }
+function lvlLoad() { if (LVL.data) return LVL.data; try { LVL.data = JSON.parse(localStorage.getItem(SAVEKEY) || 'null'); } catch (e) { LVL.data = null; } if (!LVL.data || !LVL.data.levels) LVL.data = { levels: {}, last: null, best: -1, v: 2 }; if (!LVL.data.v) lvlMigrate(LVL.data); return LVL.data; }
+// build 56: the level list lost its generated levels, so old checkpoints are re-filed by what they were, not where they sat in the list
+function lvlMigrate(D) {
+  const first = LEVELS.findIndex(l => l.s === 'L2'), out = {}; let last = null, lt = -1;
+  for (const k in D.levels) { const sv = D.levels[k], i = +k; if (!sv) continue; let ni = i;
+    if (first < 0 || i >= first) { const st = sv.story || {}, mid = st.m && st.m.id;
+      if (mid && LEVELS.some(l => l.s === 'm:' + mid)) ni = LEVELS.findIndex(l => l.s === 'm:' + mid);
+      else { let L = st.L | 0; if (L < 2) L = 2; if (!CAMPL.includes(L)) { L = LNEXT(L) || CAMPL[CAMPL.length - 1]; st.L = L; st.Lj = 0; st.m = null; } ni = LEVELS.findIndex(l => l.s === 'L' + L); } }
+    if (ni < 0) continue; if (out[ni] && (out[ni].t || 0) > (sv.t || 0)) continue; sv.li = ni; out[ni] = sv; if ((sv.t || 0) > lt) { lt = sv.t || 0; last = ni; } }
+  D.levels = out; D.last = last; D.best = Math.max(-1, ...Object.keys(out).map(Number)); D.v = 2; try { localStorage.setItem(SAVEKEY, JSON.stringify(D)); } catch (e) {}
+}
 function lvlStore() { try { localStorage.setItem(SAVEKEY, JSON.stringify(LVL.data)); return true; } catch (e) { return false; } }
 function lvlOfStage(i) { return LEVELS.findIndex(l => l.s === i); }
 function lvlSnap(li) {
@@ -2739,13 +2750,13 @@ async function lvlStart(li) {
 function lvlCardHUD() {
   if (!LVL.card || state !== 'play') return; LVL.card.t -= 1 / 60; if (LVL.card.t <= 0) { LVL.card = null; return; }
   const L = LEVELS[LVL.card.li], a = clamp(LVL.card.t, 0, 1) * clamp((4.5 - LVL.card.t) * 2, 0, 1), cx = VW / 2;
-  ctx.globalAlpha = a; font(11, 700); ctx.textAlign = 'center'; ctx.fillStyle = '#9fd6e6'; const pt = LEVELS.slice(0, LVL.card.li + 1).filter(l => l.L === L.L).length; ctx.fillText('LEVEL ' + L.L + (L.L > 1 ? ' · ' + (LVNAME[L.L] || '').toUpperCase() : '') + (L.s === 'L' + L.L ? '' : '  •  PART ' + (L.L > 1 ? pt - 1 : pt)) + '  •  CHECKPOINT SAVED', cx, VH * .17);
+  ctx.globalAlpha = a; font(11, 700); ctx.textAlign = 'center'; ctx.fillStyle = '#9fd6e6'; const pt = LEVELS.slice(0, LVL.card.li + 1).filter(l => l.L === L.L).length; ctx.fillText('LEVEL ' + LORD(L.L) + (L.L > 1 ? ' · ' + (LVNAME[L.L] || '').toUpperCase() : '') + (L.s === 'L' + L.L ? '' : '  •  PART ' + (L.L > 1 ? pt - 1 : pt)) + '  •  CHECKPOINT SAVED', cx, VH * .17);
   font(34, 800); ctx.fillStyle = '#fff'; ctx.fillText(L.n.toUpperCase(), cx, VH * .17 + 38); font(13, 500); ctx.fillStyle = '#c8d2cf'; ctx.fillText(L.d, cx, VH * .17 + 62); ctx.globalAlpha = 1;
 }
 function lvlMenuHTML() {
   const D = lvlLoad();
   let lastL = 0, part = 0; const maxL = Math.max(1, ...LEVELS.map((L, i) => D.levels[i] ? L.L : 1));
-  return '<div class="panel"><h3>Levels</h3><div class="lvls">' + LEVELS.map((L, i) => { if (L.L > maxL + 1) return ''; const ok = !!D.levels[i]; let hd = ''; if (L.L !== lastL) { lastL = L.L; part = 0; const any = L.L <= maxL; hd = '<div class="lvh' + (any ? '' : ' lock') + '">Level ' + L.L + ': ' + (any ? LVNAME[L.L] : 'Next level') + '</div>'; }
+  return '<div class="panel"><h3>Levels</h3><div class="lvls">' + LEVELS.map((L, i) => { if (LORD(L.L) > LORD(maxL) + 1) return ''; const ok = !!D.levels[i]; let hd = ''; if (L.L !== lastL) { lastL = L.L; part = 0; const any = L.L <= maxL; hd = '<div class="lvh' + (any ? '' : ' lock') + '">Level ' + LORD(L.L) + ': ' + (any ? LVNAME[L.L] : 'Next level') + '</div>'; }
     if (L.s === 'L' + L.L) return hd + (ok ? '<div class="lv" data-lv="' + i + '"><b>Start of level</b><small>' + L.d + '</small></div>' : '');
     part++; return hd + (ok ? '<div class="lv" data-lv="' + i + '"><b>' + part + '. ' + L.n + '</b><small>' + L.d + '</small></div>' : ''); }).join('') + '</div><div class="btns"><span class="btn" data-m="back">Back</span></div></div>';
 }
@@ -3237,7 +3248,7 @@ function missionStart(id) {
   const M = MISSIONS[id]; if (!M || (story.m && story.m.id)) return;
   story.m = { id, step: 0, t: 0, entered: false }; PR.menu = null;
   const li = LEVELS.findIndex(l => l.s === 'm:' + id); if (li >= 0) LVL.pending = li;
-  toast(M.camp ? 'Level ' + M.camp + ': ' + M.n : 'Job started: ' + M.n); objFlash = 4; beep(660, .12, 'triangle', .04);
+  toast(M.camp ? 'Level ' + LORD(M.camp) + ': ' + M.n : 'Job started: ' + M.n); objFlash = 4; beep(660, .12, 'triangle', .04);
   if (M.intro) setTimeout(() => M.intro(), 300);
 }
 function missionStep() { const m = story.m; if (!m || !m.id) return null; return MISSIONS[m.id].steps[m.step] || null; }
@@ -3512,8 +3523,8 @@ function update(dt) {
     const f = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0), r = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0);
     if (P.sit && (f || r)) iaStand();
     if ((f || r) && !P.sit && !(P.sleepT > 0)) {
-      const l = Math.hypot(f, r); sprinting = staminaTick(dt, sprint && f > 0, true); moving = true;
-      if (sprinting && STL.crouch) setCrouch(false); const sp = sprinting ? 110 : 70 * (1 - adsK * .45) * (STL.crouch ? .5 : 1);
+      const l = Math.hypot(f, r); sprinting = staminaTick(dt, sprint && f > 0 && !NET.carrying, true); moving = true;
+      if (sprinting && STL.crouch) setCrouch(false); const sp = (sprinting ? 110 : 70 * (1 - adsK * .45) * (STL.crouch ? .5 : 1)) * netCarryMul();
       const fx = Math.cos(yaw), fy = Math.sin(yaw), rx = -Math.sin(yaw), ry = Math.cos(yaw);
       P.x += (fx * f + rx * r) / l * sp * dt; P.y += (fy * f + ry * r) / l * sp * dt; collide(P);
       bobT += dt * (sprinting ? 12 : STL.crouch ? 5 : 8); if (!STL.crouch) footTick(sprinting);
@@ -3580,7 +3591,7 @@ function update(dt) {
   for (let i = zombies.length - 1; i >= 0; i--) {
     const z = zombies[i];
     if (!isFinite(z.x) || !isFinite(z.y)) { if (z.m) world3.remove(z.m); zombies.splice(i, 1); continue; }   // build 39: never keep a zombie that is nowhere
-    if (z.hp <= 0) { if (NET.on) { if (z.puppet) netPuppetDied(z); else if (NET.host && z.nid) { NET.dead.push([z.nid, z.lastBy || (z.byP ? NET.pid : null), z.elite ? 1 : 0]); NET.byNid.delete(z.nid); } } zombies.splice(i, 1); kills++; zKilled(z); if (z.spec === 'bloater') bloaterBurst(z); dying.push({ m: z.m, t: 0, x: z.x, y: z.y, corpse: { x: z.x, y: z.y, kind: 'corpse', def: IAK.corpse, r: 18 } }); if (z.m.userData.glb) { if (z.crawl || z.down > 0) { z.down = 0; z.crawl = 1; zPose(z, 0); dying[dying.length - 1].still = 1; } else setAnim(z.m.userData, 'Death', 1, 0.08); } splat(z.x, z.y); continue; }
+    if (z.hp <= 0) { if (z.pinT) grabRelease(z); if (NET.on) { if (z.puppet) netPuppetDied(z); else if (NET.host && z.nid) { NET.dead.push([z.nid, z.lastBy || (z.byP ? NET.pid : null), z.elite ? 1 : 0]); NET.byNid.delete(z.nid); } } zombies.splice(i, 1); kills++; zKilled(z); if (z.spec === 'bloater') bloaterBurst(z); dying.push({ m: z.m, t: 0, x: z.x, y: z.y, corpse: { x: z.x, y: z.y, kind: 'corpse', def: IAK.corpse, r: 18 } }); if (z.m.userData.glb) { if (z.crawl || z.down > 0) { z.down = 0; z.crawl = 1; zPose(z, 0); dying[dying.length - 1].still = 1; } else setAnim(z.m.userData, 'Death', 1, 0.08); } splat(z.x, z.y); continue; }
     if (z.puppet) { netPuppetTick(z, dt); continue; }
     const T_ = NET.on && NET.host ? netTarget(z) : P;
     z.cd = Math.max(0, z.cd - dt); z.atkT = Math.max(0, (z.atkT || 0) - dt); z.hitT = Math.max(0, (z.hitT || 0) - dt); z.alertT = Math.max(0, (z.alertT || 0) - dt);
@@ -3588,10 +3599,11 @@ function update(dt) {
     if ((z.lv | 0) !== (T_.lv | 0)) { if (z.state === 'chase') z.state = 'wander'; }
     else if (z.state === 'chase') { if (d > zDet(z, det) * 1.7) z.state = 'wander'; } else if (d < zDet(z, det) && (noise > .6 || d < det * .3 || !segBlocked(z.x, z.y, T_.x, T_.y)) && !(z.sleep && noise < 1.3 && d > 40)) { z.state = 'chase'; z.feed = false; z.alertT = z.run ? 0.7 : 1.1; z.stag = Math.max(z.stag || 0, z.alertT * 0.8); scream(d, Math.atan2(z.y - T_.y, z.x - T_.x) - yaw); }
     z.moving = false;
+    if (z.spec === 'grabber' && NET.on && NET.host && !(z.stag > 0) && grabTick(z, T_, d, dt)) { collide(z); continue; }
     if (zMod(z, d, dt)) {}
     else if (z.stag > 0) { z.stag -= dt; z.moving = false; }
     else if (z.swing > 0) { z.moving = false; z.ang = Math.atan2(T_.y - z.y, T_.x - z.x); }
-    else if (LURE && (z.lv | 0) === 0 && Math.hypot(LURE.x - z.x, LURE.y - z.y) < 1100) { const ld = Math.hypot(LURE.x - z.x, LURE.y - z.y); z.ang = Math.atan2(LURE.y - z.y, LURE.x - z.x); if (ld > 16) { z.x += Math.cos(z.ang) * zSp(z) * dt; z.y += Math.sin(z.ang) * zSp(z) * dt; z.moving = true; } }
+    else if (LURE && (z.lv | 0) === 0 && Math.hypot(LURE.x - z.x, LURE.y - z.y) < 1400 && !(NET.on && d < 110 && z.state === 'chase')) { const ld = Math.hypot(LURE.x - z.x, LURE.y - z.y); z.ang = Math.atan2(LURE.y - z.y, LURE.x - z.x); if (ld > 16) { z.x += Math.cos(z.ang) * zSp(z) * dt; z.y += Math.sin(z.ang) * zSp(z) * dt; z.moving = true; } }
     else if (z.state === 'chase') {
       z.ang = Math.atan2(T_.y - z.y, T_.x - z.x);
       z.x += Math.cos(z.ang) * zSp(z) * dt; z.y += Math.sin(z.ang) * zSp(z) * dt; z.moving = true;
@@ -6716,7 +6728,7 @@ function renderTitle() {
   } else if (titleMode === 'credits') {
     h += '<div class="panel"><h3>Credits</h3><p>ColdShore prototype. Characters, zombies, vehicles, buildings, trees and animation built procedurally in Blender. Engine: three.js. Voices: your browser&#39;s speech engine.</p><p style="font-size:12px;opacity:.8">Models from BlendSwap, reduced for the browser: M1 Humvee by panko10 (CC-BY); Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0); Ford Crown Victoria Police Interceptor 2005 (CC-BY 3.0); Mercedes-AMG GLS (CC0); BMW 3 Series Coupe by mikepan (CC-BY-SA 3.0); Trees &amp; Bushes pack by Painkiller5555; Dodge Challenger 1970 R/T; Low Quality Weapon Pack (CC0).</p><div class="btns"><span class="btn" data-m="back">Back</span></div></div>';
   }
-  h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 55</div>';
+  h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 56</div>';
   titleEl.innerHTML = h; titleEl.classList.add('on');
   titleEl.querySelectorAll('[data-m]').forEach(a => a.onclick = () => titleAction(a.dataset.m));
   titleEl.querySelectorAll('[data-k]').forEach(a => a.onclick = () => pickBg(a.dataset.k));
@@ -7196,6 +7208,7 @@ function campParty(list) {
 function campSaveNow(key) { const li = LEVELS.findIndex(l => l.s === key); if (li < 0) return; const D = lvlLoad(); D.levels[li] = lvlSnap(li); D.last = li; D.best = Math.max(D.best, li); lvlStore(); LVL.card = { li, t: 4.5 }; }
 async function campBegin(L) {
   intForceOut();
+  if (L > 1 && L <= MAXL && !campLevel(L)) L = LNEXT(L) || MAXL + 1;   // an old save that stopped in a generated level picks up at the next real one
   if (L === MAXL + 1 && !story.endSeen) { story.endSeen = 1; return campFinale(); }
   const C = campLevel(L); if (!C) return campFinale(); BLOOD.on = 0;
   endEl.classList.remove('on'); story.L = L; story.Lj = 0; story.m = null; story.timer = null; story.Lmax = Math.max(story.Lmax || 1, L);
@@ -7208,7 +7221,7 @@ async function campBegin(L) {
   clearZombies(P.x, P.y, 1400); campParty(C.party); lock(); garageIA();
   campSaveNow('L' + L);
   await campCut(async () => {
-    await fadeTo(1, 0); await tcard('Level ' + L + ': ' + C.n, C.sub || '', 2.8); await fadeTo(0, 1.4);
+    await fadeTo(1, 0); await tcard('Level ' + LORD(L) + ': ' + C.n, C.sub || '', 2.8); await fadeTo(0, 1.4);
     const h = heartCh(); if (h && story.rst) toast(CAST[h].name + ' and you: ' + RST[story.rst]);
     if (C.intro) await C.intro();
   }, { x: P.x, y: P.y, r: 1200 });
@@ -7222,9 +7235,11 @@ async function campAfter(M) {
 async function campLevelDone() {
   const L = story.L, C = campLevel(L); BLOOD.on = 0; if (C.outro) await campCut(C.outro, { x: P.x, y: P.y, r: 1200 });
   if (C.after) C.after();
-  gainXP(300 + 50 * L, 'LEVEL ' + L + ' COMPLETE');
-  await runCut(async () => { await fadeTo(1, .8); await tcard('Level ' + L + ' complete', campLevel(L + 1) ? 'Next: Level ' + (L + 1) + ', ' + campLevel(L + 1).n : 'The end of the road', 2.6); });
-  campBegin(L + 1);
+  gainXP(300 + 50 * LORD(L), 'LEVEL ' + LORD(L) + ' COMPLETE');
+  await romanceBeat(L);
+  const nx = LNEXT(L);
+  await runCut(async () => { await fadeTo(1, .8); await tcard('Level ' + LORD(L) + ' complete', nx ? 'Next: Level ' + LORD(nx) + ', ' + campLevel(nx).n : 'The end of the road', 2.6); });
+  campBegin(nx || MAXL + 1);
 }
 function garageIA() { if (IA.some(i => i.kind === 'garage')) return; const d = houseDoor('warehouse', 110); iaAdd(d.x + Math.cos(d.a + 1.5708) * 120, d.y + Math.sin(d.a + 1.5708) * 120, 'garage', { r: 30 }); }
 function campRestore() {
@@ -7275,6 +7290,17 @@ async function beatLove() {
   await fadeTo(1, .6); await tcard('The storm', 'Harbor Town, midnight', 2); romanceMusic(true); await fadeTo(0, 1.2);
   if (!heartCh()) { gather(['OZZ']); if (!(await pickHeart(false))) { romanceMusic(false); return; } }
   const h = heartCh(), n = npc(h); gather([h], 44); await talk(LOVE[h]); await meKiss(n); romanceMusic(false); setRst(3);
+}
+
+/* build 56: the romance beats that used to sit inside generated levels now come after hand-written ones:
+   the first date after the first level past 12, "I love you" after the first past 38, and quiet moments at home every few levels */
+const ROMSKIP = new Set([32, 48, 120, 140, 155, 162, 170]);
+async function romanceBeat(L) {
+  if (story.single || story.free) return;
+  if (L >= 12 && !story.dateSeen) { story.dateSeen = 1; return campCut(beatDate, { x: P.x, y: P.y, r: 1200 }); }
+  if (L >= 38 && story.dateSeen && !story.loveSeen && heartCh()) { story.loveSeen = 1; return campCut(beatLove, { x: P.x, y: P.y, r: 1200 }); }
+  if (ROMSKIP.has(L) || !heartCh() || (story.rst || 0) < 2) return;
+  if (LORD(L) % 3 === 0) return campCut(() => moment(LORD(L) * 4), { x: P.x, y: P.y, r: 1200 });
 }
 
 /* ======================= LEVEL 2: HARBOR TOWN ======================= */
@@ -7720,8 +7746,8 @@ function campFinale() {
     'Mia grows up with Dara, goes to school on a bus with no wheels, and becomes the first doctor Calder County has trained in a generation.',
     'Sam and Nadia make it to Lisbon. They come back every summer.', 'Eli\'s garage has a waiting list. Ozzie is still on the radio. Dara still runs the harbor, and still sings, badly, every Sunday.'].filter(Boolean).join(' ');
   endEl.innerHTML = '<div class="in"><h2>ColdShore: Spring</h2><p>The cordon is gone. The fences come down one by one, and the county learns how to be a place again, not a quarantine.</p><p style="font-size:.9em;opacity:.85">' + fam + '</p>' +
-    '<div class="k">' + MAXL + ' levels &middot; ' + kills + ' kills &middot; level ' + PR.lvl + '</div><div style="display:flex;gap:12px"><span class="btn" id="again" style="border:1px solid #888;padding:9px 20px;cursor:pointer;font:13px Segoe UI,Arial;letter-spacing:.2em">TITLE SCREEN</span><span class="btn" id="keepgo" style="border:1px solid #e9c46a;color:#e9c46a;padding:9px 20px;cursor:pointer;font:13px Segoe UI,Arial;letter-spacing:.2em">KEEP GOING: THE LONG WINTER</span></div></div>';
-  endEl.classList.add('on'); fadeTo(0, .5); document.getElementById('again').onclick = () => { endEl.classList.remove('on'); showTitle(); }; { const kg = document.getElementById('keepgo'); if (kg) kg.onclick = () => { endEl.classList.remove('on'); state = 'play'; lock(); campBegin(MAXL + 1); }; }
+    '<div class="k">' + (CAMPL.length + 1) + ' levels &middot; ' + kills + ' kills &middot; level ' + PR.lvl + '</div><div style="display:flex;gap:12px"><span class="btn" id="again" style="border:1px solid #888;padding:9px 20px;cursor:pointer;font:13px Segoe UI,Arial;letter-spacing:.2em">TITLE SCREEN</span><span class="btn" id="keepgo" style="border:1px solid #e9c46a;color:#e9c46a;padding:9px 20px;cursor:pointer;font:13px Segoe UI,Arial;letter-spacing:.2em">KEEP EXPLORING THE COUNTY</span></div></div>';
+  endEl.classList.add('on'); fadeTo(0, .5); document.getElementById('again').onclick = () => { endEl.classList.remove('on'); showTitle(); }; { const kg = document.getElementById('keepgo'); if (kg) kg.onclick = () => { endEl.classList.remove('on'); state = 'play'; story.free = 1; story.m = null; lock(); toast('Free roam. The county is yours.'); }; }
 }
 
 /* ======================= THE LONG ROAD (build 34): 200 levels =======================
@@ -8082,6 +8108,7 @@ function zMod(z, d, dt) {
   return false;
 }
 function zScream(z) {   // build 39: was also named scream(), which silently replaced the zombie-noticed-you sound and spawned zombies at NaN
+  if (NET.on && NET.host && NET.stage && NET.stage.quiet) netSend({ t: 'alarm', x: Math.round(z.x), y: Math.round(z.y) });
   camShake = Math.max(camShake, .2); try { if (actx) { const t = actx.currentTime; nb(t, .9, 'bandpass', 1900, 3, 1.1, .12, 800, .9); beep(880, .7, 'sawtooth', .05); } } catch (e) {}
   noise = Math.max(noise, 2.5); if (elapsed - (scream.last || -99) > 8) { scream.last = elapsed; toast('A screamer is calling the horde.'); }
   for (const o of zombies) if (o !== z && Math.hypot(o.x - z.x, o.y - z.y) < 1200 && (o.lv | 0) === (z.lv | 0)) { o.state = 'chase'; o.feed = false; }
@@ -8343,9 +8370,14 @@ function netMsg(m) {
     case 'host': netSetHost(m.pid, m.reason); break;
     case 'needpts': netPoints(m); break;
     case 'stage': netStage(m); break;
-    case 'prog': NET.prog = m.v; if (m.secs !== undefined) NET.secs = m.secs; break;
+    case 'prog': if (m.lure) { NET.lureP = m.v; break; } NET.prog = m.v; if (m.secs !== undefined) NET.secs = m.secs; if (m.keys) NET.keysOn = m.keys; NET.jam = m.jam || 0; if (m.ohp !== undefined && m.ohp !== null && !NET.host) NET.ohp = m.ohp; break;
+    case 'cargo': netCargo(m); break;
+    case 'lure': NET.lureOn = !!m.on; NET.lureSecs = m.secs || 0; if (NET.host) LURE = m.on && NET.lurePt ? { x: NET.lurePt.x, y: NET.lurePt.y, t: 9999 } : null; if (m.on && m.secs > 5 && !NET.lureWas) toast('The flare is lit. The horde is turning toward it.'); if (!m.on && NET.lureWas) toast('The flare burned out. They are turning round.'); NET.lureWas = !!m.on; break;
+    case 'pin': if (m.on) { NET.pinned = { nid: m.nid }; NET.strug = 0; { const g = NET.byNid.get(m.nid); if (g) yaw = Math.atan2(g.y - P.y, g.x - P.x); } camShake = Math.max(camShake, .3); toast('A grabber has you. Mash E, or wait for a friend to shoot it off.'); } else NET.pinned = null; break;
+    case 'pinned': { const r = NET.RP.get(m.pid); if (r) r.pinned = !!m.on; } break;
+    case 'bk': barRemove(COOP.bars.get(m.i)); break;
     case 'left': NET.left = m.n; break;
-    case 'claimed': NET.claims[m.i] = m.pid; { const it = (NET.caches || [])[m.i]; if (it) it.looted = true; } toast(m.name + (m.nest ? ' burned a nest (' : ' grabbed a cache (') + m.got + '/' + m.n + ')'); if (m.nest) { const it = (NET.caches || [])[m.i]; if (it) nestBurn(it); } break;
+    case 'claimed': NET.claims[m.i] = m.pid; { const it = (NET.caches || [])[m.i]; if (it) { it.looted = true; if (m.bar) it.gone = true; } } if (m.bar) barAdd(m.bar); toast(m.name + (m.bar ? ' built a barricade (' : m.nest ? ' burned a nest (' : ' grabbed a cache (') + m.got + '/' + m.n + ')'); if (m.nest) { const it = (NET.caches || [])[m.i]; if (it) nestBurn(it); } break;
     case 'ps': netRemoteState(m.pid, m.s); break;
     case 'shot': netRemoteShot(m); break;
     case 'zs': if (!NET.host) netZSnap(m.z, m.tm); break;
@@ -8401,10 +8433,10 @@ function netUI() {
     h += '<div style="display:flex;justify-content:space-between;align-items:flex-end"><div><div class="tag">Crew · chapter ' + C.ch + '</div><div style="font:700 20px Segoe UI">' + esc_(C.name) + '</div><div class="muted">' + C.done + ' missions done · ' + C.fails + ' failed</div></div><div style="text-align:right"><div class="muted">Invite code</div><div class="code">' + C.code + '</div></div></div>' +
       '<div style="margin:10px 0">' + C.online.map(p => '<span class="pl' + (p.ready ? ' r' : '') + '">' + esc_(p.name) + (p.pid === NET.pid ? ' (you)' : '') + (p.op ? ' · out on ' + esc_(((C.ops || []).find(o => o.id === p.op) || {}).name || 'an op') : ' · at Haven') + '</span>').join('') + '</div>' +
       '<div class="cols"><div><h3>Operations <span class="muted">' + (C.ops || []).length + ' of ' + (C.maxOps || 3) + ' squads out</span></h3>' + (C.ops || []).map(o => '<div class="card story"><div class="tag">' + esc_(o.type) + ' · threat ' + o.threat + '</div><b>' + esc_(o.name) + '</b> <span class="muted">' + esc_(o.stage) + '</span><div class="muted">Squad: ' + o.squad.map(esc_).join(', ') + (o.bonus ? ' · ' + esc_(o.bonus) : '') + '</div>' + (!o.full && !(C.online.find(q => q.pid === NET.pid) || {}).op ? '<span class="b gold" data-a="joinop" data-o="' + o.id + '">Join this squad</span>' : '') + '</div>').join('') +
-      '<div class="muted" style="margin:6px 0 2px">Go wherever you like: deploy on any contract, join any squad that is out, or stay home. The map (M) shows every contract and squad.</div>' +
-      C.board.map(m => '<div class="card' + (m.story ? ' story' : '') + '"><div class="tag">' + (m.story ? 'Story · chapter ' + m.ch : m.type) + (m.night ? ' · night' : '') + '</div><b>' + esc_(m.name) + '</b> <span class="muted">' + esc_(m.town) + '</span>' + (m.brief ? '<div class="muted" style="margin:4px 0">' + esc_(m.brief) + '</div>' : '') + (m.warn ? '<div class="muted" style="color:#e98a6a">' + esc_(m.warn) + '</div>' : '') +
+      '<div class="muted" style="margin:6px 0 2px">Twelve operations, built for squads: each one needs you to work together in a different way. Finished ones can be replayed on harder settings for supplies. Solo works too, just harder.</div>' +
+      C.board.map(m => '<div class="card' + (m.story ? ' story' : '') + '"><div class="tag">' + (m.story ? 'Operation · chapter ' + m.ch : m.type) + (m.night ? ' · night' : '') + '</div><b>' + esc_(m.name) + '</b> <span class="muted">' + esc_(m.town) + '</span>' + (m.brief ? '<div class="muted" style="margin:4px 0">' + esc_(m.brief) + '</div>' : '') + (m.tips && m.tips.length ? '<div style="margin:4px 0">' + m.tips.map(t => '<span class="pl" style="font-size:11px">' + esc_(t) + '</span>').join('') + '</div>' : '') + (m.steps && m.story ? '<div class="muted" style="font-size:11px;margin:2px 0 4px">' + m.steps.map((t, k) => (k + 1) + '. ' + esc_(t)).join('<br>') + '</div>' : '') + (m.warn ? '<div class="muted" style="color:#e98a6a">' + esc_(m.warn) + '</div>' : '') +
         (m.taken ? '<div class="muted" style="color:#9fd6e6">A squad is out on this one.</div>' : m.locked ? '<div class="muted">Needs ' + Object.entries(m.need).map(([k, v]) => k === 'radio' ? 'Radio level ' + v : v + ' missions done').join(' and ') + '</div>' : '<div><select id="t_' + m.mid.replace(/[^a-z0-9]/gi, '') + '"><option value="normal">Normal</option><option value="hard">Hard (×1.6 pay)</option><option value="nightmare">Nightmare (×2.4)</option></select> <span class="b gold" data-a="start" data-m="' + m.mid + '">Deploy</span></div>') + '</div>').join('') +
-      ((C.ops || []).length ? '' : '<span class="b" data-a="refresh">New contracts</span>') + '</div><div><h3>Haven <span class="muted">' + (C.settlers || 6) + ' settlers</span></h3><div class="res">' + Object.entries(C.res).map(([k, v]) => '<span>' + k + ' <b>' + v + '</b></span>').join('') + '</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin:8px 0">' +
+      '' + '</div><div><h3>Haven <span class="muted">' + (C.settlers || 6) + ' settlers</span></h3><div class="res">' + Object.entries(C.res).map(([k, v]) => '<span>' + k + ' <b>' + v + '</b></span>').join('') + '</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin:8px 0">' +
       HVB.map(b => '<div><span style="color:#e9c46a">' + b.ic + '</span> ' + b.n + ' <span style="letter-spacing:2px;color:#e9c46a">' + '▮'.repeat(C.b[b.k] || 0) + '<span style="color:#3a4448">' + '▮'.repeat(5 - (C.b[b.k] || 0)) + '</span></span></div>').join('') + '</div>' +
       '<div class="muted">Upgrades are built in person, at the command table in Haven.</div><span class="b gold" data-a="haven">' + (NET.worldReady ? 'Back to Haven' : 'Enter Haven') + '</span>' +
       '<h3>Radio log</h3><div class="log">' + C.log.slice().reverse().map(l => '<div>' + esc_(l.m) + '</div>').join('') + '</div></div></div>' +
@@ -8483,7 +8515,9 @@ function netPoints(m) {   // the host works out the concrete spots on the real m
   const H_ = HARBOR(), HV_ = HAVEN(), T = m.T, pts = { haven: { x: HV_.x, y: HV_.y + 120 }, center: null, caches: [], nests: [] };
   // an open, reachable spot near the middle of town
   const ok = (x, y) => !isWater(x, y) && spotFree(x, y, 0, 16) && canEscape(x, y, 0, 220) && !houses.some(h => x > h.x - 30 && x < h.x + h.w + 30 && y > h.y - 30 && y < h.y + h.h + 30);
-  if (m.town === 'HARBOR ROW') pts.center = { x: Math.round(H_.x + 260), y: Math.round(H_.y) };
+  const SITE = { grey: GREY, kcld: KCLDP, motel: MOTEL, hangar: HANGAR, stn9: STN9, lite: LITE, lab: LAB, church: CHURCH, depot: DEPOT };
+  if (m.site && SITE[m.site]) { try { const sp = SITE[m.site](); for (let R = 0; R < 900 && !pts.center; R += 40) for (let a = 0; a < 6.28 && !pts.center; a += .45) { const x = sp.x + Math.cos(a) * R, y = sp.y + Math.sin(a) * R; if (ok(x, y)) pts.center = { x: Math.round(x), y: Math.round(y) }; } } catch (e) {} }
+  if (!pts.center && m.town === 'HARBOR ROW') pts.center = { x: Math.round(H_.x + 260), y: Math.round(H_.y) };
   for (let R = 0; R < 1500 && !pts.center; R += 60) for (let a = 0; a < 6.28 && !pts.center; a += .5) { const x = T.x + Math.cos(a) * R, y = T.y + Math.sin(a) * R; if (ok(x, y)) pts.center = { x: Math.round(x), y: Math.round(y) }; }
   if (!pts.center) pts.center = { x: T.x, y: T.y };
   if (m.n) { const hs = houses.map((h, i) => ({ h, i, d: Math.hypot(h.x + h.w / 2 - pts.center.x, h.y + h.h / 2 - pts.center.y) })).filter(o => o.d < Math.max(900, T.r * .8) && o.d > 120).sort((a, b) => a.d - b.d);
@@ -8491,13 +8525,25 @@ function netPoints(m) {   // the host works out the concrete spots on the real m
       for (let gx = h.x + 30; gx < h.x + h.w - 30 && !best; gx += 14) for (let gy = h.y + 30; gy < h.y + h.h - 30 && !best; gy += 14) { if (spotFree(gx, gy, 0, 14) && canEscape(gx, gy, 0, 160)) best = { x: Math.round(gx), y: Math.round(gy) }; }
       if (best) pts.caches.push(best); } }
   if (m.nests) for (let R = 260, a0 = Math.random() * 6; R < 1400 && pts.nests.length < m.nests; R += 90) for (let a = a0; a < a0 + 6.28 && pts.nests.length < m.nests; a += .7) { const x = pts.center.x + Math.cos(a) * R, y = pts.center.y + Math.sin(a) * R; if (ok(x, y) && pts.nests.every(q => Math.hypot(q.x - x, q.y - y) > 300)) pts.nests.push({ x: Math.round(x), y: Math.round(y) }); }
+  // build 56: switches far enough apart that one person cannot hold two, barricade spots on the approaches, the flare well away from the loot, the thing to carry
+  const open = (x, y) => !isWater(x, y) && spotFree(x, y, 0, 18) && canEscape(x, y, 0, 160);
+  // barricade spots: on dry land, with dry land all the way back to the point being held (no walls standing in the sea)
+  const dry = (c, x, y) => { for (const [ox, oy] of [[0, 0], [70, 0], [-70, 0], [0, 70], [0, -70]]) if (isWater(x + ox, y + oy)) return false; for (let k = 1; k < 6; k++) if (isWater(c.x + (x - c.x) * k / 6, c.y + (y - c.y) * k / 6)) return false; return true; };
+  const spread = (c, n, r0, r1, gap, a0) => { const out = []; for (let R = r0; R <= r1 && out.length < n; R += 40) for (let k = 0; k < 24 && out.length < n; k++) { const a = (a0 || 0) + k * 6.283 / 24 + R * .01, x = c.x + Math.cos(a) * R, y = c.y + Math.sin(a) * R; if (open(x, y) && dry(c, x, y) && out.every(q => Math.hypot(q.x - x, q.y - y) > gap)) out.push({ x: Math.round(x), y: Math.round(y) }); } return out; };
+  if (m.keys) pts.keys = spread(pts.center, m.keys, 220, 560, 300, Math.random() * 6);
+  const ringAt = (c, n, R) => { const out = []; for (let k = 0; k < n * 3 && out.length < n; k++) { let best = null; for (let dR = 0; dR <= 140 && !best; dR += 35) for (const sg of [1, -1]) { const a = k * 6.283 / n + .35 + Math.floor(k / n) * .5, x = c.x + Math.cos(a) * (R + sg * dR), y = c.y + Math.sin(a) * (R + sg * dR); if (!best && open(x, y) && dry(c, x, y) && out.every(q => Math.hypot(q.x - x, q.y - y) > 200)) best = { x: Math.round(x), y: Math.round(y) }; } if (best) out.push(best); } return out; };
+  if (m.bars) pts.bars = ringAt(pts.center, m.bars, 250);
+  if (m.hbars) pts.hbars = ringAt(pts.haven, m.hbars, 300);
+  if (m.lure) { const l = spread(pts.center, 1, 720, 1100, 0, Math.atan2(pts.center.y - (pts.caches[0] || pts.center).y, pts.center.x - (pts.caches[0] || pts.center).x) - .4); pts.lure = l[0] || null; }
+  if (m.item) { const it = spread(pts.center, 1, 40, 200, 0, 0); pts.item = it[0] || { x: pts.center.x, y: pts.center.y }; }
   netSend({ t: 'pts', pts });
 }
 function netSpawnAt(x, y) { if (zombies.length > 120) return; NET.force = true; try { spawnZombie(false, x, y); } finally { NET.force = false; } }
 function netDirective(d, threat) {
+  if (d.k === 'lure') { LURE = d.on ? { x: d.x, y: d.y, t: 9999 } : null; return; }
   const n0 = zombies.length, n = Math.min(d.n | 0, 120 - zombies.length); if (n <= 0) return;
   if (d.k === 'chase') {   // runners come out of the trees behind the squad on the way home
-    const ps = [P, ...[...NET.RP.values()].filter(r => r.s && !r.s.down)]; NET.force = true; try { for (let i = 0; i < n; i++) { const q = ps[i % ps.length], a = Math.random() * 6.283, r = rnd(520, 760); const x = q.x + Math.cos(a) * r, y = q.y + Math.sin(a) * r; if (isWater(x, y)) continue; spawnZombie(false, x, y); const z = zombies[zombies.length - 1]; if (z) { z.run = true; z.sp = Math.max(z.sp, 120); z.state = 'chase'; z.mtag = d.tag; } } } finally { NET.force = false; } return; }
+    const ps = [P, ...[...NET.RP.values()].filter(r => r.s && !r.s.down)]; NET.force = true; try { for (let i = 0; i < n; i++) { const q = d.at || ps[i % ps.length], a = Math.random() * 6.283, r = rnd(520, 760); const x = q.x + Math.cos(a) * r, y = q.y + Math.sin(a) * r; if (isWater(x, y)) continue; spawnZombie(false, x, y); const z = zombies[zombies.length - 1]; if (z) { z.run = true; z.sp = Math.max(z.sp, 120); z.state = 'chase'; z.mtag = d.tag; if (d.grab && i === 0) makeSpecial(z, 'grabber'); } } } finally { NET.force = false; } return; }
   if (d.k === 'infest') { NET.force = true; try { for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, r = Math.random() * d.r; spawnZombie(true, d.x + Math.cos(a) * r, d.y + Math.sin(a) * r); } } finally { NET.force = false; } }
   else horde(n, d.x, d.y, d.run || 0);
   const added = zombies.slice(n0);
@@ -8506,15 +8552,23 @@ function netDirective(d, threat) {
   for (let i = 0; i < (d.brute || 0) && i < added.length; i++) makeSpecial(added[added.length - 1 - i], 'brute');
   if (d.boss && added.length) { const z = added[0]; makeSpecial(z, 'brute'); makeElite(z); z.hp *= 2.2; z.max = z.hp; z.boss = 1; z.apex = 1; }
   for (let i = 0, k = 0; k < (d.elite || 0) && i < added.length; i++) { const z = added[Math.floor(added.length / 2) + i] || added[i]; if (z && !z.spec && !z.elite) { makeElite(z); k++; } }
+  // build 56: grabbers, extra screamers for the quiet approach, and the share of a wave that goes for the machine instead of you
+  for (let i = 0, k = 0; k < (d.grab || 0) && i < added.length; i++) { const z = added[(i * 7 + 3) % added.length]; if (z && !z.spec && !z.boss) { makeSpecial(z, 'grabber'); z.state = 'wander'; k++; } }
+  for (let i = 0, k = 0; k < (d.scream || 0) && i < added.length; i++) { const z = added[(i * 5 + 1) % added.length]; if (z && !z.spec) { makeSpecial(z, 'screamer'); k++; } }
+  if (d.prot) for (const z of added) if (Math.random() < d.prot) z.prot = 1;
 }
 function netApplyHits(pid, list) { for (const [nid, dmg, head] of list || []) { const z = NET.byNid.get(nid); if (!z || z.hp <= 0) continue; z.hp -= Math.min(30, +dmg || 0); z.lastBy = pid; z.lastHead = !!head; z.state = 'chase'; z.hitT = .35; z.stag = Math.max(z.stag || 0, .2); blood(z.x, z.y, 1, 4); } }
 // zombies chase whoever is nearest: you, or a teammate
 function netTarget(z) {
   let best = P, bd = dist(z, P) + (driving ? 400 : 0) + (NET.down ? 900 : 0);
-  if (NET.host) for (const r of NET.RP.values()) { if (!r.s || r.s.down || r.s.drv >= 0 && false) continue; const d = Math.hypot(r.x - z.x, r.y - z.y) + ((r.s.lv | 0) !== (z.lv | 0) ? 2000 : 0) + (r.s.drv >= 0 ? 400 : 0); if (d < bd) { bd = d; best = r.proxy; } }
-  return best;
+  const T0 = netTarget0(z, best, bd); if (NET.obj && NET.ohp > 0) { const od = Math.hypot(NET.obj.x - z.x, NET.obj.y - z.y); if ((z.prot && od < 1600) || (od < 230 && T0.d > 150)) { MACHP.x = NET.obj.x; MACHP.y = NET.obj.y; MACHP.iframe = 0; return MACHP; } }
+  return T0.t;
 }
-function zHurt(T_, n) { if (T_ === P) return hurt(n); NET.pdmg.push([T_.pid, Math.round(n * 10) / 10]); }
+function netTarget0(z, best, bd) {
+  if (NET.host) for (const r of NET.RP.values()) { if (!r.s || r.s.down || r.s.drv >= 0 && false) continue; const d = Math.hypot(r.x - z.x, r.y - z.y) + ((r.s.lv | 0) !== (z.lv | 0) ? 2000 : 0) + (r.s.drv >= 0 ? 400 : 0); if (d < bd) { bd = d; best = r.proxy; } }
+  return { t: best, d: bd };
+}
+function zHurt(T_, n) { if (T_ === P) return hurt(n); if (T_.obj) { NET.ohp = Math.max(0, (NET.ohp || 0) - n * .22); if (NET.obj) { spark({ x: NET.obj.x + rnd(-20, 20), y: NET.obj.y + rnd(-20, 20) }); } return; } NET.pdmg.push([T_.pid, Math.round(n * 10) / 10]); }
 function netFar(z, lim) { if (Math.abs(z.x - P.x) + Math.abs(z.y - P.y) <= lim) return false; for (const r of NET.RP.values()) if (Math.abs(z.x - r.x) + Math.abs(z.y - r.y) <= lim) return false; return true; }
 
 /* ---------- puppets (everyone but the host) ---------- */
@@ -8547,19 +8601,24 @@ function netStage(m) {
   NET.stage = m; NET.prog = 0; NET.secs = m.secs || 0; NET.left = null; objFlash = 2.5; toast(m.txt);
   if (m.claims) NET.claims = m.claims;
   for (const it of NET.caches || []) it.gone = true; NET.caches = [];
-  if (m.caches) m.caches.forEach((c, i) => { if (NET.claims[i]) return; const it = { x: c.x, y: c.y, lv: 0, net: i, nest: !!m.nest }; if (m.nest) nestMesh(it); else mitemMesh(it); NET.caches[i] = it; });
+  if (m.caches) m.caches.forEach((c, i) => { if (NET.claims[i]) return; const it = { x: c.x, y: c.y, lv: 0, net: i, nest: !!m.nest, bar: !!m.bar }; if (m.nest) nestMesh(it); else if (m.bar) barMarkMesh(it); else mitemMesh(it); NET.caches[i] = it; });
+  coopStage(m);
   if (NET.marker) { world3.remove(NET.marker); NET.marker = null; }
-  if (m.target && (m.k === 'hold' || m.k === 'crack' || m.k === 'extract')) {   // a ring on the ground (and a crate or a flare where it matters)
-    const g = new THREE.Group(), R = m.k === 'hold' ? 380 : m.k === 'extract' ? 320 : 90;
+  if (m.target && (m.k === 'hold' || m.k === 'crack' || m.k === 'extract' || m.k === 'carry')) {   // a ring on the ground (and a crate or a flare where it matters)
+    const g = new THREE.Group(), R = m.k === 'hold' ? 380 : m.k === 'extract' ? 320 : m.k === 'carry' ? 240 : 90;
     const ring = new THREE.Mesh(new THREE.RingGeometry(R * S3 - .25, R * S3, 64), new THREE.MeshBasicMaterial({ color: m.k === 'extract' ? 0x7fe0a0 : 0xe9c46a, transparent: true, opacity: .55, side: THREE.DoubleSide, depthWrite: false }));
     ring.rotation.x = -Math.PI / 2; ring.position.y = .06; g.add(ring);
-    if (m.k === 'crack') { const cr = new THREE.Mesh(new THREE.BoxGeometry(1.2, .8, .9), new THREE.MeshStandardMaterial({ color: 0x4a5a3a, roughness: .8 })); cr.position.y = .4; g.add(cr); const fl = new THREE.PointLight(0xff3a2a, 2.2, 22); fl.position.y = 1.4; g.add(fl); }
+    if (m.k === 'crack' && !m.cover) { const cr = new THREE.Mesh(new THREE.BoxGeometry(1.2, .8, .9), new THREE.MeshStandardMaterial({ color: 0x4a5a3a, roughness: .8 })); cr.position.y = .4; g.add(cr); const fl = new THREE.PointLight(0xff3a2a, 2.2, 22); fl.position.y = 1.4; g.add(fl); }
     g.position.set(m.target.x * S3, 0, m.target.y * S3); world3.add(g); NET.marker = g; }
 }
 function netObj() {   // what the objective panel and the yellow marker show online
   const M = NET.mission, s = NET.stage; if (!M) return null;
   if (!s) return { text: M.name + ': deploying…', x: P.x, y: P.y, noDist: true };
   let text = M.name + ': ' + s.txt, sub = '';
+  if (s.k === 'twokey' && s.keys) { const on = NET.keysOn || []; const free = s.keys.map((k, i) => on[i] ? null : k).filter(Boolean).sort((a, b) => dist(P, a) - dist(P, b)); const k = free[0] || s.keys[0]; return { text, x: k.x, y: k.y, sub: Math.round(NET.prog * 100) + '% · ' + on.filter(Boolean).length + '/' + s.keys.length + ' switches held' }; }
+  if (s.k === 'carry' && NET.cargo) { if (!NET.carrying && !NET.cargo.pid) return { text, x: NET.cargo.x, y: NET.cargo.y, sub: 'pick it up (E)' }; const t = s.target || P; return { text, x: t.x, y: t.y, sub: NET.carrying ? 'you have it' : 'escort the carrier' }; }
+  if (s.k === 'build') { const open = (NET.caches || []).filter(c => c && !c.looted).sort((a, b) => dist(P, a) - dist(P, b)); if (open[0]) return { text: text + ' (' + Object.keys(NET.claims).length + '/' + s.n + ')', x: open[0].x, y: open[0].y, sub: 'hold E at the marker' }; }
+  if (s.lure && !NET.lureOn && NET.lurePt) return { text, x: NET.lurePt.x, y: NET.lurePt.y, sub: 'light the flare first (hold E)' };
   if (s.k === 'collect') { const n = s.n || 0, got = Object.keys(NET.claims).length; text += ' (' + got + '/' + n + ')'; const open = (NET.caches || []).map((c, i) => c && !NET.claims[i] ? c : null).filter(Boolean).sort((a, b) => dist(P, a) - dist(P, b)); if (open[0]) return { text, x: open[0].x, y: open[0].y, sub: s.nest ? (NET.nestP ? Math.round(NET.nestP * 100) + '% · keep holding E' : 'hold E at the nest to burn it') : 'E to grab' }; }
   if (s.k === 'hold') sub = Math.floor(NET.secs / 60) + ':' + String(NET.secs % 60).padStart(2, '0') + ' left · stay in the ring';
   if (s.k === 'crack') sub = Math.round(NET.prog * 100) + '% · hold E at the crate';
@@ -8567,9 +8626,9 @@ function netObj() {   // what the objective panel and the yellow marker show onl
   const t = s.target || P; return { text, x: t.x, y: t.y, sub };
 }
 function netDown() { if (NET.down) return; NET.down = true; NET.downT = 75; P.hp = 0; toast('You are down. A teammate can pick you up (E).'); }
-function netEndLocal() { NET.on = false; NET.host = false; NET.mission = null; NET.stage = null; for (const pid of [...NET.RP.keys()]) netDropRemote(pid); for (const z of zombies) z.puppet = false; }
+function netEndLocal() { try { coopClear(); } catch (e) {} NET.on = false; NET.host = false; NET.mission = null; NET.stage = null; for (const pid of [...NET.RP.keys()]) netDropRemote(pid); for (const z of zombies) z.puppet = false; }
 function netMissionEnd(m) {
-  NET.results = m; NET.mission = null; NET.stage = null; NET.down = false; P.hp = Math.max(P.hp, 60);
+  NET.results = m; NET.mission = null; NET.stage = null; NET.down = false; P.hp = Math.max(P.hp, 60); coopClear();
   for (const it of NET.caches || []) it.gone = true; NET.caches = []; if (NET.marker) { world3.remove(NET.marker); NET.marker = null; }
   for (const z of zombies) if (z.m) world3.remove(z.m); zombies.length = 0; NET.byNid.clear();
   for (const pid of [...NET.RP.keys()]) netDropRemote(pid);
@@ -8578,14 +8637,14 @@ function netMissionEnd(m) {
 }
 function netTick(dt) {
   if (!NET.on || !NET.ws) return; const t = performance.now();
-  netRemoteTick(dt);
+  netRemoteTick(dt); coopTick(dt);
   // downed: stay put, bleed out slowly
-  if (NET.down) { P.hp = 0; if (P.dx === undefined) { P.dx = P.x; P.dy = P.y; } P.x = P.dx; P.y = P.dy; NET.downT -= dt; if (NET.downT <= 0) { NET.downT = 0; } } else { P.dx = undefined; }
+  if (NET.down) { P.hp = 0; if (P.dx === undefined) { P.dx = P.x; P.dy = P.y; } P.x = P.dx; P.y = P.dy; NET.downT -= dt; if (NET.downT <= 0) { NET.downT = 0; } } else if (NET.pinned) { if (P.dx === undefined) { P.dx = P.x; P.dy = P.y; } P.x = P.dx; P.y = P.dy; } else { P.dx = undefined; }
   // revive a teammate: hold E next to them
   let rv = null; if (!NET.down && !driving) for (const r of NET.RP.values()) if (r.s && r.s.down && Math.hypot(r.x - P.x, r.y - P.y) < 70) rv = r;
   if (rv && keys.KeyE) { NET.reviveT += dt; if (NET.reviveT > 2.2) { NET.reviveT = 0; netSend({ t: 'revive', pid: rv.pid }); } } else NET.reviveT = 0; NET.rv = rv;
   // grab a cache
-  NET.nestP = 0; if (NET.stage && NET.stage.k === 'collect' && keys.KeyE && !NET.down) (NET.caches || []).forEach((c, i) => { if (c && !NET.claims[i] && !c.asked && Math.hypot(c.x - P.x, c.y - P.y) < 70) { if (c.nest) { c.hold = (c.hold || 0) + dt; NET.nestP = Math.min(1, c.hold / 2.5); if (Math.random() < dt * 8) havenPuff(c.x * S3 + rnd(-.5, .5), .4, c.y * S3 + rnd(-.5, .5), 0); if (c.hold < 2.5) return; c.hold = 0; } c.asked = true; setTimeout(() => c.asked = false, 1500); netSend({ t: 'claim', i }); } });
+  NET.nestP = 0; if (NET.stage && (NET.stage.k === 'collect' || NET.stage.k === 'build') && keys.KeyE && !NET.down && !NET.pinned && !NET.carrying) (NET.caches || []).forEach((c, i) => { if (c && !NET.claims[i] && !c.asked && Math.hypot(c.x - P.x, c.y - P.y) < 70) { if (c.nest || c.bar) { c.hold = (c.hold || 0) + dt; NET.nestP = Math.min(1, c.hold / (c.bar ? 2 : 2.5)); if (c.bar && c.hold < 2) return; if (Math.random() < dt * 8) havenPuff(c.x * S3 + rnd(-.5, .5), .4, c.y * S3 + rnd(-.5, .5), 0); if (c.hold < 2.5) return; c.hold = 0; } c.asked = true; setTimeout(() => c.asked = false, 1500); netSend({ t: 'claim', i }); } });
   if (!keys.KeyE) for (const c of NET.caches || []) if (c) c.hold = 0;
   // my state ~15 Hz
   NET.stT -= dt; if (NET.stT <= 0 && (NET.mission || NET.worldReady)) { NET.stT = NET.mission || driving || SEAT.car ? 1 / 15 : 1 / 8;
@@ -8606,6 +8665,182 @@ function netTick(dt) {
   }
 }
 function netShot(yw, pt) { const t = performance.now(); if (t - (NET.shotT || 0) < 70) return; NET.shotT = t; netSend({ t: 'shot', a: [Math.round(P.x), Math.round(P.y), +(lvH(P) + 1.45).toFixed(2)], b: [+yw.toFixed(3), +pt.toFixed(3)], w: curW }); }
+/* ======================= BUILD 56: CO-OP OPERATIONS =======================
+   Hand-built online operations need things a squad does together:
+   - cover:  a cutting / prying job stalls while any zombie is close to the worker, so the others have to keep them clear
+   - twokey: switches far apart that must be held at the same moment, so the squad has to split up and still act as one
+   - carry:  one player carries the objective (no shooting, slow), faster with a friend at their side; chasers come for it
+   - lure:   a flare pulls the horde away while the others loot; when it burns out someone has to relight it
+   - build:  barricades placed before a wave; zombies have to go round them, brutes and crowds break them
+   - prot:   a machine the dead attack instead of you; if it dies, the operation fails
+   - quiet:  a screamer that sees you brings a horde down on the squad
+   - grabbers: a special that pins one player until a teammate shoots it off (or the player mashes E free)          */
+const COOP = { meshes: [], keys: [], keyM: [], lureM: null, objM: null, cargoM: null, bars: new Map() };
+// glow sprites, not point lights: a light added at runtime makes three.js recompile every material in the scene
+function glowS(col, size) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOWTEX, color: col, transparent: true, opacity: .9, depthWrite: false, blending: THREE.AdditiveBlending })); sp.scale.setScalar(size || 1.2); sp.intensity = 1; return sp; }
+function coopClear() {
+  for (const m of COOP.meshes) world3.remove(m); COOP.meshes = []; COOP.keyM = []; COOP.lureM = null; COOP.objM = null;
+  if (COOP.cargoM) { world3.remove(COOP.cargoM); COOP.cargoM = null; }
+  for (const b of COOP.bars.values()) barRemove(b, true); COOP.bars.clear();
+  NET.cargo = null; NET.carrying = false; NET.lureOn = false; NET.lureSecs = 0; NET.obj = null; NET.ohp = null; NET.pinned = null; NET.pinBy = null; NET.keysOn = null; NET.jam = 0; NET.strug = 0;
+  if (NET.host) LURE = null;
+}
+const cMat = (c, e) => new THREE.MeshStandardMaterial({ color: c, roughness: .7, metalness: .1, emissive: e || 0x000000 });
+function coopAdd(m, x, y) { m.position.set(x * S3, lvH({ x, y, lv: 0 }), y * S3); world3.add(m); COOP.meshes.push(m); return m; }
+function barMarkMesh(it) {   // where a barricade goes: a pile of planks and a ghost outline
+  if (!world3) return; const g = new THREE.Group(), wood = cMat(0x8a6a44, 0x2a1a08);
+  for (let i = 0; i < 4; i++) { const pl = new THREE.Mesh(new THREE.BoxGeometry(1.6, .1, .22), wood); pl.position.set(0, .06 + i * .1, (i % 2) * .1); pl.rotation.y = i * .2; g.add(pl); }
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(.09, .16, 9, 10, 1, true), new THREE.MeshBasicMaterial({ color: 0x9fd6ff, transparent: true, opacity: .3, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide })); beam.position.y = 4.6; g.add(beam);
+  g.position.set(it.x * S3, lvH({ x: it.x, y: it.y, lv: 0 }), it.y * S3); world3.add(g); it.mesh = g; MITEMS.push(it);
+}
+function keyMesh(x, y) {   // a breaker box on a post, lamp red until someone is on it
+  const g = new THREE.Group(); const post = new THREE.Mesh(new THREE.BoxGeometry(.18, 1.3, .18), cMat(0x3a3f44)); post.position.y = .65; g.add(post);
+  const box = new THREE.Mesh(new THREE.BoxGeometry(.6, .7, .3), cMat(0x5a6a58)); box.position.y = 1.35; g.add(box);
+  const lamp = new THREE.Mesh(new THREE.SphereGeometry(.09, 10, 8), new THREE.MeshBasicMaterial({ color: 0xff3a2a })); lamp.position.set(0, 1.82, 0); g.add(lamp); g.userData.lamp = lamp;
+  const L = glowS(0xff3a2a, 1.1); L.position.y = 1.82; g.add(L); g.userData.light = L;
+  const ring = new THREE.Mesh(new THREE.RingGeometry(70 * S3 - .15, 70 * S3, 40), new THREE.MeshBasicMaterial({ color: 0xe9c46a, transparent: true, opacity: .5, side: THREE.DoubleSide, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.y = .06; g.add(ring);
+  return coopAdd(g, x, y);
+}
+function lureMesh(x, y) {   // a flare stand: pole, can, and a red light that only burns when lit
+  const g = new THREE.Group(); const pole = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, 2.4, 6), cMat(0x555555)); pole.position.y = 1.2; g.add(pole);
+  const can = new THREE.Mesh(new THREE.CylinderGeometry(.16, .16, .4, 10), cMat(0xb83a2a)); can.position.y = 2.5; g.add(can);
+  const L = glowS(0xff4a2a, 3); L.position.y = 2.9; L.visible = false; g.add(L); g.userData.light = L;
+  const ring = new THREE.Mesh(new THREE.RingGeometry(80 * S3 - .15, 80 * S3, 40), new THREE.MeshBasicMaterial({ color: 0xff7a5a, transparent: true, opacity: .45, side: THREE.DoubleSide, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.y = .06; g.add(ring);
+  return coopAdd(g, x, y);
+}
+function objMesh(kind, x, y) {   // the machine you are protecting
+  const g = new THREE.Group(), big = kind === 'transmitter' || kind === 'transformer';
+  const base = new THREE.Mesh(new THREE.BoxGeometry(big ? 1.8 : 1.4, big ? 1.6 : 1.0, big ? 1.4 : .9), cMat(kind === 'generator' ? 0x8a6a2a : 0x5a646a)); base.position.y = big ? .8 : .5; g.add(base);
+  if (kind === 'transmitter') { const mast = new THREE.Mesh(new THREE.CylinderGeometry(.06, .12, 6, 6), cMat(0x9a9a9a)); mast.position.y = 4.4; g.add(mast); }
+  if (kind === 'transformer') for (let i = 0; i < 3; i++) { const c = new THREE.Mesh(new THREE.CylinderGeometry(.12, .12, .7, 8), cMat(0xc8c0a0)); c.position.set(-.5 + i * .5, 1.95, 0); g.add(c); }
+  const L = glowS(0x9fd6ff, 1.6); L.position.y = 2.2; g.add(L); g.userData.light = L;
+  return coopAdd(g, x, y);
+}
+function cargoMesh(item) {
+  const g = new THREE.Group();
+  if (item === 'fridge') { const b = new THREE.Mesh(new THREE.BoxGeometry(.7, 1.1, .6), cMat(0xe8ece8)); b.position.y = .55; g.add(b); const l = new THREE.Mesh(new THREE.BoxGeometry(.1, .1, .02), new THREE.MeshBasicMaterial({ color: 0x5aff7a })); l.position.set(.2, .95, .31); g.add(l); }
+  else if (item === 'stretcher') { const b = new THREE.Mesh(new THREE.BoxGeometry(2.0, .1, .6), cMat(0x6a7a5a)); b.position.y = .55; g.add(b); const p = new THREE.Mesh(new THREE.BoxGeometry(1.6, .25, .4), cMat(0x8a6a5a)); p.position.y = .72; g.add(p); }
+  else if (item === 'drum') { const b = new THREE.Mesh(new THREE.CylinderGeometry(.32, .32, .9, 14), cMat(0xa83222)); b.position.y = .45; g.add(b); }
+  else { const b = new THREE.Mesh(new THREE.BoxGeometry(.45, .35, .35), cMat(0xe8762a)); b.position.y = .2; g.add(b); const l = glowS(0xff8a2a, .8); l.position.y = .4; g.add(l); }
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(.04, .04, 30, 6, 1, true), new THREE.MeshBasicMaterial({ color: 0x9fd6ff, transparent: true, opacity: .35, depthWrite: false })); beam.position.y = 15; g.add(beam);
+  world3.add(g); return g;
+}
+/* barricades: a wall across the approach, square to the line from the point you are holding */
+function barAdd(b) {
+  if (!b || COOP.bars.has(b.i)) return; const dx = b.x - b.cx, dy = b.y - b.cy, vert = Math.abs(dx) > Math.abs(dy), L_ = 150, T_ = 16;
+  const w = vert ? { x: b.x - T_ / 2, y: b.y - L_ / 2, w: T_, h: L_ } : { x: b.x - L_ / 2, y: b.y - T_ / 2, w: L_, h: T_ }; w.bar = b.i; w.low = false; walls.push(w);
+  if (colGrid) for (let gx = Math.floor((w.x - 45) / 200); gx <= Math.floor((w.x + w.w + 45) / 200); gx++) for (let gy = Math.floor((w.y - 45) / 200); gy <= Math.floor((w.y + w.h + 45) / 200); gy++) { const k = gx * 10000 + gy; let a = colGrid.get(k); if (!a) colGrid.set(k, a = { w: [], t: [], p: [] }); a.w.push(w); }
+  const g = new THREE.Group(), wood = cMat(0x7a5a3a), bag = cMat(0x8a8068);
+  for (let i = 0; i < 3; i++) { const pl = new THREE.Mesh(new THREE.BoxGeometry(L_ * S3, .22, .12), wood); pl.position.set(0, .4 + i * .45, (i % 2 ? .05 : -.05)); pl.rotation.z = (i - 1) * .05; g.add(pl); }
+  for (const s_ of [-1, 0, 1]) { const po = new THREE.Mesh(new THREE.BoxGeometry(.16, 1.6, .16), wood); po.position.set(s_ * L_ * S3 * .45, .8, 0); g.add(po); }
+  for (let i = 0; i < 6; i++) { const sb = new THREE.Mesh(new THREE.BoxGeometry(.6, .28, .4), bag); sb.position.set((-2.5 + i) * .62 * (L_ * S3 / 4), .14, .32); g.add(sb); }
+  g.rotation.y = vert ? Math.PI / 2 : 0; g.position.set(b.x * S3, lvH({ x: b.x, y: b.y, lv: 0 }), b.y * S3); world3.add(g);
+  COOP.bars.set(b.i, { i: b.i, w, g, hp: 10, x: b.x, y: b.y }); havenPuff(b.x * S3, .5, b.y * S3, 0); beep(320, .12, 'square', .04);
+}
+function barRemove(B, quiet) {
+  if (!B) return; world3.remove(B.g); const i = walls.indexOf(B.w); if (i >= 0) walls.splice(i, 1);
+  if (colGrid) for (const a of colGrid.values()) { const j = a.w.indexOf(B.w); if (j >= 0) a.w.splice(j, 1); }
+  COOP.bars.delete(B.i); if (!quiet) { camShake = Math.max(camShake, .15); beep(90, .35, 'sawtooth', .07); for (let k = 0; k < 8; k++) havenPuff(B.x * S3 + rnd(-1.5, 1.5), .6, B.y * S3 + rnd(-1.5, 1.5), 0); toast('A barricade went down.'); }
+}
+// host: brutes smash barricades, crowds wear them down
+function barTick(dt) {
+  if (!NET.host || !COOP.bars.size) return;
+  for (const B of [...COOP.bars.values()]) { let dmg = 0; const w = B.w;
+    for (const z of zombies) { if (z.hp <= 0) continue; const cx = clamp(z.x, w.x, w.x + w.w), cy = clamp(z.y, w.y, w.y + w.h); if (Math.hypot(z.x - cx, z.y - cy) < z.r + 14) dmg += z.spec === 'brute' ? 2.2 : z.apex ? 3 : .14; }
+    if (dmg) { B.hp -= dmg * dt; if (B.hp <= 0) { netSend({ t: 'bk', i: B.i }); barRemove(B); } } }
+}
+/* the machine under attack: the host scores the damage */
+const MACHP = { x: 0, y: 0, lv: 0, r: 26, iframe: 0, drv: false, obj: true };
+/* carrying */
+function netCarryMul() { if (!NET.on || !NET.carrying) return 1; const c = NET.cargo; let help = false; for (const r of NET.RP.values()) if (r.s && !r.s.down && Math.hypot(r.x - P.x, r.y - P.y) < 110) help = true; NET.carryHelp = help; return c && c.heavy ? (help ? .82 : .55) : .8; }
+/* grabbers */
+ZSPEC.grabber = { name: 'Grabber', tint: 0x8a9aa0, sx: .92, sy: .84, hp: 1.5, sp: 1.08, tip: 'Grabbers pin one of you and hold on. Shoot it off your friend. If it has you, mash E.' };
+NZSPEC.push('grabber');
+function grabPin(z, T_) {
+  z.pinT = T_; z.pinD = 0; z.pinA = Math.atan2(z.y - T_.y, z.x - T_.x); z.atkT = .6; beep(140, .4, 'sawtooth', .08);
+  if (T_ === P) { NET.pinBy = z; NET.pinned = { nid: z.nid || 0, local: 1 }; NET.strug = 0; yaw = Math.atan2(z.y - P.y, z.x - P.x); camShake = Math.max(camShake, .3); toast('A grabber has you. Mash E, or wait for a friend to shoot it off.'); }
+  else if (T_.pid) netSend({ t: 'pin', pid: T_.pid, on: 1, nid: z.nid || 0 });
+}
+function grabRelease(z) {
+  const T_ = z.pinT; if (!T_) return; z.pinT = null; z.gcd = 5; z.stag = 1.4;
+  if (T_ === P) { NET.pinBy = null; NET.pinned = null; } else if (T_.pid) netSend({ t: 'pin', pid: T_.pid, on: 0, nid: z.nid || 0 });
+}
+function grabTick(z, T_, d, dt) {   // host only. true = it moved itself this frame
+  z.cd = 99; z.gcd = Math.max(0, (z.gcd || 0) - dt);
+  if (z.pinT) { const T = z.pinT, down = T === P ? (NET.down || P.hp <= 0 || driving) : !(T.pid && NET.RP.get(T.pid) && NET.RP.get(T.pid).s && !NET.RP.get(T.pid).s.down);
+    if (down || (z.pinD += dt) > 14) { grabRelease(z); return true; }
+    z.x = T.x + Math.cos(z.pinA) * 18; z.y = T.y + Math.sin(z.pinA) * 18; z.ang = z.pinA + Math.PI; z.moving = false; z.atkT = .4;
+    z.pinHit = (z.pinHit || 0) - dt; if (z.pinHit <= 0) { z.pinHit = .6; zHurt(T, 3.2); } return true; }
+  if (z.lunge > 0) { z.lunge -= dt; z.x += Math.cos(z.lA) * 330 * dt; z.y += Math.sin(z.lA) * 330 * dt; z.ang = z.lA; z.moving = true; collide(z);
+    if (dist(z, T_) < z.r + (T_.r || 12) + 8 && !(T_ === P ? driving : T_.drv) && (z.lv | 0) === (T_.lv | 0)) { z.lunge = 0; grabPin(z, T_); }
+    else if (z.lunge <= 0) z.gcd = 3; return true; }
+  // already somebody's grabber? do not double-pin the same person
+  if (z.state === 'chase' && z.gcd <= 0 && d < 240 && d > 40 && (z.lv | 0) === (T_.lv | 0) && !segBlocked(z.x, z.y, T_.x, T_.y) && !zombies.some(o => o !== z && o.pinT === T_)) { z.lunge = .75; z.lA = Math.atan2(T_.y - z.y, T_.x - z.x); beep(420, .2, 'sawtooth', .05); return true; }
+  return false;
+}
+function netStruggle() {   // E while pinned: break free after a few presses
+  if (!NET.pinned) return; NET.strug = (NET.strug || 0) + 1; camShake = Math.max(camShake, .08);
+  if (NET.strug >= 7) { NET.strug = 0; if (NET.pinBy) { const z = NET.pinBy; z.hp = 0; z.byP = true; grabRelease(z); } else { NET.hits.push([NET.pinned.nid, 30, 0], [NET.pinned.nid, 30, 0]); NET.pinned = null; } toast('You threw it off.'); }
+}
+function coopKey(e) {   // E taps for carrying and struggling (holding E is handled elsewhere)
+  if (!NET.on || !NET.mission || e.repeat) return;
+  if (NET.pinned) { netStruggle(); return; }
+  const c = NET.cargo; if (!c || NET.down || driving) return;
+  if (NET.carrying) { netSend({ t: 'cargo.drop' }); return; }
+  if (!c.pid && Math.hypot(c.x - P.x, c.y - P.y) < 80) netSend({ t: 'cargo.grab' });
+}
+addEventListener('keydown', e => { if (e.code === 'KeyE') coopKey(e); });
+function coopStage(m) {   // build the props for a new stage
+  for (const k of COOP.keyM) { world3.remove(k); const i = COOP.meshes.indexOf(k); if (i >= 0) COOP.meshes.splice(i, 1); } COOP.keyM = [];
+  if (COOP.lureM) { world3.remove(COOP.lureM); COOP.lureM = null; } if (COOP.objM) { world3.remove(COOP.objM); COOP.objM = null; }
+  if (COOP.cargoM && !m.cargo) { world3.remove(COOP.cargoM); COOP.cargoM = null; }
+  NET.keysOn = null; NET.jam = 0; NET.ohp = m.ohp; NET.obj = null; NET.lureOn = false;
+  if (m.keys) COOP.keyM = m.keys.map(k => keyMesh(k.x, k.y));
+  if (m.lure) { COOP.lureM = lureMesh(m.lure.x, m.lure.y); NET.lurePt = m.lure; }
+  if (m.prot && m.target) { COOP.objM = objMesh(m.prot, m.target.x, m.target.y); NET.obj = { kind: m.prot, x: m.target.x, y: m.target.y }; NET.ohp = m.ohp === null || m.ohp === undefined ? 100 : m.ohp; }
+  if (m.cargo) netCargo({ c: m.cargo });
+  for (const b of m.bars || []) barAdd(b);
+  if (m.k === 'build' && NET.caches) for (const it of NET.caches) if (it) it.bar = 1;
+}
+function netCargo(m) {
+  const c = m.c; if (!c) return; const was = NET.cargo; NET.cargo = c; NET.carrying = c.pid === NET.pid;
+  if (!COOP.cargoM) COOP.cargoM = cargoMesh(c.item);
+  if (m.why && (!was || was.pid !== c.pid)) toast(m.why + '.');
+}
+function coopTick(dt) {
+  if (!NET.on || !NET.mission) return;
+  const t = performance.now() / 1000;
+  // twokey lamps go green when someone is on them
+  COOP.keyM.forEach((g, i) => { const on = NET.keysOn && NET.keysOn[i]; g.userData.lamp.material.color.setHex(on ? 0x5aff7a : 0xff3a2a); g.userData.light.material.color.setHex(on ? 0x5aff7a : 0xff3a2a); g.userData.light.scale.setScalar(on ? 1.5 : 1 + .25 * Math.sin(t * 6)); });
+  if (COOP.lureM) { const L = COOP.lureM.userData.light; L.visible = !!NET.lureOn; L.scale.setScalar(3 + Math.sin(t * 23) * .5 + Math.sin(t * 37) * .4); }
+  if (COOP.objM) { const L = COOP.objM.userData.light; const low = NET.ohp !== null && NET.ohp < 35; L.material.color.setHex(low ? 0xff5a3a : 0x9fd6ff); L.scale.setScalar(low ? 1.2 + .6 * Math.abs(Math.sin(t * 8)) : 1.6); }
+  // the cargo sits on the ground or rides with whoever has it
+  if (COOP.cargoM && NET.cargo) { const c = NET.cargo; let x = c.x, y = c.y, h = 0;
+    if (c.pid === NET.pid) { x = P.x + Math.cos(yaw) * 26; y = P.y + Math.sin(yaw) * 26; h = .35; } else if (c.pid) { const r = NET.RP.get(c.pid); if (r) { x = r.x; y = r.y; h = .35; } }
+    COOP.cargoM.position.set(x * S3, lvH({ x, y, lv: 0 }) + h, y * S3); COOP.cargoM.rotation.y = c.pid === NET.pid ? -yaw : COOP.cargoM.rotation.y; }
+  if (NET.carrying && (STL && STL.crouch)) setCrouch(false);
+  barTick(dt);
+  // host: tell the server how close the dead are to the worker, and how the machine is holding up
+  if (NET.host && NET.stage) { NET.monT = (NET.monT || 0) - dt; if (NET.monT <= 0) { NET.monT = .5; const tg = NET.stage.target; let n = 0;
+      if (tg && NET.stage.cover) for (const z of zombies) if (z.hp > 0 && Math.hypot(z.x - tg.x, z.y - tg.y) < 170) n++;
+      netSend({ t: 'mon', n, ohp: NET.obj ? Math.max(0, Math.round(NET.ohp * 10) / 10) : undefined }); } }
+}
+function coopHUD() {
+  const s = NET.stage; if (!s) return; ctx.textAlign = 'center';
+  const bar = (y, v, col, label) => { const w = 260; ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(VW / 2 - w / 2, y, w, 8); ctx.fillStyle = col; ctx.fillRect(VW / 2 - w / 2, y, w * clamp(v, 0, 1), 8); if (label) { font(11, 700); ctx.fillStyle = '#fff'; ctx.fillText(label, VW / 2, y - 4); } };
+  if (s.k === 'twokey') { bar(70, NET.prog, '#7fe0a0'); const on = NET.keysOn || []; font(12, 700); ctx.fillStyle = '#fff'; ctx.fillText('SWITCHES  ' + (s.keys || []).map((k, i) => on[i] ? '■' : '□').join(' ') + '  ·  hold E together', VW / 2, 96); }
+  if (s.k === 'crack' && NET.jam) { font(13, 800); ctx.fillStyle = '#ff7a6a'; ctx.fillText('STALLED: THE DEAD ARE TOO CLOSE. CLEAR THEM OFF THE WORKER', VW / 2, 96); }
+  if (s.lure) { if (NET.lureOn) bar(110, NET.lureSecs / ((s.lsecs || 45)), '#ff8a5a', 'FLARE BURNING · ' + NET.lureSecs + 's'); else { font(12, 700); ctx.fillStyle = '#ff9a7a'; ctx.fillText('THE FLARE IS OUT · light it (hold E at the flare) to pull the horde away', VW / 2, 110); } }
+  if (NET.obj && NET.ohp !== null && NET.ohp !== undefined) bar(126, NET.ohp / 100, NET.ohp < 35 ? '#ff6a5a' : '#9fd6ff', (NET.obj.kind || 'machine').toUpperCase() + ' ' + Math.round(NET.ohp) + '%');
+  if (NET.cargo) { const c = NET.cargo; font(15, 600); ctx.fillStyle = '#ffd08a';
+    if (NET.carrying) ctx.fillText('Carrying' + (c.heavy ? (NET.carryHelp ? ' · a friend is helping' : ' · slow on your own') : '') + '  ·  E to put it down', VW / 2, VH * .62);
+    else if (!c.pid && Math.hypot(c.x - P.x, c.y - P.y) < 80 && !driving) ctx.fillText('E  Pick it up', VW / 2, VH * .62);
+    else if (c.pid) { const r = NET.RP.get(c.pid); if (r && Math.hypot(r.x - P.x, r.y - P.y) > 260) { font(12, 700); ctx.fillStyle = '#ffd08a'; ctx.fillText((r.name || 'Your friend') + ' is carrying it. Stay with them.', VW / 2, 140); } } }
+  for (const r of NET.RP.values()) if (r.pinned) { font(14, 800); ctx.fillStyle = '#ff7a6a'; ctx.fillText((r.name || 'A friend') + ' IS PINNED · SHOOT THE GRABBER OFF THEM', VW / 2, VH * .3); break; }
+  if (NET.pinned) { ctx.fillStyle = 'rgba(90,30,0,.3)'; ctx.fillRect(0, 0, VW, VH); font(24, 800); ctx.fillStyle = '#ffb07a'; ctx.fillText('PINNED', VW / 2, VH * .42); font(13, 600); ctx.fillStyle = '#fff'; ctx.fillText('Mash E to break free (' + (NET.strug || 0) + '/7) · or a friend can shoot it off you', VW / 2, VH * .42 + 24); }
+  if (s.k === 'build') for (const c of NET.caches || []) if (c && !c.looted && Math.hypot(c.x - P.x, c.y - P.y) < 70) { font(15, 600); ctx.fillStyle = '#ffd08a'; ctx.fillText(c.hold ? 'Building… ' + Math.round(c.hold / 2 * 100) + '%' : 'Hold E to build the barricade', VW / 2, VH * .66); break; }
+  if (s.lure && NET.lurePt && !NET.lureOn && Math.hypot(NET.lurePt.x - P.x, NET.lurePt.y - P.y) < 80) { font(15, 600); ctx.fillStyle = '#ff9a7a'; ctx.fillText('Hold E to light the flare', VW / 2, VH * .66); }
+}
 function netHUD() {
   if (!NET.on) return; ctx.save();
   // the crew, top right under the minimap
@@ -8617,6 +8852,7 @@ function netHUD() {
   if (NET.down) { ctx.fillStyle = 'rgba(90,0,0,.35)'; ctx.fillRect(0, 0, VW, VH); font(22, 800); ctx.fillStyle = '#ff7a6a'; ctx.fillText('DOWN', VW / 2, VH * .42); font(13, 500); ctx.fillStyle = '#fff'; ctx.fillText('Wait for a teammate to pick you up', VW / 2, VH * .42 + 24); }
   if (NET.stage && NET.stage.k === 'collect') for (const c of NET.caches || []) if (c && !c.looted && Math.hypot(c.x - P.x, c.y - P.y) < 70) { font(15, 600); ctx.fillStyle = '#ffd08a'; ctx.fillText('E  Grab the cache', VW / 2, VH * .62); break; }
   if (NET.host) { font(9, 600); ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(160,200,210,.55)'; ctx.fillText('SIM HOST', 22, VH - 8); }
+  coopHUD();
   ctx.restore();
 }
 
@@ -9426,7 +9662,7 @@ CJ(50, 'c50home', { n: 'Iron Horse', d: 'Drive the Humvee home. Use the gun.',
 const CARLOCK = { Car_s10: { L: 12, g: 1, n: 'Stepside' }, Car_police: { L: 28, g: 2, n: 'Interceptor' }, Car_challenger: { L: 38, g: 3, n: 'Muscle Memory' }, Car_humvee: { L: 50, g: 4, n: 'Iron Horse' }, Car_gls: { L: 56, g: 5, n: 'Executive Exit' }, Car_bmw: { L: 85, g: 5, n: 'Coupe de Grace' } };
 function carUnlocked(kind) { const K = CARLOCK[kind]; if (!K) return true; if (NET.on) return ((NET.crew && NET.crew.b && NET.crew.b.garage) || 0) >= K.g; if (!story) return false; if (kind === 'Car_humvee' && story.humvee) return true; return !!(story.unlocks && story.unlocks[kind]); }
 function carLocked(c) { return !!(c && c.kind === 'Car_humvee' && CARLOCK[c.kind] && !c.free && !carUnlocked(c.kind)); }   // only the Humvee waits for its mission; every other model can be taken wherever you find it
-function carLockMsg(c) { const K = CARLOCK[c.kind], V = VEH[c.kind]; return (V ? V.name : 'This car') + ' is locked. ' + (NET.on ? 'Upgrade the Garage to level ' + K.g + ' to use it.' : 'Unlock it in level ' + K.L + ': ' + K.n + '.'); }
+function carLockMsg(c) { const K = CARLOCK[c.kind], V = VEH[c.kind]; return (V ? V.name : 'This car') + ' is locked. ' + (NET.on ? 'Upgrade the Garage to level ' + K.g + ' to use it.' : 'Unlock it in level ' + LORD(K.L) + ': ' + K.n + '.'); }
 function extSpawnAt(kind, x, y, a, col) { const c = mkCar(x, y, a, 100, col || 0x6b1e1e, kind); c.state = 'ready'; c.free = true; if (kind === 'Car_humvee') c.armorK = .35; carFree(c); c.m = buildCarMesh(c.col, false, kind); c.m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); world3.add(c.m); cars.push(c); return c; }
 function spLot(kind, town) {   // a clear spot in the town for the car, picked once per save
   story.spLot = story.spLot || {}; if (story.spLot[kind]) return story.spLot[kind];
@@ -10323,8 +10559,16 @@ CJ(192, 'c192voss', { n: 'Ines Voss', d: 'The last room.',
 if (CAMP[190] && !CAMP[197]) { CAMP[197] = CAMP[190]; delete CAMP[190]; for (const id of CAMP[197].jobs) if (MISSIONS[id]) MISSIONS[id].camp = 197; }
 
 /* ---------- campaign levels in the level list ---------- */
-for (let L = 2; L <= MAXL; L++) if (!CAMP[L]) { genLevel(L); if (BONDJ[L]) GENL[L].jobs.push(...BONDJ[L]); }
-const ENDL = 600; for (let L = MAXL + 1; L <= ENDL; L++) if (!CAMP[L]) genLevel(L);   // after the story: The Long Winter, 400 more levels
+/* build 56: the campaign is hand-written levels only. No generated filler.
+   The companion stories (Eli, June, Nadia, Ozzie) used to ride along inside generated levels; each is now a short level of its own. */
+{ const WHO = { ELI: 'Eli', JUN: 'June', NAD: 'Nadia', OZZ: 'Ozzie', REY: 'Reyes', DAR: 'Dara', SAM: 'Sam' };
+  for (const k of Object.keys(BONDJ).map(Number).sort((a, b) => a - b)) for (const id of BONDJ[k]) { const M = MISSIONS[id]; if (!M) continue; let L = k; while (CAMP[L]) L++;
+    const g = M.giver || 'ELI', mates = ['ELI', 'REY', 'JUN', 'OZZ'].filter(c => c !== g).slice(0, 1);
+    CAMP[L] = { n: M.n, sub: (WHO[g] || g) + "'s story", diff: 1, party: [g].concat(mates), jobs: [id], d: M.d, bond: g }; M.camp = L; } }
+const ENDL = MAXL;
+const CAMPL = Object.keys(CAMP).map(Number).filter(L => L >= 2 && L <= MAXL).sort((a, b) => a - b);
+const LNEXT = L => CAMPL.find(x => x > L) || null;
+const LORD = L => (L | 0) <= 1 ? 1 : (CAMPL.indexOf(L) >= 0 ? CAMPL.indexOf(L) + 2 : (CAMPL.findIndex(x => x > L) >= 0 ? CAMPL.findIndex(x => x > L) + 2 : CAMPL.length + 1));
 for (let L = 2; L <= ENDL; L++) { const C = campLevel(L); if (!C) continue; LEVELS.push({ s: 'L' + L, L, n: C.n, d: C.d }); for (const id of C.jobs) { const M = MISSIONS[id]; LEVELS.push({ s: 'm:' + id, L, n: M.n, d: M.d }); } }
 const LVNAME = { 1: 'The Cordon' }; for (let L = 2; L <= ENDL; L++) if (campLevel(L)) LVNAME[L] = campLevel(L).n;
 
