@@ -1131,8 +1131,8 @@ function buildRoads3D(free) {
     if (r.hwy) {
       dash(M.lineW, 8, 0, 60, .18, true); dash(M.lineW, Wd - 8, 0, 60, .18, true);
       dash(M.lineW, Wd * .25, 60, 180, .14); dash(M.lineW, Wd * .75, 60, 180, .14);
-      for (let t = 0; t < L; t += 400) { const t1 = Math.min(L, t + 400); if (!clear(t, t1, 30)) continue; const [x, z] = P3((t + t1) / 2, Wd / 2), l = (t1 - t) * S3; sg.add(hor ? box(l, .8, .5, M.concrete, x, .4, z) : box(.5, .8, l, M.concrete, x, .4, z)); const ok = clear(t, t1, 30); if (ok) walls.push(hor ? { x: o0 + t, y: c0 + Wd / 2 - 6, w: t1 - t, h: 12 } : { x: c0 + Wd / 2 - 6, y: o0 + t, w: 12, h: t1 - t }); }
-      if (!town) for (const side of [-14, Wd + 14]) for (let t = 0; t < L; t += 400) { const t1 = Math.min(L, t + 400); if (!clear(t, t1, 60)) continue; const [x, z] = P3((t + t1) / 2, side), l = (t1 - t) * S3; sg.add(hor ? box(l, .3, .08, M.rail, x, .62, z) : box(.08, .3, l, M.rail, x, .62, z)); for (let k = 0; k < 400; k += 80) { const [px, pz] = P3(t + k, side); sg.add(box(.12, .7, .12, M.rail, px, .35, pz)); } }
+      for (let t = 0; t < L; t += 400) { const t1 = Math.min(L, t + 400); if (!clear(t, t1, 30)) continue; const [x, z] = P3((t + t1) / 2, Wd / 2), l = (t1 - t) * S3; sg.add(hor ? box(l, .8, .5, M.concrete, x, .4, z) : box(.5, .8, l, M.concrete, x, .4, z)); const ok = clear(t, t1, 30); if (ok) walls.push(hor ? { x: o0 + t, y: c0 + Wd / 2 - 6, w: t1 - t, h: 12, low: true, vault: true } : { x: c0 + Wd / 2 - 6, y: o0 + t, w: 12, h: t1 - t, low: true, vault: true }); }
+      if (!town) for (const side of [-14, Wd + 14]) for (let t = 0; t < L; t += 400) { const t1 = Math.min(L, t + 400); if (!clear(t, t1, 60)) continue; const [x, z] = P3((t + t1) / 2, side), l = (t1 - t) * S3; sg.add(hor ? box(l, .3, .08, M.rail, x, .62, z) : box(.08, .3, l, M.rail, x, .62, z)); { walls.push(hor ? { x: o0 + t, y: c0 + side - 3, w: t1 - t, h: 6, low: true, vault: true } : { x: c0 + side - 3, y: o0 + t, w: 6, h: t1 - t, low: true, vault: true }); } for (let k = 0; k < 400; k += 80) { const [px, pz] = P3(t + k, side); sg.add(box(.12, .7, .12, M.rail, px, .35, pz)); } }
       continue;
     }
     // county road / city street: centre line, edge lines, stop bars and crosswalks at junctions, sidewalks in towns
@@ -1957,11 +1957,11 @@ function buildColGrid() {
 }
 const NOCELL = { w: [], t: [], p: [] };
 function collide(e) {
-  let hit = false;
+  let hit = false; const air = e === P && (P.jz || 0) > .42;
   const cell = colGrid ? (colGrid.get(Math.floor(e.x / 200) * 10000 + Math.floor(e.y / 200)) || NOCELL) : { w: walls, t: trees };
   const elv = e.lv | 0;
   for (const w of cell.w) {
-    if (!wallOn(w, elv)) continue;
+    if (!wallOn(w, elv) || (air && (w.low || w.vault))) continue;
     const cx = clamp(e.x, w.x, w.x + w.w), cy = clamp(e.y, w.y, w.y + w.h);
     const dx = e.x - cx, dy = e.y - cy, d2 = dx * dx + dy * dy;
     if (d2 < e.r * e.r) {
@@ -2160,8 +2160,19 @@ function shoot() {
   }
 }
 
+/* build 53: jump and vault. Space hops about a metre (more on a sprint); in the air you clear low walls, guard rails, fences and the highway median */
+function jumpStart() {
+  if (state !== 'play' || driving || SEAT.car || PR.menu || mapOpen || reading || HV.mode || P.sit || NET.down || (P.jz || 0) > 0 || P.jv) return;
+  const spr = !!(keys.ShiftLeft || keys.ShiftRight) && (keys.KeyW || keys.KeyA || keys.KeyS || keys.KeyD);
+  if (STL && STL.crouch) setCrouch(false); P.jv = spr ? 4.6 : 4.0; P.jz = .001; P.jspr = spr ? 1 : 0; noise = Math.max(noise, .5);
+  if (actx) try { nb(actx.currentTime, .06, 'bandpass', 900, 1.2, .25, .05, 0, .1); } catch (e) {} }
+function jumpTick(dt, moving) {
+  if (!P.jv && !(P.jz > 0)) return;
+  P.jv -= 13.5 * dt; P.jz += P.jv * dt;
+  if (P.jspr && (keys.KeyW)) { P.x += Math.cos(yaw) * 22 * dt; P.y += Math.sin(yaw) * 22 * dt; collide(P); }   // a running jump carries you a little further
+  if (P.jz <= 0) { const hard = P.jv < -6; P.jz = 0; P.jv = 0; P.jspr = 0; collide(P); camShake = Math.max(camShake, hard ? .08 : .03); footTick(true); if (actx) try { nb(actx.currentTime, .1, 'lowpass', 300, 1, .5, .08, 0, .1); } catch (e) {} } }
 function hotwireTime() { return 9 / (1 + 0.4 * S.hotwire) * (eliHelps() ? 0.6 : 1); }
-function enterCar(c) { if (c.ozVan && story.i <= 13 && (npc('OZZ') || {}).lift > 0) { toast("Someone is standing on the roof of that van. Deal with the dead around it first."); return; }
+function enterCar(c) { if (typeof carLocked === 'function' && carLocked(c)) { toast(carLockMsg(c)); return; } if (c.ozVan && story.i <= 13 && (npc('OZZ') || {}).lift > 0) { toast("Someone is standing on the roof of that van. Deal with the dead around it first."); return; }
   c.inT = performance.now(); cruise = 0; CC.x = CC.z = CC.y = CC.h = null; lookOff = 0;
   driving = c; c.state = 'ready'; lookOff = 0;
   if (inv.fuel > 0) { const n = inv.fuel; c.fuel = Math.min(100, c.fuel + n * 60); inv.fuel = 0; toast('Refuelled'); }
@@ -2262,6 +2273,7 @@ addEventListener('keydown', e => {
   if (e.code === 'ControlLeft' || e.code === 'ControlRight') { e.preventDefault && e.preventDefault(); setCrouch(!STL.crouch); }
   if (e.code === 'KeyI' && !driving) throwBottle();
   if (e.code === 'KeyT') rainOn = !rainOn;
+  if (e.code === 'Space' && !e.repeat) jumpStart();
   if (e.code === 'KeyP' && !e.repeat) pingHere();
   if (e.code === 'Period' && !e.repeat) giveNearest();
   if (e.code === 'KeyF') { flashOn = !flashOn; flashlight.intensity = flashOn ? 1.8 : 0; }
@@ -3507,6 +3519,7 @@ function update(dt) {
       bobT += dt * (sprinting ? 12 : STL.crouch ? 5 : 8); if (!STL.crouch) footTick(sprinting);
     }
     if (!moving) staminaTick(dt, false, false);
+    jumpTick(dt, moving);
     stairTick(P, dt); upstairsTick();
     if (mouse.down && (locked || lockFailed) && SEAT.kind !== 'gun') shoot();
   } else {
@@ -3550,12 +3563,13 @@ function update(dt) {
       prog += dt / 1.2; noise = Math.max(noise, 0.2);
       if (prog >= 1) { openCrate(target.ref); prog = 0; progMode = null; }
     } else {
+      if (carLocked(target.ref)) { prog = 0; progMode = null; if (!(P.lockT > 0)) { toast(carLockMsg(target.ref)); P.lockT = 3; } } else {
       hotwiring = true; prog += dt / hotwireTime(); noise = Math.max(noise, 0.5);
       if (Math.random() < dt * 6) beep(rnd(600, 900), .03, 'square', .02);
-      if (prog >= 1) { target.ref.state = 'ready'; S.hotwire += 1; prog = 0; progMode = null; toast('Hotwired. Hotwire skill up.'); beep(700, .2, 'triangle', .06); }
+      if (prog >= 1) { target.ref.state = 'ready'; S.hotwire += 1; prog = 0; progMode = null; toast('Hotwired. Hotwire skill up.'); beep(700, .2, 'triangle', .06); } }
     }
   } else { prog = Math.max(0, prog - dt * 2); if (prog === 0) progMode = null; }
-  P.target = target; tdoorTick(dt); safeTick(dt); stuckTick(dt); roadTick(dt); wdropTick(dt); wptTick(); if (driving) humveeTick(dt); seatTick(dt); pingTick(dt); seatRemoteTick(); if (NET.on) havenTick(dt); vilTick(dt); if (driving) carDamageTick(driving, dt); gasTick(dt); bottleTick(dt); stealthTick(dt); iaTick(dt); prTick(dt); convoyTick(dt); lvlTick(); intTick(dt); missionTick(dt); sweetTick(dt); towerFloorsTick(dt); updateLamps(dt); geyserTick(dt);
+  P.target = target; tdoorTick(dt); safeTick(dt); stuckTick(dt); roadTick(dt); wdropTick(dt); wptTick(); P.lockT = Math.max(0, (P.lockT || 0) - dt); if (driving) humveeTick(dt); seatTick(dt); pingTick(dt); seatRemoteTick(); if (NET.on) havenTick(dt); vilTick(dt); if (driving) carDamageTick(driving, dt); gasTick(dt); bottleTick(dt); stealthTick(dt); iaTick(dt); prTick(dt); convoyTick(dt); lvlTick(); intTick(dt); missionTick(dt); sweetTick(dt); towerFloorsTick(dt); updateLamps(dt); geyserTick(dt);
 
   // zombies
   const baseDet = 240 * (1 - .15 * pk('quiet')) * (bgKey === 'hunter' ? 0.7 : 1) * (sprinting ? 1.5 : 1);
@@ -3692,7 +3706,7 @@ function syncScene(dt) {
     else { cx = c.x * S3 + Math.cos(c.a) * 0.15 - Math.sin(c.a) * (-0.4); cz = c.y * S3 + Math.sin(c.a) * 0.15 + Math.cos(c.a) * (-0.4); cy = 1.35; }
     yaw = cyaw;
   } else {
-    cx = P.x * S3; cz = P.y * S3; cy -= (P.sitK || 0) * .55; cy += lvH(P);
+    cx = P.x * S3; cz = P.y * S3; cy -= (P.sitK || 0) * .55; cy += lvH(P) + (P.jz || 0);
     if (P.moving) cy += Math.sin(bobT) * 0.045;
   }
   if (SEAT.car) { const sc = seatCam(); if (sc) { cx = sc[0]; cy = sc[1]; cz = sc[2]; } }
@@ -3768,7 +3782,7 @@ function drawHUD() {
   else if (t) {
     if (t.type === 'note') msg = 'E: read ' + (readIds.has(t.ref.id) ? '(read) ' : '') + t.ref.t;
     else if (t.type === 'crate') msg = 'Hold E: scavenge';
-    else if (t.type === 'hot') msg = 'Hold E: hotwire (' + hotwireTime().toFixed(1) + 's)   X: trunk   Z: siphon';
+    else if (t.type === 'hot') msg = carLocked(t.ref) ? '🔒 ' + carLockMsg(t.ref) : 'Hold E: hotwire (' + hotwireTime().toFixed(1) + 's)   X: trunk   Z: siphon';
     else if (t.type === 'door') msg = 'E: ' + (t.ref.tgt > .5 ? 'close' : 'open') + ' door';
     else if (t.type === 'ia') { const it = t.ref, hd = it.def.mode === 'hold'; msg = (hd && !it.looted ? 'Hold E: ' : 'E: ') + it.def.label(it) + (hd && it.looted ? ' (searched)' : ''); }
     else msg = 'E: enter car  (fuel ' + Math.round(t.ref.fuel) + ')   X: trunk   Z: siphon';
@@ -4868,11 +4882,11 @@ function placeTrees() {
     if (t.wreck) return;
     const r = (Math.sin(i * 12.9898) * 43758.5453) % 1, k = Math.abs(r); let type = k < .4 ? 'Pine' : k < .62 ? 'PineS' : k < .9 ? 'Oak' : 'Dead';
     let sc = (t.r / 18) * (0.85 + 0.3 * Math.abs(Math.sin(i * 7.1)));
-    if (TREEG2 && (type === 'Oak' || (type === 'PineS' && hashI(i) % 3 === 0))) { type = 'Broad' + (1 + hashI(i * 31) % 6); sc *= .82; }   // broadleaf trees from the Blender pack
+    if (TREEG2) { type = 'Broad' + (1 + hashI(i * 31) % 6); sc *= .82; }   // build 53: every tree is one of the Blender pack's broadleaf trees
     e.set((Math.sin(i) * 0.04), i * 2.4, Math.cos(i) * 0.04); q.setFromEuler(e);
     sets[type].push(new THREE.Matrix4().compose(new THREE.Vector3(t.x * S3, 0, t.y * S3), q, new THREE.Vector3(sc, sc, sc)));
   });
-  bushPos.forEach(([x, y], i) => { e.set(0, i * 1.7, 0); q.setFromEuler(e); if (TREEG2 && hashI(i * 13) % 4 === 0) { const s2 = .35 + .25 * Math.abs(Math.sin(i * 2.1)); sets['Shrub' + (1 + hashI(i) % 3)].push(new THREE.Matrix4().compose(new THREE.Vector3(x * S3, 0, y * S3), q, new THREE.Vector3(s2, s2, s2))); return; } const sc = 0.7 + 0.6 * Math.abs(Math.sin(i * 3.3)); sets.Bush.push(new THREE.Matrix4().compose(new THREE.Vector3(x * S3, 0, y * S3), q, new THREE.Vector3(sc, sc * 0.8, sc))); });
+  bushPos.forEach(([x, y], i) => { e.set(0, i * 1.7, 0); q.setFromEuler(e); if (TREEG2) { const s2 = .35 + .25 * Math.abs(Math.sin(i * 2.1)); sets['Shrub' + (1 + hashI(i) % 3)].push(new THREE.Matrix4().compose(new THREE.Vector3(x * S3, 0, y * S3), q, new THREE.Vector3(s2, s2, s2))); return; } const sc = 0.7 + 0.6 * Math.abs(Math.sin(i * 3.3)); sets.Bush.push(new THREE.Matrix4().compose(new THREE.Vector3(x * S3, 0, y * S3), q, new THREE.Vector3(sc, sc * 0.8, sc))); });
   for (const n in sets) instanceSet(n, sets[n]);
 }
 /* ---------- Blender-baked world textures ---------- */
@@ -6696,13 +6710,13 @@ function renderTitle() {
   } else if (titleMode === 'levels') {
     h += lvlMenuHTML().replace('class="lvls"', 'class="bgs" style="max-height:60vh;overflow:auto"').replace(/class="lv( lock)?"/g, (m, l) => 'class="bgc"' + (l ? ' style="opacity:.35;cursor:default"' : '')).replace(/class="lvh( lock)?"/g, (m, l) => 'class="lvh" style="grid-column:1/-1;margin:14px 0 2px;font:700 12px Segoe UI,Arial;letter-spacing:.24em;text-transform:uppercase;color:' + (l ? '#55625f' : '#9fd6e6') + '"');
   } else if (titleMode === 'controls') {
-    h += '<div class="panel"><h3>Controls</h3><table>' + [['WASD', 'Move'], ['Shift', 'Sprint (louder)'], ['E on a companion', 'Talk, give ammo, start their job'], ['C', 'Squad orders: follow / hold position / hold fire'], ['TAB', 'Pick a perk when you level up'], ['Mouse', 'Look  /  click to shoot'], ['Right mouse', 'Aim down the sights'], ['R', 'Reload'], ['E', 'Interact, hotwire (hold), enter or exit car, help a downed friend (hold)'], ['V', 'Shove'], ['F', 'Flashlight'], ['1 - 6', 'Pistol / shotgun / rifle / SMG / hunting rifle / machete (or mouse wheel)'], ['In a vehicle', 'H horn, L headlights, X wipers, R radio, C chase camera, K siren (police, ambulance)'], ['Right mouse (hunting rifle)', 'Look through the 3.4x scope'], ['B / N', 'Craft bandage / ammo'], ['H', 'Use bandage'], ['M', 'County map'], ['J', 'Journal'], ['Space', 'Handbrake'], ['Enter', 'Skip cutscene'], ['Esc', 'Pause']].map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('') + '</table><div class="btns"><span class="btn" data-m="back">Back</span></div></div>';
+    h += '<div class="panel"><h3>Controls</h3><table>' + [['WASD', 'Move'], ['Shift', 'Sprint (louder)'], ['Space', 'Jump (sprint first to clear rails and fences)'], ['E on a companion', 'Talk, give ammo, start their job'], ['C', 'Squad orders: follow / hold position / hold fire'], ['TAB', 'Pick a perk when you level up'], ['Mouse', 'Look  /  click to shoot'], ['Right mouse', 'Aim down the sights'], ['R', 'Reload'], ['E', 'Interact, hotwire (hold), enter or exit car, help a downed friend (hold)'], ['V', 'Shove'], ['F', 'Flashlight'], ['1 - 6', 'Pistol / shotgun / rifle / SMG / hunting rifle / machete (or mouse wheel)'], ['In a vehicle', 'H horn, L headlights, X wipers, R radio, C chase camera, K siren (police, ambulance)'], ['Right mouse (hunting rifle)', 'Look through the 3.4x scope'], ['B / N', 'Craft bandage / ammo'], ['H', 'Use bandage'], ['M', 'County map'], ['J', 'Journal'], ['Space', 'Handbrake'], ['Enter', 'Skip cutscene'], ['Esc', 'Pause']].map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('') + '</table><div class="btns"><span class="btn" data-m="back">Back</span></div></div>';
   } else if (titleMode === 'settings') {
     h += '<div class="panel"><h3>Settings</h3><table><tr><td>Graphics</td><td>' + ['Low', 'Medium', 'High'].map((q, i) => '<span class="btn" data-q="' + i + '" style="padding:4px 12px;margin-right:6px;' + (quality === i ? 'border-color:#9fd6e6' : '') + '">' + q + '</span>').join('') + '</td></tr><tr><td>Voices</td><td><span class="btn" data-v="1" style="padding:4px 12px">' + (voicesOn ? 'On' : 'Off') + '</span> ' + (ttsOk ? '' : '<small>(no speech voices on this device: subtitles only)</small>') + '</td></tr></table><div class="btns"><span class="btn" data-m="back">Back</span></div></div>';
   } else if (titleMode === 'credits') {
     h += '<div class="panel"><h3>Credits</h3><p>ColdShore prototype. Characters, zombies, vehicles, buildings, trees and animation built procedurally in Blender. Engine: three.js. Voices: your browser&#39;s speech engine.</p><p style="font-size:12px;opacity:.8">Models from BlendSwap, reduced for the browser: M1 Humvee by panko10 (CC-BY); Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0); Ford Crown Victoria Police Interceptor 2005 (CC-BY 3.0); Mercedes-AMG GLS (CC0); BMW 3 Series Coupe by mikepan (CC-BY-SA 3.0); Trees &amp; Bushes pack by Painkiller5555; Dodge Challenger 1970 R/T; Low Quality Weapon Pack (CC0).</p><div class="btns"><span class="btn" data-m="back">Back</span></div></div>';
   }
-  h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 52</div>';
+  h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 53</div>';
   titleEl.innerHTML = h; titleEl.classList.add('on');
   titleEl.querySelectorAll('[data-m]').forEach(a => a.onclick = () => titleAction(a.dataset.m));
   titleEl.querySelectorAll('[data-k]').forEach(a => a.onclick = () => pickBg(a.dataset.k));
@@ -7033,8 +7047,8 @@ function chunkBuild(cx, cy) {
   const merged = mergeStatic(g); merged.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.userData.own = 1; o.matrixAutoUpdate = false; o.updateMatrix(); } });
   rec.g.add(merged); rec.g.add(rec.furn); world3.add(rec.g);
   // trees: instanced, with collision
-  if (TREEG && I.trees.length) { const sets = { Pine: [], PineS: [], Oak: [], Dead: [] }, q = new THREE.Quaternion(), e = new THREE.Euler();
-    I.trees.forEach(([x, y, r], i) => { const k = (i * 37 + cx * 11 + cy * 7) % 10, ty = k < 4 ? 'Pine' : k < 6 ? 'PineS' : k < 9 ? 'Oak' : 'Dead', sc = (r / 18) * (.85 + .3 * ((i * 13) % 7) / 7); e.set(0, i * 2.4, 0); q.setFromEuler(e);
+  if (TREEG && I.trees.length) { const sets = { Pine: [], PineS: [], Oak: [], Dead: [] }, q = new THREE.Quaternion(), e = new THREE.Euler(); if (TREEG2) for (let k = 1; k <= 6; k++) sets['Broad' + k] = [];
+    I.trees.forEach(([x, y, r], i) => { const k = (i * 37 + cx * 11 + cy * 7) % 10, ty = TREEG2 ? 'Broad' + (1 + (i * 7 + cx * 3 + cy) % 6) : k < 4 ? 'Pine' : k < 6 ? 'PineS' : k < 9 ? 'Oak' : 'Dead', sc = (r / 18) * (.85 + .3 * ((i * 13) % 7) / 7) * (TREEG2 ? .82 : 1); e.set(0, i * 2.4, 0); q.setFromEuler(e);
       sets[ty].push(new THREE.Matrix4().compose(new THREE.Vector3(x * S3, 0, y * S3), q, new THREE.Vector3(sc, sc, sc))); const t = { x, y, r: r * .55 }; rec.tr.push(t); colAddT(t); });
     for (const n in sets) if (sets[n].length) treeCells(n, sets[n], rec.ims); }
   // abandoned cars on the roads
@@ -8237,12 +8251,16 @@ function myTruckEnsure() {
   t = story.fort ? mkCar(b.x + 160, b.y + 120, -Math.PI / 2, 90, story.truckCol || 0x2f4a5c, 'Car_pickup') : mkCar(b.x + 200, b.y + 5, 0, 90, story.truckCol || 0x2f4a5c, 'Car_pickup'); t.myTruck = true; carFree(t); t.state = 'ready'; t.hp = story.truckHp !== undefined ? Math.max(40, story.truckHp) : 100; t.flat = story.truckFlat || 0;
   t.m = buildCarMesh(t.col, false, t.kind); t.m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); world3.add(t.m); cars.push(t);
 }
-IAK.carfix = D_(it => (it.c.flat ? 'Change the tyre' : 'Patch up the engine') + (inv.scrap >= 2 ? '  (2 scrap)' : '  (needs 2 scrap)'), 'hold', it => {
-  if (inv.scrap < 2) { toast('You need 2 scrap.'); return; } inv.scrap -= 2; const c = it.c;
-  if (c.flat) { c.flat = 0; toast('Tyre changed.'); } else { c.hp = Math.min(100, c.hp + 35 + (bgKey === 'mechanic' ? 20 : 0)); toast('Engine patched. ' + Math.round(c.hp) + '%'); }
+const carFixCost = c => c.flat ? 2 : c.hp <= 0 ? 4 : 2;   // build 53: every car can be fixed, even one that has died on you (it costs more)
+IAK.carfix = D_(it => (it.c.flat ? 'Change the tyre' : it.c.hp <= 0 ? 'Rebuild the engine' : 'Patch up the engine') + (inv.scrap >= carFixCost(it.c) ? '  (' + carFixCost(it.c) + ' scrap)' : '  (needs ' + carFixCost(it.c) + ' scrap)'), 'hold', it => {
+  const c = it.c, k = carFixCost(c); if (inv.scrap < k) { toast('You need ' + k + ' scrap.'); return; } inv.scrap -= k; c.stall = 0;
+  if (c.flat) { c.flat = 0; c.flatS = 0; toast('Tyre changed.'); } else { c.hp = Math.min(100, Math.max(0, c.hp) + 35 + (bgKey === 'mechanic' ? 20 : 0)); toast('Engine ' + (c.hp <= 55 ? 'rebuilt' : 'patched') + '. ' + Math.round(c.hp) + '%'); }
   if (c.myTruck) { story.truckHp = c.hp; story.truckFlat = c.flat; } beep(500, .1, 'triangle', .05); }, { time: 3.2 });
 function carFixConsider(consider) {
-  if (driving) return; for (const c of cars) { if (!(c.flat || (c.hp < 60 && c.hp > 0)) || Math.abs(c.x - P.x) > 70 || Math.abs(c.y - P.y) > 70) continue; consider({ x: c.x, y: c.y, kind: 'carfix', def: IAK.carfix, r: 46, c, _tmp: 1 }); }
+  if (driving) return; for (const c of cars) { if (c.wreck || !(c.flat || c.hp < 60)) continue; const reach = (c.hl || 40) + 30; if (Math.abs(c.x - P.x) > reach || Math.abs(c.y - P.y) > reach) continue;
+    // stand anywhere along the car: the work point is the nearest spot on its body
+    const ca = Math.cos(c.a), sa = Math.sin(c.a), lx = (P.x - c.x) * ca + (P.y - c.y) * sa, ly = -(P.x - c.x) * sa + (P.y - c.y) * ca, px = clamp(lx, -(c.hl || 40), c.hl || 40), py = clamp(ly, -(c.hw || 18), c.hw || 18);
+    consider({ x: c.x + px * ca - py * sa, y: c.y + px * sa + py * ca, kind: 'carfix', def: IAK.carfix, r: 40, c, _tmp: 1 }); }
 }
 /* roadblocks on outland roads: wrecks and barricades across half the lane */
 function roadblocks(rec, g, cx, cy) {
@@ -9347,7 +9365,7 @@ function humveeEnsure() {   // once earned, the Humvee waits at home at the star
   if (!story || !story.humvee || !cars || !world3) return; if (cars.some(c => c.kind === 'Car_humvee')) return;
   const b = typeof BASE === 'function' ? BASE() : { x: 780, y: 2100 }; const c = mkCar(b.x + (story.fort ? -160 : 260), b.y + (story.fort ? 120 : 70), story.fort ? -Math.PI / 2 : 0, 100, 0x4a5236, 'Car_humvee'); c.state = 'ready'; c.armorK = .35; carFree(c);
   c.m = buildCarMesh(c.col, false, c.kind); c.m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); world3.add(c.m); cars.push(c); }
-function humveeSpawnAt(x, y, a) { const c = mkCar(x, y, a, 100, 0x4a5236, 'Car_humvee'); c.nid = 'hv' + Math.round(x) + '_' + Math.round(y); c.state = 'ready'; c.armorK = .35; carFree(c); c.m = buildCarMesh(c.col, false, c.kind); c.m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); world3.add(c.m); cars.push(c); return c; }
+function humveeSpawnAt(x, y, a) { const c = mkCar(x, y, a, 100, 0x4a5236, 'Car_humvee'); c.nid = 'hv' + Math.round(x) + '_' + Math.round(y); c.state = 'ready'; c.free = true; c.armorK = .35; carFree(c); c.m = buildCarMesh(c.col, false, c.kind); c.m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); world3.add(c.m); cars.push(c); return c; }
 function humveeHUD() { const c = driving; if (!c || c.kind !== 'Car_humvee' || state !== 'play') return; ctx.save(); const x = VW / 2, y = VH - 120; font(10, 700); ctx.textAlign = 'center'; ctx.fillStyle = '#e9c46a'; ctx.fillText('M2 · HOLD FIRE OR F', x, y - 8);
   ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(x - 80, y, 160, 6); ctx.fillStyle = HMV.heat > .8 ? '#ff5a4a' : '#e9c46a'; ctx.fillRect(x - 80, y, 160 * HMV.heat, 6);
   ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(VW / 2, VH / 2, 10, 0, 6.283); ctx.moveTo(VW / 2 - 16, VH / 2); ctx.lineTo(VW / 2 - 6, VH / 2); ctx.moveTo(VW / 2 + 6, VH / 2); ctx.lineTo(VW / 2 + 16, VH / 2); ctx.stroke(); ctx.restore(); }
@@ -9369,6 +9387,43 @@ CJ(50, 'c50home', { n: 'Iron Horse', d: 'Drive the Humvee home. Use the gun.',
     { t: 'custom', text: () => story.fort ? 'Drive the Humvee to Fort Hope' : 'Drive the Humvee to the harbor', at: BASE, r: 300, check() { const a = BASE(); return driving && driving.kind === 'Car_humvee' && Math.hypot(driving.x - a.x, driving.y - a.y) < 300; },
       enter() { if (typeof ROAD !== 'undefined' && ROAD.force) try { ROAD.force('horde'); } catch (e) {} }, tick(dt, m) { m.rt = (m.rt || 0) - dt; if (m.rt <= 0 && driving) { m.rt = 22; try { ROAD.force(['horde', 'pileup', 'ambush'][Math.floor(Math.random() * 3)]); } catch (e) {} } } }],
   outro: () => { story.humvee = 1; toast('LEGENDARY VEHICLE UNLOCKED: M1 Humvee. It waits at home at the start of every level.'); beep(523, .3, 'triangle', .06); setTimeout(() => beep(784, .4, 'triangle', .06), 160); } });
+
+
+/* ---------- build 53: every real-model car is locked until its own special mission (online: until the Garage reaches its level) ---------- */
+const CARLOCK = { Car_s10: { L: 12, g: 1, n: 'Stepside' }, Car_police: { L: 28, g: 2, n: 'Interceptor' }, Car_challenger: { L: 38, g: 3, n: 'Muscle Memory' }, Car_humvee: { L: 50, g: 4, n: 'Iron Horse' }, Car_gls: { L: 56, g: 5, n: 'Executive Exit' }, Car_bmw: { L: 85, g: 5, n: 'Coupe de Grace' } };
+function carUnlocked(kind) { const K = CARLOCK[kind]; if (!K) return true; if (NET.on) return ((NET.crew && NET.crew.b && NET.crew.b.garage) || 0) >= K.g; if (!story) return false; if (kind === 'Car_humvee' && story.humvee) return true; return !!(story.unlocks && story.unlocks[kind]); }
+function carLocked(c) { return !!(c && CARLOCK[c.kind] && !c.free && !carUnlocked(c.kind)); }
+function carLockMsg(c) { const K = CARLOCK[c.kind], V = VEH[c.kind]; return (V ? V.name : 'This car') + ' is locked. ' + (NET.on ? 'Upgrade the Garage to level ' + K.g + ' to use it.' : 'Unlock it in level ' + K.L + ': ' + K.n + '.'); }
+function extSpawnAt(kind, x, y, a, col) { const c = mkCar(x, y, a, 100, col || 0x6b1e1e, kind); c.state = 'ready'; c.free = true; if (kind === 'Car_humvee') c.armorK = .35; carFree(c); c.m = buildCarMesh(c.col, false, kind); c.m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); world3.add(c.m); cars.push(c); return c; }
+function spLot(kind, town) {   // a clear spot in the town for the car, picked once per save
+  story.spLot = story.spLot || {}; if (story.spLot[kind]) return story.spLot[kind];
+  const T = TOWNS.find(t => t.n === town) || TOWNS[0]; let best = { x: T.x + 200, y: T.y + 200 };
+  for (let i = 0; i < 200; i++) { const a = i * 2.39996, r = 250 + i * 6, x = T.x + Math.cos(a) * r, y = T.y + Math.sin(a) * r; if (typeof spotFree === 'function' && !spotFree(x, y, 0, 70)) continue; if (typeof segBlocked === 'function' && segBlocked(x - 60, y, x + 60, y)) continue; best = { x, y }; break; }
+  return (story.spLot[kind] = best); }
+const SPECIALCARS = [
+  { kind: 'Car_s10', town: 'PINE RIDGE', col: 0x6b1e1e, party: ['REY'], sub: 'A farm pickup that still runs', d: 'Old Haskins kept a Chevy S-10 in his barn at Pine Ridge. Nobody has touched it since the quarantine.',
+    lines: [['REY', "Haskins' Stepside. He rebuilt that engine twice. If anything in this county still starts, it's that truck."]], keys: 'The keys hang on a nail by the barn door', got: 'Keys on a Chevy fob. Haskins left a note: TAKE CARE OF HER.', hold: 0, n: 10 },
+  { kind: 'Car_police', town: 'MILLBROOK', col: 0xe9e9e4, party: ['REY', 'ELI'], sub: 'The sheriff\'s last cruiser', d: 'The Millbrook sheriff\'s office kept one Interceptor in the sally port. The lights still work.',
+    lines: [['ELI', "A police Interceptor. Lights, siren, push bar. It's like Christmas, if Christmas tried to eat you."], ['REY', "The sally port is locked from inside. Keys will be in the evidence cage."]], keys: 'Find the keys in the evidence cage', got: 'Interceptor keys, tagged UNIT 4.', hold: 75, n: 14 },
+  { kind: 'Car_challenger', town: 'FAIRHAVEN', col: 0xc8a030, party: ['ELI'], sub: 'Four hundred horsepower of bad ideas', d: 'Somebody in Fairhaven restored a 1970 Challenger R/T and never got to drive it.',
+    lines: [['ELI', "A '70 Challenger. Hemi. Nobody restores a car like that to leave it in a garage."], ['YOU', "Loud, fast and thirsty. Perfect."]], keys: 'The keys are in the house', got: 'A keyring with a little Mopar tag.', hold: 0, n: 16 },
+  { kind: 'Car_gls', town: 'NEW HALDEN', col: 0x2a2f36, party: ['REY', 'ELI'], sub: 'The executive\'s getaway car', d: 'A Mercedes-AMG GLS sits in a New Halden parking garage, fuelled for an evacuation that never came.',
+    lines: [['REY', "Company car for one of the lab's directors. Full tank, armoured glass, and nobody in it."], ['ELI', "The garage is full of them. The dead, I mean. Not Mercedes."]], keys: 'Find the director\'s key card at the security desk', got: 'A key card and a smart key in a leather pouch.', hold: 110, n: 20 },
+  { kind: 'Car_bmw', town: 'GRANITE FALLS', col: 0x1d3f7a, party: ['ELI'], sub: 'A coupe nobody came back for', d: 'A BMW 3 Series coupe waits in a Granite Falls showroom, still on the turntable.',
+    lines: [['ELI', "A BMW in the showroom window. Not a scratch on it. Let's change that."]], keys: 'The keys are in the sales office', got: 'Dealer keys, still in the plastic.', hold: 90, n: 18 }];
+for (const S of SPECIALCARS) { const K = CARLOCK[S.kind], L = K.L, id = 'sp' + L, at = () => spLot(S.kind, S.town), V = () => ({ Car_s10: 'Chevy S-10', Car_police: 'Crown Vic Interceptor', Car_challenger: 'Challenger', Car_gls: 'AMG GLS', Car_bmw: 'BMW 3 Coupe' })[S.kind] || (VEH[S.kind] && VEH[S.kind].name) || 'car';
+  CAMP[L] = { n: K.n, sub: S.sub, diff: 1, party: S.party, jobs: [id + 'find', id + 'hold', id + 'home'], d: S.d, intro: async () => { gather(S.party.concat(['DAR'])); await talk(S.lines.concat([['DAR', 'Bring it home. And bring yourselves home.']])); } };
+  CJ(L, id + 'find', { n: 'The ' + V(), d: 'Find it in ' + S.town[0] + S.town.slice(1).toLowerCase() + '.',
+    steps: [G('Drive to ' + S.town[0] + S.town.slice(1).toLowerCase(), at, { r: 500 }), CL('Clear the area around it', at, S.n, .35, { husk: .25 }),
+      IT(S.keys, () => { const a = at(); return { x: a.x - 160, y: a.y + 90 }; }, 'Take the keys', S.got)] });
+  CJ(L, id + 'hold', { n: 'Warm-up', d: 'Get it started.',
+    steps: [{ t: 'custom', text: 'Get it started', at, enter() { const a = at(); if (!cars.some(c => c.kind === S.kind && c.free && Math.hypot(c.x - a.x, c.y - a.y) < 400)) extSpawnAt(S.kind, a.x, a.y, 0, S.col); toast('There it is.'); }, check: () => true },
+      S.hold ? SV('Hold on while the engine warms up', at, S.hold, 12, 7, .4, { r: 700 }) : { t: 'custom', text: 'Check it over', at, secs: 3, check: () => true }] });
+  CJ(L, id + 'home', { n: 'Drive It Home', d: 'Bring the ' + V() + ' home.',
+    steps: [{ t: 'custom', text: () => 'Get in the ' + V(), at: () => { const c = cars.find(c => c.kind === S.kind && c.free); return c ? { x: c.x, y: c.y } : at(); }, check: () => driving && driving.kind === S.kind },
+      { t: 'custom', text: () => story.fort ? 'Drive it to Fort Hope' : 'Drive it to the harbor', at: BASE, r: 300, check() { const a = BASE(); return driving && driving.kind === S.kind && Math.hypot(driving.x - a.x, driving.y - a.y) < 300; },
+        tick(dt, m) { m.rt = (m.rt || 6) - dt; if (m.rt <= 0 && driving) { m.rt = 26; try { ROAD.force(['horde', 'pileup', 'ambush'][Math.floor(Math.random() * 3)]); } catch (e) {} } } }],
+    outro: () => { story.unlocks = story.unlocks || {}; story.unlocks[S.kind] = 1; toast('VEHICLE UNLOCKED: ' + V() + '. Every one in the county is yours to drive now.'); beep(523, .3, 'triangle', .06); setTimeout(() => beep(784, .4, 'triangle', .06), 160); } }); }
 
 /* ---------- new kinds of job, so levels stop repeating ---------- */
 // level modifiers: one twist per generated level
@@ -9451,19 +9506,19 @@ function demolish(x, y, gas) {   // the set piece: a fireball, a shockwave, and 
 // Each loads once in the background; until a model is ready the game falls back to its own stand-in.
 const EXTG = {}, EXTV = { Car_humvee: 'veh_humvee.json', Car_s10: 'veh_s10.json', Car_challenger: 'veh_challenger.json', Car_police: 'veh_police.json', Car_gls: 'veh_gls.json', Car_bmw: 'veh_bmw.json' };
 const EXTFALL = { Car_humvee: 'Car_suv', Car_s10: 'Car_pickup', Car_challenger: 'Car', Car_police: 'Car', Car_gls: 'Car_suv', Car_bmw: 'Car' };
-const EXTPAINT = { Car_humvee: /^Grey/, Car_s10: /paint/i, Car_challenger: null, Car_police: null, Car_gls: /^carosserie$/, Car_bmw: /^grill$/ };
+const EXTPAINT = { Car_humvee: /^Grey/, Car_s10: /paint/i, Car_challenger: null, Car_police: null, Car_gls: /^BodyPaint$/, Car_bmw: /^BodyPaint$/ };
 const EXTLOOK = {   // build 52: Crown Victoria police, Mercedes GLS, BMW 3 coupe
   Car_police: (m, n) => { const set = (c, r, mt, e) => { m.color.set(c).convertSRGBToLinear(); m.roughness = r; m.metalness = mt; if (e && m.emissive) { m.emissive.set(c).convertSRGBToLinear(); m.emissiveIntensity = e; } };
     if (/Car Paint \(Dark/.test(n)) set(0x0e1013, .35, .55); else if (/Car Paint \(White\)|Police Car Paint/.test(n)) set(0xeeeeea, .35, .4); else if (/Chrome|Mirror/.test(n)) set(0xb9bec3, .25, .9);
     else if (/^Tire/.test(n)) set(0x141414, .92, 0); else if (/Plastic|^Bar$|Bottom|Interior|Rim \(Plastic\)|Material\.0/.test(n)) set(0x1b1d1f, .7, .1); else if (/PL Red/.test(n)) { set(0xff2020, .4, 0, .4); m.name = 'C_red'; } else if (/^Red|Red Light/.test(n)) set(0xd01818, .4, 0, .6);
     else if (/PL Blue/.test(n)) { set(0x2050ff, .4, 0, .4); m.name = 'C_blue'; } else if (/^Blue/.test(n)) set(0x1a4ad8, .4, 0, .6); else if (/Orange|Turn Signal/.test(n)) set(0xe08a1a, .4, 0, .3); else if (/Headlight|Reverse|Clear/.test(n)) set(0xeef2f6, .15, .3, .2); else if (/Ford/.test(n)) set(0x1a3a7a, .4, .5); },
   Car_gls: (m, n) => { if (/Mat.riau|wire/.test(n)) { m.color.set(/wire/.test(n) ? 0xcfd2d4 : 0x1c1d1f).convertSRGBToLinear(); m.roughness = .6; m.metalness = .3; } },
-  Car_bmw: (m, n) => { if (/BreakLight/.test(n)) m.name = 'C_tail'; else if (/AngelEye|Foglight/.test(n)) m.name = 'C_headlight'; else if (/Internal/.test(n)) { m.color.set(0x151515); m.roughness = .8; } else if (/Material\.002/.test(n)) { m.color.set(0xe08a1a).convertSRGBToLinear(); } }
+  Car_bmw: (m, n) => {}
 };
 for (const k in EXTV) loadGlbJson(EXTV[k]).then(g => {
   g.scene.traverse(o => { if (!o.isMesh || !o.material) return; const m = o.material, n = m.name || '';
     if (EXTLOOK[k]) EXTLOOK[k](m, n);
-    if (/glass|window|windshield|carosserie\.001|HeadLightGlass/i.test(n)) m.name = 'C_glass'; else if (EXTPAINT[k] && EXTPAINT[k].test(n)) m.name = 'X_paint'; else if (/tail|b-light|red_reflect/i.test(n)) m.name = 'C_tail'; else if (/head.?light|head_lights/i.test(n)) m.name = 'C_headlight';
+    if (/glass|window|windshield/i.test(n)) m.name = 'C_glass'; else if (EXTPAINT[k] && EXTPAINT[k].test(n)) m.name = 'X_paint'; else if (/tail|b-light|red_reflect/i.test(n)) m.name = 'C_tail'; else if (/^HeadLight$/.test(n)) m.name = 'C_headlight'; else if (/head.?light|head_lights/i.test(n)) m.name = 'C_headlight';
     o.castShadow = true; o.receiveShadow = true; });
   EXTG[k] = g; }).catch(e => console.warn('vehicle model', k, e));
 Object.assign(VEH, {
