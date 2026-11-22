@@ -6696,7 +6696,7 @@ function renderTitle() {
   } else if (titleMode === 'credits') {
     h += '<div class="panel"><h3>Credits</h3><p>ColdShore prototype. Characters, zombies, vehicles, buildings, trees and animation built procedurally in Blender. Engine: three.js. Voices: your browser&#39;s speech engine.</p><p style="font-size:12px;opacity:.8">Vehicle and weapon models from BlendSwap, reduced for the browser: M1 Humvee by panko10 (CC-BY); Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0); Dodge Challenger 1970 R/T; Low Quality Weapon Pack (CC0).</p><div class="btns"><span class="btn" data-m="back">Back</span></div></div>';
   }
-  h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 50</div>';
+  h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 51</div>';
   titleEl.innerHTML = h; titleEl.classList.add('on');
   titleEl.querySelectorAll('[data-m]').forEach(a => a.onclick = () => titleAction(a.dataset.m));
   titleEl.querySelectorAll('[data-k]').forEach(a => a.onclick = () => pickBg(a.dataset.k));
@@ -6754,7 +6754,7 @@ function renderPause() {
   });
 }
 function pauseTick() {
-  const want = state === 'play' && wasLocked && !locked && !lockFailed && !reading && !mapOpen && !HV.mode;
+  const want = state === 'play' && wasLocked && !locked && !lockFailed && !reading && !mapOpen && !HV.mode && !PR.menu && !(NET.ui && NET.ui.classList.contains('on'));
   if (want && !pauseEl.classList.contains('on')) { renderPause(); pauseEl.classList.add('on'); }
   if (!want && pauseEl.classList.contains('on')) pauseEl.classList.remove('on');
 }
@@ -8315,12 +8315,18 @@ function netOpen() { if (!NET.ui) { NET.ui = document.createElement('div'); NET.
 #netui .cols{display:grid;grid-template-columns:1.1fr 1fr;gap:20px}#netui .card{border:1px solid #26343a;border-radius:8px;padding:12px 14px;margin:8px 0;background:rgba(255,255,255,.02)}#netui .card.story{border-color:#6b5a2a;background:rgba(233,196,106,.05)}
 #netui .tag{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#e9c46a}#netui .muted{color:#7f8f8f;font-size:12px}#netui .res{display:flex;gap:14px;flex-wrap:wrap;margin:6px 0}#netui .res b{color:#fff}
 #netui table{width:100%;border-collapse:collapse}#netui td{padding:5px 4px;border-bottom:1px solid #1c272b;font-size:13px}#netui .log{font-size:12px;color:#9aa8a8;max-height:120px;overflow:auto}#netui .code{font:700 26px Consolas,monospace;letter-spacing:.3em;color:#9fd6e6}
-#netui .pl{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border-radius:12px;background:#1b2a30;font-size:12px}#netui .pl.r{background:#24402a}`; document.head.appendChild(st); }
+#netui .b.back{position:sticky;top:0;float:right;margin:0 0 6px 12px;z-index:2;border-color:#9fd6e6;background:#10222a}#netui .pl{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border-radius:12px;background:#1b2a30;font-size:12px}#netui .pl.r{background:#24402a}`; document.head.appendChild(st); }
   NET.ui.classList.add('on'); try { document.exitPointerLock(); } catch (e) {} netUI(); }
 function netClose() { if (NET.ui) NET.ui.classList.remove('on'); }
 function esc_(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function netBackAction() {   // what Back / Esc does on each crew screen
+  const sc = NET.screen; if (sc === 'game' && !NET.worldReady) return null;
+  if (NET.worldReady && (sc === 'crew' || sc === 'results' || sc === 'game')) return ['toworld', NET.mission ? 'Back to the mission' : 'Back to Haven'];
+  if (sc === 'crew') return ['tocrews', 'Back to crews']; if (sc === 'crews') return ['back', 'Back to title']; if (sc === 'connect') return ['back', 'Back to title']; if (sc === 'results') return ['tocrew', 'Back']; return null; }
+function netBack() { const b = netBackAction(); if (!b) return; const el = NET.ui && NET.ui.querySelector('[data-a="' + b[0] + '"]'); if (el) el.click(); }
+document.addEventListener('keydown', e => { if (e.code !== 'Escape' || !NET.ui || !NET.ui.classList.contains('on')) return; if (document.activeElement && document.activeElement.tagName === 'INPUT') { document.activeElement.blur(); return; } e.preventDefault(); e.stopImmediatePropagation(); netBack(); }, true);
 function netUI() {
-  if (!NET.ui) return; const C = NET.crew; let h = '<div class="box"><h2>COLD<span>SHORE</span> ONLINE</h2><div class="sub">Salt &amp; Signal · co-op for up to 6</div>';
+  if (!NET.ui) return; const C = NET.crew, bk = netBackAction(); let h = '<div class="box">' + (bk ? '<span class="b back" data-a="' + bk[0] + '">← ' + bk[1] + ' <span class="muted">Esc</span></span>' : '') + '<h2>COLD<span>SHORE</span> ONLINE</h2><div class="sub">Salt &amp; Signal · co-op for up to 6</div>';
   const msgs = NET.msgs.slice(-3).map(x => '<div class="muted">' + esc_(x.m) + '</div>').join('');
   if (NET.screen === 'connect') {
     let nm = ''; try { nm = localStorage.getItem('cs_net_name') || ''; } catch (e) {}
@@ -8336,7 +8342,7 @@ function netUI() {
     const B = { walls: 'Walls', tower: 'Watchtower', workshop: 'Workshop', infirmary: 'Infirmary', garage: 'Garage', farm: 'Farm', radio: 'Radio' };
     const BD = { walls: 'fewer get in during sieges', tower: 'gunners on the walls', workshop: '+6% weapon damage', infirmary: '+10 health, bandages', garage: 'tougher convoy truck', farm: 'food while you are offline', radio: 'new chapters and towns' };
     h += '<div style="display:flex;justify-content:space-between;align-items:flex-end"><div><div class="tag">Crew · chapter ' + C.ch + '</div><div style="font:700 20px Segoe UI">' + esc_(C.name) + '</div><div class="muted">' + C.done + ' missions done · ' + C.fails + ' failed</div></div><div style="text-align:right"><div class="muted">Invite code</div><div class="code">' + C.code + '</div></div></div>' +
-      '<div style="margin:10px 0">' + C.online.map(p => '<span class="pl' + (p.ready ? ' r' : '') + '">' + esc_(p.name) + (p.pid === NET.pid ? ' (you)' : '') + (p.ready ? ' ✓' : '') + '</span>').join('') + '</div>' +
+      '<div style="margin:10px 0">' + C.online.map(p => '<span class="pl' + (p.ready ? ' r' : '') + '">' + esc_(p.name) + (p.pid === NET.pid ? ' (you)' : '') + (p.op ? ' · out on ' + esc_(((C.ops || []).find(o => o.id === p.op) || {}).name || 'an op') : ' · at Haven') + '</span>').join('') + '</div>' +
       '<div class="cols"><div><h3>Operations <span class="muted">' + (C.ops || []).length + ' of ' + (C.maxOps || 3) + ' squads out</span></h3>' + (C.ops || []).map(o => '<div class="card story"><div class="tag">' + esc_(o.type) + ' · threat ' + o.threat + '</div><b>' + esc_(o.name) + '</b> <span class="muted">' + esc_(o.stage) + '</span><div class="muted">Squad: ' + o.squad.map(esc_).join(', ') + (o.bonus ? ' · ' + esc_(o.bonus) : '') + '</div>' + (!o.full && !(C.online.find(q => q.pid === NET.pid) || {}).op ? '<span class="b gold" data-a="joinop" data-o="' + o.id + '">Join this squad</span>' : '') + '</div>').join('') +
       '<div class="muted" style="margin:6px 0 2px">Go wherever you like: deploy on any contract, join any squad that is out, or stay home. The map (M) shows every contract and squad.</div>' +
       C.board.map(m => '<div class="card' + (m.story ? ' story' : '') + '"><div class="tag">' + (m.story ? 'Story · chapter ' + m.ch : m.type) + (m.night ? ' · night' : '') + '</div><b>' + esc_(m.name) + '</b> <span class="muted">' + esc_(m.town) + '</span>' + (m.brief ? '<div class="muted" style="margin:4px 0">' + esc_(m.brief) + '</div>' : '') + (m.warn ? '<div class="muted" style="color:#e98a6a">' + esc_(m.warn) + '</div>' : '') +
@@ -8370,6 +8376,7 @@ function netUI() {
     else if (A === 'leave') { netSend({ t: 'crew.leave' }); NET.screen = 'crews'; NET.crew = null; netUI(); }
     else if (A === 'chat') { const v = q('#chat').value.trim(); if (v) netSend({ t: 'chat', m: v }); }
     else if (A === 'tocrew') { NET.screen = 'crew'; netUI(); }
+    else if (A === 'tocrews') { NET.screen = 'crews'; netUI(); }
     else if (A === 'toworld') { netClose(); NET.screen = 'game'; lock(); }
   });
   const ci = q('#chat'); if (ci) ci.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter' && ci.value.trim()) { netSend({ t: 'chat', m: ci.value.trim() }); ci.value = ''; } };
@@ -8466,8 +8473,12 @@ function netPuppetDied(z) { if (z.nhp > 0) NET.hits.push([z.nid, +(z.nhp).toFixe
 function netRemote(pid) { let r = NET.RP.get(pid); if (r) return r; const who = NET.crew && NET.crew.online.find(p => p.pid === pid);
   r = { pid, x: 0, y: 0, a: 0, s: null, m: null, name: who ? who.name : 'Teammate', look: who ? who.look : 'PM1', proxy: null, fireT: 0 };
   r.proxy = { x: 0, y: 0, lv: 0, r: 12, iframe: 0, pid, drv: false }; NET.RP.set(pid, r);
-  loadLook(r.look).then(() => { if (!NET.RP.has(pid)) return; r.m = buildPerson(r.look); if (r.m.userData.hand) { r.gun = makeGun(true); r.m.userData.hand.add(r.gun); } world3.add(r.m); r.tag = netTag(r.name); r.m.add(r.tag); });
-  return r; }
+  netRemoteModel(r); return r; }
+function netRemoteModel(r, tries) {   // build a teammate's body; if their look won't load, fall back to a stock one (an unbuildable look used to leave them invisible)
+  tries = tries || 0; const ok = LOOKS.some(l => l.id === r.look) || /^[A-Z][A-Z0-9]{1,4}$/.test(r.look || ''), look = ok ? r.look : 'PM1';
+  loadLook(look).then(() => { if (!NET.RP.has(r.pid) || r.m) return; let m = null;
+    try { if (!PG[look]) throw new Error('look ' + look + ' not loaded'); m = buildPerson(look); } catch (e) { console.warn('teammate model', look, e); if (look !== 'PM1') { r.look = 'PM1'; return netRemoteModel(r, tries + 1); } if (tries < 3) return setTimeout(() => netRemoteModel(r, tries + 1), 3000); return; }
+    r.m = m; if (m.userData.hand) { r.gun = makeGun(true); m.userData.hand.add(r.gun); } world3.add(m); r.tag = netTag(r.name); m.add(r.tag); }); }
 function netTag(name) { const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64; const g = cv.getContext('2d'); g.font = '600 30px Segoe UI, Arial'; g.textAlign = 'center'; g.fillStyle = 'rgba(0,0,0,.5)'; g.fillRect(28, 12, 200, 40); g.fillStyle = '#9fe0ff'; g.fillText(name, 128, 43);
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false, transparent: true })); sp.scale.set(1.2, .3, 1); sp.position.y = 2.15; sp.renderOrder = 999; return sp; }
 function netDropRemote(pid) { const r = NET.RP.get(pid); if (!r) return; if (r.m) world3.remove(r.m); NET.RP.delete(pid); }
@@ -9114,7 +9125,7 @@ function havenUI() {
 #hvui .fx{font-size:12px;padding:8px 10px;border-left:2px solid rgba(255,255,255,.15);margin:4px 0;color:#9aa8a8}#hvui .fx.n{border-color:#7fe0a0;color:#c8f0d4;background:rgba(127,224,160,.06)}#hvui .fx small{display:block;font-size:9px;letter-spacing:.2em;text-transform:uppercase;opacity:.7;margin-bottom:2px}
 #hvui .cost{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}#hvui .cost span{padding:5px 9px;border-radius:3px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-size:13px}#hvui .cost span.no{border-color:#c0504a;color:#ff9a90;background:rgba(192,80,74,.1)}#hvui .cost i{font-style:normal;color:#e9c46a;margin-right:5px}
 #hvui .lock{color:#ff9a90;font-size:12px;margin:6px 0}#hvui .go{display:flex;align-items:center;gap:14px;margin-top:16px;cursor:pointer;user-select:none}#hvui .go svg{width:62px;height:62px}#hvui .go .l{font:800 13px 'Segoe UI';letter-spacing:.2em}#hvui .go .l small{display:block;font-weight:400;font-size:10px;color:#8fa0a0;letter-spacing:.16em;margin-top:3px}#hvui .go.dis{opacity:.35;cursor:default}
-#hvui .hint{position:absolute;left:34px;top:112px;font-size:11px;letter-spacing:.18em;color:#8fa0a0;text-transform:uppercase}#hvui .hint b{color:#eef2ee;border:1px solid rgba(255,255,255,.3);border-radius:3px;padding:1px 6px;margin:0 3px;font-weight:600}
+#hvui .hvback{position:absolute;left:34px;top:140px;pointer-events:auto;cursor:pointer;padding:7px 14px;border:1px solid rgba(255,255,255,.35);border-radius:6px;background:rgba(0,0,0,.45);font-size:12px;letter-spacing:.14em;text-transform:uppercase}#hvui .hvback:hover{border-color:#e9c46a;color:#ffe7a8}#hvui .hint{position:absolute;left:34px;top:112px;font-size:11px;letter-spacing:.18em;color:#8fa0a0;text-transform:uppercase}#hvui .hint b{color:#eef2ee;border:1px solid rgba(255,255,255,.3);border-radius:3px;padding:1px 6px;margin:0 3px;font-weight:600}
 #hvui .ban{position:absolute;left:50%;top:22%;transform:translateX(-50%);text-align:center;animation:hvBan 3.6s ease-out forwards}#hvui .ban .k{font-size:12px;letter-spacing:.4em;color:#e9c46a}#hvui .ban .n{font:800 44px 'Segoe UI';letter-spacing:.16em;text-shadow:0 4px 30px rgba(0,0,0,.8)}#hvui .ban .f{color:#c8f0d4;font-size:14px;margin-top:4px}#hvui .ban hr{border:0;height:2px;width:260px;margin:10px auto;background:linear-gradient(90deg,transparent,#e9c46a,transparent)}
 @keyframes hvBan{0%{opacity:0;transform:translate(-50%,10px) scale(.96)}10%{opacity:1;transform:translate(-50%,0) scale(1)}80%{opacity:1}100%{opacity:0}}`;
     document.head.appendChild(st); }
@@ -9133,10 +9144,10 @@ function havenUIDraw() {
     for (const [b, n] of can.lock) h += '<div class="lock">🔒 Needs ' + (HVB.find(x => x.k === b) || { n: b }).n + ' level ' + n + '</div>';
     const p = HV.hold, R = 26, C2 = 2 * Math.PI * R;
     h += '<div class="go' + (can.ok && !HV.pend ? '' : ' dis') + '" id="hvgo"><svg viewBox="0 0 62 62"><circle cx="31" cy="31" r="' + R + '" fill="rgba(0,0,0,.35)" stroke="rgba(255,255,255,.15)" stroke-width="4"/><circle id="hvring" cx="31" cy="31" r="' + R + '" fill="none" stroke="#e9c46a" stroke-width="4" stroke-linecap="round" stroke-dasharray="' + C2 + '" stroke-dashoffset="' + C2 * (1 - p) + '" transform="rotate(-90 31 31)"/><text x="31" y="37" text-anchor="middle" fill="#fff" font-size="15" font-weight="800">' + (HV.pend ? '…' : '⏎') + '</text></svg><div class="l">' + (HV.pend ? 'BUILDING' : can.ok ? 'HOLD SPACE TO BUILD' : can.lock.length ? 'LOCKED' : 'NOT ENOUGH') + '<small>' + (can.ok ? 'or hold the button' : 'bring more back from missions') + '</small></div></div>'; }
-  h += '</div><div class="hint"><b>A</b><b>D</b> choose &nbsp; <b>SPACE</b> hold to build &nbsp; <b>ESC</b> back</div>';
+  h += '</div><div class="hint"><b>A</b><b>D</b> choose &nbsp; <b>SPACE</b> hold to build &nbsp; <b>ESC</b> back</div><div class="hvback" id="hvback">← Back</div>';
   if (HV.ban && performance.now() - HV.ban.t < 3600) h += '<div class="ban"><div class="k">CONSTRUCTION COMPLETE</div><div class="n">' + HV.ban.n + '</div><hr><div class="f">' + HV.ban.f + '</div></div>';
   HV.ui.innerHTML = h;
-  HV.ui.querySelectorAll('.cd').forEach(c => c.onclick = () => { havenSel(+c.dataset.i); });
+  HV.ui.querySelectorAll('.cd').forEach(c => c.onclick = () => { havenSel(+c.dataset.i); }); { const hb = HV.ui.querySelector('#hvback'); if (hb) hb.onclick = () => havenClose(); }
   const go = HV.ui.querySelector('#hvgo'); if (go) { go.onmousedown = () => { HV.mouseHold = true; }; go.onmouseup = go.onmouseleave = () => { HV.mouseHold = false; }; }
 }
 function havenSel(i) { HV.sel = (i + HVB.length) % HVB.length; HV.hold = 0; HV.camT = 0; HV.cp0 = HV.cp ? HV.cp.clone() : null; click(1200, .25); havenUIDraw(); }
@@ -9705,7 +9716,7 @@ function seatHUD() { if (state !== 'play') return; const c = SEAT.car; ctx.save(
    - The give menu (.) hands over bandages, ammo, the gun in your hands, or supplies.                                                     */
 function netClock(o, ts) { const now = performance.now(); if (!isFinite(ts)) return now; const off = now - ts; o.off = o.off === undefined ? off : Math.min(off, o.off + 1); o.jit = Math.max(now - (ts + o.off), (o.jit || 0) * .985); return Math.min(now, ts + o.off); }
 function netDelay(o) { return clamp(60 + (o.jit || 0) * 1.15, 90, 350); }
-function netRemoteState(pid, s) { const r = netRemote(pid), t = netClock(r, s.ts); const first = !r.s; r.s = s;
+function netRemoteState(pid, s) { const r = netRemote(pid), t = netClock(r, s.ts); const first = !r.s || performance.now() - (r.lastT || 0) > 4000; r.s = s; r.lastT = performance.now(); if (first) r.buf = [];
   r.buf = r.buf || []; if (r.buf.length && t <= r.buf[r.buf.length - 1].t) r.buf.pop(); r.buf.push({ t, x: s.x, y: s.y, yaw: s.yaw, lv: (s.lvf !== undefined ? s.lvf : s.lv | 0) }); if (r.buf.length > 12) r.buf.shift();
   if (first) { r.x = s.x; r.y = s.y; r.head = s.yaw; }
   Object.assign(r.proxy, { x: s.x, y: s.y, lv: s.lv | 0, drv: seatDrv(s.drv) || (seatDrv(s.seat) && s.sk === 'ride') }); }
@@ -9718,7 +9729,7 @@ function netSample(buf, rt) {   // position at render time rt: between the two s
   return { x: b.x + (b.x - a.x) * k, y: b.y + (b.y - a.y) * k, lv: b.lv, yaw: b.yaw }; }
 function netRemoteTick(dt) {
   const now_ = performance.now();
-  for (const r of NET.RP.values()) { const s = r.s; if (!s || !r.m) continue; const px = r.x, py = r.y;
+  for (const r of NET.RP.values()) { const s = r.s; if (!s || !r.m) continue; if (r.m.parent !== world3) world3.add(r.m); const px = r.x, py = r.y;
     const q = netSample(r.buf || [], now_ - netDelay(r)) || s;
     if (Math.hypot(q.x - r.x, q.y - r.y) > 300) { r.x = q.x; r.y = q.y; } else { const k = Math.min(1, dt * 20); r.x += (q.x - r.x) * k; r.y += (q.y - r.y) * k; }
     const vx = (r.x - px) / Math.max(dt, 1e-3), vy = (r.y - py) / Math.max(dt, 1e-3), spRaw = Math.hypot(vx, vy);
@@ -9726,7 +9737,7 @@ function netRemoteTick(dt) {
     // face where they walk; face where they aim while shooting, aiming or standing still
     let want = s.yaw, back = false; if (r.sp > 12) { const mv = Math.atan2(vy, vx); let d0 = mv - s.yaw; d0 = Math.atan2(Math.sin(d0), Math.cos(d0)); back = Math.abs(d0) > 1.95; if (!back && !(r.fireT > 0) && !s.aim) want = mv; }
     if (r.head === undefined) r.head = want; let dh = want - r.head; dh = Math.atan2(Math.sin(dh), Math.cos(dh)); r.head += dh * Math.min(1, dt * 10);
-    r.m.visible = !seatDrv(s.drv) && !seatDrv(s.seat) && Math.abs(r.x - P.x) < 2500 && Math.abs(r.y - P.y) < 2500;
+    r.m.visible = NET.worldReady && now_ - (r.lastT || 0) < 4000 && !seatDrv(s.drv) && !seatDrv(s.seat) && Math.abs(r.x - P.x) < 2500 && Math.abs(r.y - P.y) < 2500;
     const lv = q.lv !== undefined ? q.lv : (s.lv | 0); r.m.position.set(r.x * S3, lv * 3.1, r.y * S3); r.m.rotation.y = -r.head;
     const u = r.m.userData; let an = 'Idle', ts = 1;
     if (s.down) an = 'Down'; else if (r.fireT > 0) an = 'Fire';
