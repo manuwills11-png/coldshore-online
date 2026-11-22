@@ -4161,6 +4161,7 @@ function setQuality(n, auto) {
   if (auto && toasts) toast('Framerate low: graphics set to ' + ['LOW', 'MEDIUM', 'HIGH'][quality]);
 }
 function renderFrame(dt) {
+  if (!TPROPS.done && HPG && state === 'play') { try { townDress(); } catch (e) { console.warn('town props', e); TPROPS.done = true; } } townPropsTick();
   if (quality >= 1 && composer) {
     const u = finalPass.uniforms; u.time.value = elapsed; u.hurt.value = Math.min(1, flash * 3); u.low.value = (P && P.hp < 35) ? 1 : 0; u.res.value.set(VW, VH);
     composer.render(dt);
@@ -6732,7 +6733,7 @@ function renderTitle() {
   } else if (titleMode === 'credits') {
     h += '<div class="panel"><h3>Credits</h3><p>ColdShore prototype. Characters, zombies, vehicles, buildings, trees and animation built procedurally in Blender. Engine: three.js. Voices: your browser&#39;s speech engine.</p><p style="font-size:12px;opacity:.8">Models from BlendSwap, reduced for the browser: M1 Humvee by panko10 (CC-BY); Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0); Ford Crown Victoria Police Interceptor 2005 (CC-BY 3.0); Mercedes-AMG GLS (CC0); BMW 3 Series Coupe by mikepan (CC-BY-SA 3.0); Trees &amp; Bushes pack by Painkiller5555; Dodge Challenger 1970 R/T; Low Quality Weapon Pack (CC0).</p><div class="btns"><span class="btn" data-m="back">Back</span></div></div>';
   }
-  h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 58</div>';
+  h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 59</div>';
   titleEl.innerHTML = h; titleEl.classList.add('on');
   titleEl.querySelectorAll('[data-m]').forEach(a => a.onclick = () => titleAction(a.dataset.m));
   titleEl.querySelectorAll('[data-k]').forEach(a => a.onclick = () => pickBg(a.dataset.k));
@@ -9582,6 +9583,7 @@ function havenBuild(B, grow) {
     const seg = 3; if (!rad) for (let k = 0; k * seg < hh; k++) { for (const [dx, dz] of [[-1, -1], [1, -1], [0, 1]]) hvBox(P_, H.steel, .07, seg, .07, hx(x) + dx * .35, k * seg + seg / 2, hz(y) + dz * .35); hvBox(P_, H.steel, .8, .05, .05, hx(x), k * seg + seg, hz(y) - .35); }
     if (L && !rad) { const dish = new THREE.Mesh(new THREE.SphereGeometry(.7, 12, 6, 0, 6.283, 0, 1.1), H.frame); dish.rotation.x = -1.2; dish.position.set(hx(x) + .4, hh * .7, hz(y)); P_.add(dish); }
     const tip = hvBox(P_, H.redL, .18, .18, .18, hx(x), hh + (rad && L ? 2.5 : .2), hz(y), 0, false); HV.blink.push({ o: tip, rate: 1.2 }); if (!rad) hvBox(P_, H.steel, 1, .9, .7, hx(x) + 1, .45, hz(y) + .6); hvWall(P_, x - 20, y - 20, 40, 40, null, hh); }
+  try { havenDress(B); } catch (e) { console.warn('haven dress', e); }
   try { havenMerge(g); } catch (e) { console.warn('haven merge', e); }
   if (typeof havenBuildFx === 'function' && grow && HV.parts[grow]) havenBuildFx(grow);
 }
@@ -10789,6 +10791,116 @@ function netMsg58(m) {
 giveGot = giveGot58;
 giveNearest = function () { if (!NET.on) { toast('Giving works online, next to a teammate.'); return; } let best = null, bd = 130; for (const r of NET.RP.values()) { if (!r.s || r.s.down) continue; const d = Math.hypot(r.x - P.x, r.y - P.y); if (d < bd) { bd = d; best = r; } }
   if (!best) { toast('Stand next to a teammate to give them something.'); return; } bagOpen(best); };
+/* ======================= BUILD 59: PROPS (props.json, modelled in Blender by tools/props_blend.py) =======================
+   Haven gets a lived-in camp: gate lookouts and HESCO walls, a jersey-barrier chicane outside the gate, a mess hall by the plaza,
+   a container store yard, a water tower, woodpiles, lean-tos, outhouses, burn barrels, picnic tables, shelving, scrap and lamps.
+   Every county town gets the aftermath: burnt-out cars at the kerb, rubbish bags, rubble, abandoned luggage, shopping carts,
+   bus shelters, benches, news boxes, a phone booth, a police roadblock on the way in, a billboard, and relief camps in three towns.
+   Town props are instanced per town (a handful of draw calls each) and culled by town; the big ones block like walls. */
+let HPG = null; const HPPROTO = {};
+function hpPrep(g) { g.scene.traverse(o => { if (!o.isMesh) return; const m = o.material; o.castShadow = true; o.receiveShadow = true; m.metalness = Math.min(m.metalness, .35); m.roughness = Math.max(m.roughness, .4);
+    if (/HV_glass/.test(m.name)) { m.transparent = true; m.opacity = .35; m.depthWrite = false; m.side = THREE.DoubleSide; }
+    if (/HV_(canvas|tarp|wire|net|tentW|galv)/.test(m.name) || o.geometry.attributes.position.count < 400) m.side = THREE.DoubleSide; if (/HV_bulb/.test(m.name)) { m.emissiveIntensity = 2; } }); }
+function hpProto(name) {   // the meshes of one prop with their transforms relative to its root
+  if (HPPROTO[name]) return HPPROTO[name]; const src = HPG && HPG.scene.getObjectByName(name); if (!src) return null; src.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(src.matrixWorld).invert(), parts = []; src.traverse(o => { if (o.isMesh) { o.geometry.computeBoundingBox(); parts.push({ geo: o.geometry, mat: o.material, local: new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld) }); } });
+  return HPPROTO[name] = parts; }
+function hpClone(name, P_, x, y, ry, y0) { const src = HPG && HPG.scene.getObjectByName(name); if (!src) return null; const o = src.clone(true); o.position.set(hx(x), y0 || 0, hz(y)); o.rotation.y = ry || 0; P_.add(o); return o; }
+/* ---------- Haven ---------- */
+function havenDress(B) {
+  if (!HPG || !HV.rec) return; const R = HVR, gx = HVGATE.x, P_ = havenPart('dress'), rec = HV.rec, placed = [];
+  const paths = [{ x: gx - 95, y: R.y0 - 400, w: 190, h: 1550 }, { x: R.x0 + 75, y: 3475, w: R.x1 - R.x0 - 150, h: 150 }];
+  const hit = (x0, y0, x1, y1) => rec.walls.some(w => x0 < w.x + w.w && x1 > w.x && y0 < w.y + w.h && y1 > w.y) || placed.some(w => x0 < w.x1 && x1 > w.x0 && y0 < w.y1 && y1 > w.y0) || paths.some(w => x0 < w.x + w.w && x1 > w.x && y0 < w.y + w.h && y1 > w.y);
+  const inside = (x0, y0, x1, y1) => x0 > R.x0 + 45 && x1 < R.x1 - 45 && y0 > R.y0 + 45 && y1 < R.y1 - 45;
+  // put a prop if its footprint (w x h game units, after turning) is clear; solid ones block like walls
+  const put = (name, x, y, ry, w, h, solid, out, hgt) => { const q = Math.round((ry || 0) / (Math.PI / 2)) % 2 !== 0, fw = q ? h : w, fh = q ? w : h, x0 = x - fw / 2, y0 = y - fh / 2;
+    if (hit(x0 - 8, y0 - 8, x0 + fw + 8, y0 + fh + 8) || (!out && !inside(x0, y0, x0 + fw, y0 + fh))) return false; if (!hpClone(name, P_, x, y, ry)) return false;
+    placed.push({ x0, y0, x1: x0 + fw, y1: y0 + fh }); if (solid) hvWall(P_, x0, y0, fw, fh, null, hgt || 2); return true; };
+  const firstFree = (name, cands, ry, w, h, solid, hgt) => { for (const [x, y] of cands) if (put(name, x, y, ry, w, h, solid, false, hgt)) return [x, y]; return null; };
+  const grid = (x0, y0, x1, y1, st) => { const out = []; for (let y = y0; y <= y1; y += st) for (let x = x0; x <= x1; x += st) out.push([x, y]); return out; };
+  const lv = Object.values(B).reduce((a, b) => a + (b | 0), 0);
+  // the gate: lookouts either side inside, HESCO walls and a jersey chicane outside
+  put('HP_lookout', gx - 175, R.y0 + 85, 0, 62, 62, true, false, 4.4); put('HP_lookout', gx + 175, R.y0 + 85, Math.PI, 62, 62, true, false, 4.4);
+  for (const s of [-1, 1]) put('HP_hesco', gx + s * 205, R.y0 - 40, 0, 68, 24, true, true, 1.3);
+  put('HP_jersey', gx - 60, R.y0 - 150, 0, 62, 14, true, true, .8); put('HP_jersey', gx + 60, R.y0 - 230, 0, 62, 14, true, true, .8); put('HP_jersey', gx - 60, R.y0 - 310, 0, 62, 14, true, true, .8);
+  put('HP_signpost', gx + 125, R.y0 - 120, 0, 10, 10, false, true);
+  // a mess hall by the plaza, a container yard, a water tower
+  firstFree('HP_messhall', [[gx + 300, 3760], [gx - 330, 3760], [gx + 330, 3380], [gx - 420, 3380], ...grid(R.x0 + 200, R.y0 + 200, R.x1 - 200, R.y1 - 160, 90)], 0, 205, 125, true, 3.6);
+  const cont = ['HP_container_b', 'HP_container_r', 'HP_container_g', 'HP_container_y'], nC = 2 + Math.min(4, Math.floor(lv / 4)); let c0 = null;
+  for (let i = 0; i < nC; i++) { const at = firstFree(cont[i % 4], grid(R.x0 + 120, R.y0 + 90, R.x1 - 120, R.y1 - 90, 60).sort((a, b) => Math.hypot(a[0] - (c0 ? c0[0] : R.x0), a[1] - (c0 ? c0[1] : R.y0)) - Math.hypot(b[0] - (c0 ? c0[0] : R.x0), b[1] - (c0 ? c0[1] : R.y0))), 0, 125, 52, true, 2.6); if (at && !c0) c0 = at;
+    if (at && i === 1 && lv >= 6) hpClone(cont[3], P_, at[0], at[1], 0, 2.6); }
+  if (c0) { firstFree('HP_drums', grid(c0[0] - 160, c0[1] - 140, c0[0] + 160, c0[1] + 140, 40), 0, 50, 40, true, 1); firstFree('HP_pallets', grid(c0[0] - 180, c0[1] - 160, c0[0] + 180, c0[1] + 160, 40), 0, 70, 40, true, 1.2); firstFree('HP_shelves', grid(c0[0] - 180, c0[1] - 160, c0[0] + 180, c0[1] + 160, 40), 0, 60, 40, true, 2.4); }
+  firstFree('HP_watertower', [[R.x1 - 90, R.y1 - 90], [R.x1 - 90, (R.y0 + R.y1) / 2], [R.x0 + 90, R.y1 - 90], ...grid(R.x0 + 100, R.y0 + 100, R.x1 - 100, R.y1 - 100, 80).reverse()], 0, 68, 68, true, 8);
+  // living clutter: woodpile, outhouses, lean-tos, picnic tables, burn barrels, a scrap heap and tyres by the workshop
+  const near = (cx, cy, r) => grid(cx - r, cy - r, cx + r, cy + r, 35).sort((a, b) => Math.hypot(a[0] - cx, a[1] - cy) - Math.hypot(b[0] - cx, b[1] - cy));
+  firstFree('HP_woodpile', near(gx - 260, 3700, 400), 0, 100, 40, true, 2); for (let i = 0; i < 2; i++) firstFree('HP_outhouse', near(R.x0 + 120, R.y1 - 120, 500), Math.PI, 30, 30, true, 2.2);
+  for (let i = 0; i < 2 + Math.min(2, B.housing | 0); i++) firstFree('HP_leanto', near(R.x0 + 400, 3800, 600), (i % 2) * Math.PI, 60, 50, true, 1.8);
+  for (let i = 0; i < 3; i++) firstFree('HP_picnic', near(gx + (i - 1) * 200, 3700, 260), 0, 42, 36, true, .8);
+  for (const [x, y] of [[gx - 180, 3650], [gx + 180, 3420], [R.x0 + 300, 3900], [gx + 420, 3700]]) { const at = firstFree('HP_burnbarrel', near(x, y, 160), 0, 16, 16, true, 1); if (at) { const fl = new THREE.Mesh(new THREE.ConeGeometry(.22, .6, 6), HM().fire || new THREE.MeshBasicMaterial({ color: 0xff8a3a })); fl.position.set(hx(at[0]), 1.15, hz(at[1])); P_.add(fl); HV.glow.push(fl); const gl = glowS(0xff8a3a, 1.8); gl.position.set(hx(at[0]), 1.3, hz(at[1])); P_.add(gl); HV.glow.push(gl); } }
+  firstFree('HP_scrap', near(gx + 420, R.y0 + 360, 420), 0, 70, 60, true, 1.2); firstFree('HP_tires', near(gx + 520, R.y0 + 380, 420), 0, 60, 30, true, 1.2);
+  if ((B.workshop | 0) >= 2) firstFree('HP_scrap', near(gx + 560, R.y0 + 420, 420), Math.PI / 2, 70, 60, true, 1.2);
+  // lamps along the paths (they light up with power), a signpost at the crossroads
+  put('HP_signpost', gx + 115, 3640, 0, 10, 10, false); if ((B.power | 0) >= 1) for (let i = 0; i < 4; i++) { put('HP_lampm', gx - 110, R.y0 + 300 + i * 280, 0, 12, 12, false); put('HP_lampm', R.x0 + 300 + i * 500, 3460, 0, 12, 12, false); }
+}
+/* ---------- towns ---------- */
+const TPROPS = { done: false, groups: [], rec: { walls: [] } };
+function townDress() {
+  if (TPROPS.done || !HPG || !world3 || !colGrid || !roads || !roads.length) return; TPROPS.done = true; const t0 = performance.now();
+  const list = {}; TPROPS.dbg = []; const add = (name, x, y, ry, y0) => { (list[name] = list[name] || []).push([x, y, ry || 0, y0 || 0]); TPROPS.dbg.push({ n: name, x: Math.round(x), y: Math.round(y) }); };
+  const onRoad = (x, y, m) => roads.some(q => x > q.x - m && x < q.x + q.w + m && y > q.y - m && y < q.y + q.h + m);
+  const inHouse = (x, y, m) => houses.some(q => x > q.x - m && x < q.x + q.w + m && y > q.y - m && y < q.y + q.h + m);
+  const ok = (x, y, r) => !isWater(x, y) && !inHouse(x, y, r) && spotFree(x, y, 0, r) && !(x > HVR.x0 - 300 && x < HVR.x1 + 300 && y > HVR.y0 - 500 && y < HVR.y1 + 300);
+  const block = (x, y, w, h, hgt) => intColAdd({ x: x - w / 2, y: y - h / 2, w, h }, TPROPS.rec);
+  let seed = 59; const rnd_ = () => (seed = (seed * 16807) % 2147483647) / 2147483647, pk = a => a[Math.floor(rnd_() * a.length)];
+  const BILL = [['EVACUATE', 'ROUTE 9 · EAST', '#c8281e'], ['STAY INDOORS', 'HELP IS COMING', '#1f3a5a'], ['HALDEN BIOMEDICAL', 'A HEALTHIER TOMORROW', '#2a6a5a'], ['BOIL ALL WATER', 'BY ORDER OF THE COUNTY', '#6a4a1a']];
+  const camps = new Set(['MILLBROOK', 'FAIRHAVEN', 'SEAVIEW']);
+  for (const T of TOWNS) {
+    const tr = roads.filter(q => !q.lot && Math.hypot(q.x + q.w / 2 - T.x, q.y + q.h / 2 - T.y) < T.r + Math.max(q.w, q.h) / 2);
+    if (!tr.length) continue;
+    const along = (q, f, side, off) => { const hor = q.w > q.h; return hor ? [q.x + q.w * f, side < 0 ? q.y - off : q.y + q.h + off, 0] : [side < 0 ? q.x - off : q.x + q.w + off, q.y + q.h * f, Math.PI / 2]; };
+    const inT = ([x, y]) => Math.hypot(x - T.x, y - T.y) < T.r;
+    // burnt-out cars against the kerb (inside the road, along it)
+    const big = T.r > 1400 ? 1.6 : 1; for (let i = 0, n = 0; i < 120 && n < Math.round(6 * big); i++) { const q = pk(tr), hor = q.w > q.h, side = rnd_() < .5 ? -1 : 1, f = .1 + rnd_() * .8, p = along(q, f, side, -26); if (!inT(p) || !spotFree(p[0], p[1], 0, 50)) continue; add('HP_burnt', p[0], p[1], p[2] + (rnd_() < .5 ? Math.PI : 0) + (rnd_() - .5) * .25); block(p[0], p[1], hor ? 84 : 36, hor ? 36 : 84); n++; }
+    // pavement life: a bus shelter, benches, news boxes, a phone booth, carts, bags, luggage, rubble
+    const pave = (name, r, n_, solid, w, h, off) => { for (let i = 0, n = 0; i < 60 && n < n_; i++) { const q = pk(tr), side = rnd_() < .5 ? -1 : 1, p = along(q, .1 + rnd_() * .8, side, off || 45); if (!inT(p) || !ok(p[0], p[1], r) || onRoad(p[0], p[1], 10)) continue;
+      const ry = p[2] + (side > 0 ? Math.PI : 0); add(name, p[0], p[1], ry); if (solid) { const v = Math.abs(Math.sin(ry)) > .5; block(p[0], p[1], v ? h : w, v ? w : h); } n++; } };
+    pave('HP_busstop', 40, Math.round(1 * big), true, 68, 36, 55); pave('HP_bench', 22, Math.round(4 * big), false); pave('HP_newsbox', 20, Math.round(2 * big), true, 30, 12); pave('HP_phone', 18, 1, true, 18, 18);
+    pave('HP_bags', 26, Math.round(10 * big), false, 0, 0, 40); pave('HP_luggage', 24, Math.round(4 * big), false, 0, 0, 40); pave('HP_cart', 16, Math.round(3 * big), false, 0, 0, 40);
+    for (let i = 0, n = 0; i < 120 && n < Math.round(6 * big); i++) { const a = rnd_() * 6.283, r = rnd_() * T.r, x = T.x + Math.cos(a) * r, y = T.y + Math.sin(a) * r; if (!ok(x, y, 40) || onRoad(x, y, 30)) continue; add('HP_rubble', x, y, rnd_() * 6.283); n++; }
+    for (let i = 0, n = 0; i < 120 && n < Math.round(8 * big); i++) { const h = pk(houses.filter(q => Math.hypot(q.x + q.w / 2 - T.x, q.y + q.h / 2 - T.y) < T.r) || [{ x: T.x, y: T.y, w: 1, h: 1 }]); if (!h) break; const x = h.x + (rnd_() < .5 ? -35 : h.w + 35), y = h.y + rnd_() * h.h; if (!ok(x, y, 28) || onRoad(x, y, 12)) continue; add('HP_bags', x, y, rnd_() * 6.283); n++; }
+    // a police roadblock on the way in: jersey barriers, sawhorses, a sandbag nest by the road
+    { let best = null; for (const q of tr) { const hor = q.w > q.h, L = hor ? q.w : q.h; for (let t = 40; t < L - 40; t += 60) { const x = hor ? q.x + t : q.x + q.w / 2, y = hor ? q.y + q.h / 2 : q.y + t, d = Math.hypot(x - T.x, y - T.y), sc = Math.abs(d - T.r * .78);
+          if (d > T.r * .4 && (!best || sc < best.sc)) best = { q, f: (hor ? x - T.x : y - T.y) > 0 ? 1 : 0, d, sc, hor, x: hor ? x : q.x + q.w / 2, y: hor ? q.y + q.h / 2 : y }; } }
+      if (best) { const { q, hor } = best, dir = best.f ? -1 : 1, pos = t => hor ? [best.x + dir * t, q.y + q.h / 2] : [q.x + q.w / 2, best.y + dir * t];
+        const wdt = hor ? q.h : q.w; [[60, -1], [170, 1]].forEach(([t, s_]) => { const [ax, ay] = pos(t), off = s_ * (wdt / 2 - 33), x = hor ? ax : ax + off, y = hor ? ay + off : ay; if (spotFree(x, y, 0, 20)) { add('HP_jersey', x, y, hor ? Math.PI / 2 : 0); block(x, y, hor ? 14 : 62, hor ? 62 : 14); } });
+        { const [bx, by] = pos(260), off = (wdt / 2 - 40), x = hor ? bx : bx - off, y = hor ? by - off : by; if (spotFree(x, y, 0, 20)) add('HP_sawhorse', x, y, hor ? Math.PI / 2 : 0); }
+        const [cx, cy] = pos(100), nx = hor ? cx : cx + (wdt / 2 + 70), ny = hor ? cy + (wdt / 2 + 70) : cy; if (ok(nx, ny, 50)) { add('HP_nest', nx, ny, hor ? 0 : Math.PI / 2); block(nx, ny, 60, 56); } } }
+    // a billboard on the edge of town, facing the road
+    for (let i = 0; i < 30; i++) { const q = pk(tr), side = rnd_() < .5 ? -1 : 1, p = along(q, rnd_() < .5 ? .05 : .95, side, 120); if (!ok(p[0], p[1], 70) || onRoad(p[0], p[1], 40)) continue; const ry = p[2] + (side > 0 ? Math.PI : 0);
+      add('HP_billboard', p[0], p[1], ry); for (const s of [-1, 1]) block(p[0] + Math.cos(ry) * s * 48, p[1] - Math.sin(ry) * s * 48, 10, 10); TPROPS.bills = TPROPS.bills || []; TPROPS.bills.push({ x: p[0], y: p[1], ry, b: BILL[(TOWNS.indexOf(T)) % BILL.length] }); break; }
+    // relief camps: tents in rows behind a fence of sawhorses, a container, supplies
+    if (camps.has(T.n)) { for (let i = 0; i < 80; i++) { const a = rnd_() * 6.283, r = T.r * (.35 + rnd_() * .5), x = T.x + Math.cos(a) * r, y = T.y + Math.sin(a) * r; let clear = true;
+        for (let dx = -260; dx <= 260 && clear; dx += 65) for (let dy = -200; dy <= 200 && clear; dy += 65) if (!ok(x + dx, y + dy, 20) || onRoad(x + dx, y + dy, 20)) clear = false; if (!clear) continue;
+        for (let k = 0; k < 4; k++) { const tx = x - 170 + (k % 2) * 200, ty = y - 90 + Math.floor(k / 2) * 150; add('HP_tent', tx + 50, ty, 0); block(tx + 50, ty, 120, 80); }
+        add('HP_container_b', x + 230, y + 10, Math.PI / 2); block(x + 230, y + 10, 52, 125); add('HP_drums', x + 160, y + 170, 0); add('HP_pallets', x - 230, y + 170, 0);
+        for (let k = -3; k <= 3; k++) if (k) add('HP_sawhorse', x + k * 60, y - 220, 0); add('HP_lampm', x - 260, y - 200, 0); add('HP_lampm', x + 260, y - 200, 0); add('HP_signpost', x, y - 260, 0); break; } }
+  }
+  // instancing: one InstancedMesh per prop part per town, culled with the town
+  const groupsByTown = new Map();
+  for (const name in list) { const parts = hpProto(name); if (!parts) continue; const L = list[name];
+    for (const part of parts) { const mats = L.map(([x, y, ry, y0]) => new THREE.Matrix4().compose(new THREE.Vector3(x * S3, y0, y * S3), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), ry), new THREE.Vector3(1, 1, 1)).multiply(part.local));
+      const im = new THREE.InstancedMesh(part.geo, part.mat, mats.length); mats.forEach((m4, i) => im.setMatrixAt(i, m4)); im.castShadow = /burnt|container|tent|billboard|busstop|nest|jersey/.test(name); im.receiveShadow = true;
+      let cx = 0, cz = 0; for (const [x, y] of L) { cx += x * S3; cz += y * S3; } cx /= L.length; cz /= L.length; let r = 0; for (const [x, y] of L) r = Math.max(r, Math.hypot(x * S3 - cx, y * S3 - cz)); im.frustumCulled = false; im.userData.cull = { x: cx, z: cz, r: r + 12 };
+      world3.add(im); TPROPS.groups.push(im); } }
+  // the billboards' faces
+  for (const B of TPROPS.bills || []) { const cv = document.createElement('canvas'); cv.width = 512; cv.height = 240; const c = cv.getContext('2d'); c.fillStyle = B.b[2]; c.fillRect(0, 0, 512, 240); c.fillStyle = '#f4efe2'; c.font = 'bold 64px Georgia'; c.textAlign = 'center'; c.fillText(B.b[0], 256, 112); c.font = 'bold 30px Arial'; c.fillText(B.b[1], 256, 176);
+    for (let k = 0; k < 40; k++) { c.fillStyle = 'rgba(30,20,10,' + (Math.random() * .25) + ')'; c.fillRect(Math.random() * 512, Math.random() * 240, Math.random() * 60, Math.random() * 6); }
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(6.2, 2.85), new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(cv), roughness: .9 })); const g = new THREE.Group(); g.position.set(B.x * S3, 0, B.y * S3); g.rotation.y = B.ry; m.position.set(0, 5.0, .04); g.add(m); world3.add(g); TPROPS.groups.push(g); g.userData.cull = { x: B.x * S3, z: B.y * S3, r: 6 }; }
+  console.log('town props', Object.keys(list).map(k => k + ' ' + list[k].length).join(', '), Math.round(performance.now() - t0) + ' ms');
+}
+function townPropsTick() { if (!TPROPS.groups.length || !camera) return; const cx = camera.position.x, cz = camera.position.z, far = 260;
+  for (const o of TPROPS.groups) { const c = o.userData.cull; o.visible = Math.hypot(c.x - cx, c.z - cz) - c.r < far; } }
+loadGlbJson('props.json').then(g => { hpPrep(g); HPG = g; if (HV.b && world3 && typeof havenBuild === 'function' && NET.on) havenBuild(HV.b); }).catch(e => console.warn('props', e));
 /* ---------- the online loop: never pause, catch up slow frames ---------- */
 function netOnlineStep(raw, paused) {
   let rem = Math.min(.25, raw); const sk = paused ? Object.assign({}, keys) : null, md = mouse.down;
