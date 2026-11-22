@@ -145,8 +145,108 @@ const OPS = [
       { k: 'twokey', n: 2, secs: 8, txt: 'Release both door locks together' },
       { k: 'hold', secs: 150, brute: 2, big: 1, txt: 'Hold the yard while the doors grind open' },
       { k: 'clear', boss: 1, txt: "Kill WARDEN's last Apex" },
+      { k: 'extract', txt: 'Get everyone home' }] },
+
+  /* ================= ARC 2: UNDERTOW (build 57) =================
+     The tape in the lamp room was your own voice. Somebody else was listening: MERCY, a voice on a hospital ship offering a cure,
+     and Captain Rook of Meridian Recovery, paid to burn what Halden left behind. Each operation brings in one new thing a squad
+     does together, and the later ones put them on top of each other. */
+  // ---- Chapter 5: The Listener ----
+  { id: 'o13', ch: 5, need: { radio: 3 }, name: 'Dead Air', town: 'RIDGEWAY', tips: ['Send a runner ahead', 'The chain drops if you are slow', 'Guard the trace'],
+    brief: "The tape in the lamp room was your own voice. Somebody has been recording every word Haven says on the air. The old county repeater chain still runs through Ridgeway. Wake it up box by box, and it will tell us who has been listening.",
+    done: "QUILL: Got a bearing. It's not on land. It's out past Seaview, on the water. And it just said our name.",
+    stages: [{ k: 'travel', txt: 'Get to Ridgeway', say: [['QUILL', "Haven radio here. The repeaters run along the Ridgeway road, five boxes. Each one only holds a charge for about twenty seconds, so have someone waiting at the next one."]] },
+      { k: 'relay', n: 5, win: 24, txt: 'Wake the five repeaters in order (hold E at each). A box only holds for 24 seconds, so send a runner ahead to the next one' },
+      { k: 'hold', secs: 140, prot: 'transmitter', brute: 1, txt: 'Keep the trace transmitter alive while it listens back', say: [['QUILL', "Trace is running. It's loud. Everything in Ridgeway can hear it."]] },
+      { k: 'extract', txt: 'Get everyone home' }] },
+  { id: 'o14', ch: 5, need: { radio: 3 }, name: 'Mercy', town: 'SEAVIEW', spit: 1, tips: ['Light every fire', 'Never stand in the green', 'The launch will not wait'],
+    brief: "The voice on the water calls itself MERCY. She runs a hospital ship, the St. Agnes, a mile off Seaview, and she says she has a cure. She only sends her launch to people who can keep a signal fire lit.",
+    done: "MERCY: Antivirals. Real ones. Consider it a deposit, Haven. I'll be in touch.",
+    stages: [{ k: 'travel', txt: 'Get to Seaview beach', say: [['MERCY', "Hello, Haven. I'm MERCY. I heard what you did to WARDEN. Light my fires and I'll send you something you need."]] },
+      { k: 'collect', n: 4, fire: 1, txt: 'Light the four signal fires along the beach (hold E). Fire draws the dead' },
+      { k: 'hold', secs: 150, txt: 'Keep the fires burning until the launch sees them. Spitters lob acid: get out of the green', say: [['MERCY', "I can see your fires. The launch is coming. So are they, I'm afraid."]] },
+      { k: 'travel', at: 'shore', secs: 70, boat: 1, fail: 'The launch left without you.', txt: 'The launch is at the shoreline and only waits 70 seconds. Get to the boat' },
+      { k: 'carry', item: 'medcase', to: 'haven', txt: "Carry MERCY's medicine case home. The dead can smell it" }] },
+  { id: 'o15', ch: 5, need: { radio: 3 }, name: 'Rolling Thunder', town: 'MILLBROOK', spit: 1, tips: ['Stay with the truck', 'Clear the road ahead', 'It cannot take much'],
+    brief: "MERCY wants the Millbrook road open to the river bridge so her people can bring a truck of supplies to Haven. Haven has a plow with a dead starter and a jammed throttle. It only crawls while someone walks at the cab and the road in front of it is clear.",
+    done: "MERCY: The road is open. My truck will be with you by morning. You won't regret this. Probably.",
+    stages: [{ k: 'travel', txt: 'Get to the Millbrook motor pool' },
+      { k: 'escort', veh: 'plow', dest: 'far', txt: 'Walk the plow truck through Millbrook. It only moves while one of you is at the cab and nothing stands in front of it. The dead will tear at it', say: [['QUILL', "That plow is held together with tape. Don't let them chew on it."]] },
+      { k: 'build', n: 3, at: 'far', txt: 'Barricade the bridge approaches before the wave hits' },
+      { k: 'hold', secs: 150, at: 'far', brute: 2, big: 1, txt: 'Hold the bridge while the plow shoves the wrecks into the river' },
+      { k: 'extract', txt: 'Get everyone home' }] },
+  // ---- Chapter 6: Undertow ----
+  { id: 'o16', ch: 6, need: { radio: 3 }, name: 'Lamplight', town: 'HARBOR ROW', site: 'lite', spit: 1, tips: ['Carriers cannot shoot', 'Cover the fuel runs', 'Then save the generator'],
+    brief: "MERCY's truck never came. She says Recovery contractors burned it on the bridge road. The St. Agnes still wants to come into Harbor Row, and it can't without the lighthouse lamp. The lamp generator is bone dry, and there is fuel in every wreck along the harbor.",
+    done: "The lamp turns over Harbor Row for the first time since the cordon. Out on the water, a ship's horn answers.",
+    stages: [{ k: 'travel', txt: 'Get to the lighthouse' },
+      { k: 'fuel', n: 6, txt: 'Fill the lamp generator: carry the fuel cans to it one at a time (E to pick up). Whoever carries cannot shoot, so the rest cover the runs', say: [['QUILL', "Every can you pour, that generator gets louder. They will come for the noise."]] },
+      { k: 'hold', secs: 120, prot: 'generator', brute: 1, txt: 'Keep the generator alive while the lamp warms up' },
+      { k: 'extract', txt: 'Get everyone home' }] },
+  { id: 'o17', ch: 6, need: { radio: 3 }, name: 'Low Tide', town: 'MARSH END', tips: ['Stay in the bubble', 'Walk with the carrier', 'Cover the drill'],
+    brief: "MERCY needs core samples from the Marsh End flats, where the bloaters went to die. The air out there is spore gas. She sent an air scrubber. It is heavy, and it only clears a few metres around it.",
+    done: "MERCY: Those samples are perfect. You held together in the dark. That's very rare. I'm keeping notes.",
+    stages: [{ k: 'travel', at: 'entry', txt: 'Get to the edge of the marsh' },
+      { k: 'carry', item: 'scrubber', heavy: 1, gas: 1, from: 'entry', to: 'center', txt: 'Carry the scrubber into the marsh. Everyone stays inside its bubble or chokes in the gas', say: [['MERCY', "Stay close to the scrubber. Outside it, every breath is spores."]] },
+      { k: 'crack', secs: 18, cover: 1, gas: 1, at: 'anchor', txt: 'Drill the core samples (hold E) inside the bubble. Cover whoever is drilling' },
+      { k: 'carry', item: 'scrubber', heavy: 1, gas: 1, from: 'anchor', to: 'entry', txt: 'Carry the scrubber back out of the gas' },
+      { k: 'extract', txt: 'Get the samples home' }] },
+  { id: 'o18', ch: 6, need: { radio: 3 }, name: 'The Singer', town: 'FAIRHAVEN', spit: 1, tips: ['Chase it down', 'Do not stand close when it sings', 'Kill the spitters'],
+    brief: "Something in Fairhaven sings, and the dead walk toward it. MERCY calls it the Matriarch: a mother bloater the size of a van. Wound it and it runs, and calls the town with it. She wants it dead, and she wants what is inside it.",
+    done: "MERCY: The gland is what makes them listen. With it I can make them come, or go. Thank you, Haven. Truly.",
+    stages: [{ k: 'travel', txt: 'Follow the singing to Fairhaven' },
+      { k: 'hunt', ph: 3, txt: 'Hunt the Matriarch. Hurt it badly and it bursts away to a new spot and calls the dead. Follow it and finish it', say: [['MERCY', "Don't stand close when it sings. And never stand in what comes out of it."]] },
+      { k: 'crack', secs: 12, cover: 1, at: 'hunt', txt: 'Cut the gland out of the carcass (hold E). Cover whoever is cutting' },
+      { k: 'extract', txt: 'Get the gland home' }] },
+  // ---- Chapter 7: Recovery ----
+  { id: 'o19', ch: 7, need: { radio: 4 }, name: 'Whitecap', town: 'ASHFORD', spit: 1, grab: 1, tips: ['Split into pairs', 'One disarms, one covers', 'Watch the clock'],
+    brief: "A new voice on the radio: Captain Rook, Meridian Recovery. His contractors burn every place survivors gather, to bury what Halden did. He has wired the Ashford school with charges, and there are families inside. He is giving you three minutes because he thinks it's funny.",
+    done: "ROOK: You disarmed them. I'm almost touched. Next time I'll try something more permanent.",
+    stages: [{ k: 'travel', txt: 'Get to the Ashford school', say: [['ROOK', "Haven, isn't it? Rook, Meridian Recovery. You've been carrying Halden's drives around. Three charges. The clock starts when you get there."]] },
+      { k: 'defuse', n: 3, secs: 9, limit: 200, txt: 'Disarm the three charges before the clock runs out (hold E at each). A charge will not take while the dead are close to it. Split up' },
+      { k: 'hold', secs: 120, brute: 1, txt: 'Hold the school yard while the families get out' },
+      { k: 'extract', txt: 'Get everyone home' }] },
+  { id: 'o20', ch: 7, need: { radio: 4 }, name: 'Floodgate', town: 'GRANITE FALLS', night: true, spit: 1, tips: ['One of you in every ring', 'Then run uphill'],
+    brief: "Rook means to blow the Granite Falls spillway and drown the valley farms, the last real food in the county. The floodgates can be lowered by hand: three winch houses, all turning at once, in the dark.",
+    done: "The water takes the low road and the farms stay dry. Rook doesn't say anything at all. That's worse.",
+    stages: [{ k: 'travel', txt: 'Get to the Granite Falls floodgates in the dark' },
+      { k: 'twokey', zone: 1, n: 3, secs: 75, r: 150, txt: 'Man all three winches at once: one of you inside each ring. The gates only drop while every winch is turning', say: [['ROOK', "Winches? How quaint. I'll just let the dead know where you're standing."]] },
+      { k: 'travel', at: 'high', secs: 75, fail: 'The flood caught you.', txt: 'Rook blew the spillway anyway. Get to high ground before the water comes through' },
+      { k: 'extract', txt: 'Get everyone home' }] },
+  { id: 'o21', ch: 7, need: { radio: 4 }, name: 'Lazarus', town: 'KESTREL', grab: 1, tips: ['Quiet in', 'Cover the cutter', 'Everyone on the helicopter'],
+    brief: "A Meridian helicopter came down in Kestrel, and its pilot is alive. She wants out of Rook's company, and she knows what MERCY really is. She can't walk.",
+    done: "OKAFOR: MERCY isn't a doctor. She's Halden's second program. WARDEN tested which groups hold together. MERCY tests what they'll do for a cure. You've been passing both.",
+    stages: [{ k: 'travel', quiet: 1, txt: 'Get to the crash quietly. Rook caged screamers around it as alarms' },
+      { k: 'crack', secs: 14, cover: 1, txt: 'Cut the pilot out of the wreck (hold E). Cover whoever is cutting', say: [['OKAFOR', "I hear you. Name's Okafor. Get me out of this seat and I'll get us a ride."]] },
+      { k: 'carry', item: 'stretcher', heavy: 1, to: 'lz', txt: 'Carry the pilot to the landing zone. Walk with whoever is carrying' },
+      { k: 'hold', secs: 150, at: 'lz', brute: 2, big: 1, txt: 'Hold the landing zone until the helicopter arrives', say: [['OKAFOR', "Friend of mine flies medevac for anyone who pays. Two and a half minutes. Don't let them take the field."]] },
+      { k: 'evac', at: 'lz', secs: 45, heli: 1, txt: 'The helicopter is down and it will not wait. Everyone aboard' }] },
+  // ---- Chapter 8: St. Agnes ----
+  { id: 'o22', ch: 8, need: { radio: 4 }, name: 'Dead Reckoning', town: 'NEW HALDEN', spit: 1, grab: 1, tips: ['Walk the boat to the water', 'Both cranes at once', 'Everyone in the boat'],
+    brief: "The St. Agnes is anchored past the Halden breakwater, and the only boat that can reach her sits on a trailer in a city dry dock. Get the boat to the water. Rook left the city to the dead on purpose.",
+    done: "OKAFOR: Boat's in the water. Tomorrow we go aboard. Bring everything you have.",
+    stages: [{ k: 'travel', txt: 'Get to the Halden dry dock' },
+      { k: 'escort', veh: 'boat', dest: 'shore', txt: 'Walk the boat trailer to the water. It only moves while one of you is at the tractor and the road ahead is clear', say: [['ROOK', "A boat. You're going to the St. Agnes. Oh, she'll love you."]] },
+      { k: 'twokey', n: 2, secs: 10, txt: 'Work both crane controls at the same moment to lower the boat into the water' },
+      { k: 'hold', secs: 120, at: 'shore', brute: 2, txt: 'Hold the slipway while the engine warms up' },
+      { k: 'evac', at: 'shore', secs: 40, boat: 1, txt: 'Engine is running. Everyone into the boat' }] },
+  { id: 'o23', ch: 8, need: { radio: 4 }, name: 'Burn Notice', town: 'HARBOR ROW', night: true, spit: 1, grab: 1, tips: ['Wall up first', 'One of you at every gate', 'Kill the Matriarch'],
+    brief: "Rook knows you're going aboard the St. Agnes. Tonight he is sending everything he has at Haven: siren trucks herding the county's dead to your gates, and something big riding in the middle of the herd.",
+    done: "ROOK: Fine. Go to your ship, Haven. I'll be waiting on the shore when you come back.",
+    stages: [{ k: 'build', n: 4, at: 'haven', txt: "Barricade Haven's approaches before the sirens arrive", say: [['QUILL', "Sirens on every road in. Wall it up, now."]] },
+      { k: 'twokey', zone: 1, n: 3, secs: 150, r: 170, at: 'haven', txt: 'Hold all three gates at once: one of you at each, or they pour through the empty one' },
+      { k: 'hunt', ph: 2, at: 'haven', txt: 'Rook sent a Matriarch in with the herd. Kill it before it calls the county in' }] },
+  { id: 'o24', ch: 8, need: { radio: 4 }, name: 'Undertow', town: 'HARBOR ROW', spit: 1, grab: 1, tips: ['Everything you learned'],
+    brief: "The St. Agnes has come into Harbor Row under the lighthouse lamp. Her cargo hold is full of the dead in restraints: MERCY was never curing anyone. Her transmitter can reach every radio in the state. Use it.",
+    done: "Every radio in the county plays it at once: WARDEN's logs, MERCY's notes, Rook's orders, in their own voices. Then new voices, from kitchens and cellars and roofs: Haven, this is Pine Ridge. We heard you. We're coming.",
+    stages: [{ k: 'travel', quiet: 1, txt: 'Get to the pier where the St. Agnes is moored', say: [['MERCY', "Haven. You came aboard. I hoped you would. You're my best result."]] },
+      { k: 'relay', n: 4, win: 20, txt: "Restore power along the pier to the ship's transmitter: four junction boxes, in order, 20 seconds between each" },
+      { k: 'carry', item: 'box', to: 'shore', txt: "Carry the Station Nine drives aboard to the ship's transmitter" },
+      { k: 'hold', secs: 200, at: 'shore', prot: 'transmitter', brute: 2, big: 1, txt: 'Keep the transmitter alive while it sends everything', say: [['MERCY', "If you send that, nobody comes for a cure. Nobody comes for anything. Let them come for you, then."]] },
+      { k: 'hunt', ph: 3, at: 'shore', txt: 'MERCY opened the hold. Kill the thing she kept in it' },
       { k: 'extract', txt: 'Get everyone home' }] }
 ];
+const CHN = { 1: 'Static', 2: 'The Experiment', 3: 'Signal Trace', 4: 'WARDEN', 5: 'The Listener', 6: 'Undertow', 7: 'Recovery', 8: 'St. Agnes' };
 // Haven comes under attack every few operations: a fixed, built siege, not a random job
 const SIEGE = { id: 'siege', name: 'Siege: Haven', town: 'HARBOR ROW', tips: ['Build first', 'Save the generator'], brief: 'Something stirred the county up. A horde is walking at Haven. Wall up and keep the generator running.',
   stages: [{ k: 'build', n: 4, at: 'haven', txt: "Barricade Haven's approaches" }, { k: 'hold', secs: 200, at: 'haven', prot: 'generator', brute: 1, txt: 'Keep the generator alive' }] };
@@ -179,18 +279,19 @@ function chapterOf(c) { let ch = 1; for (const o of OPS) if (c.storyDone.include
 function opNeedOk(c, o) { const nd = o.need || {}; return !nd.radio || (c.b.radio || 0) >= nd.radio; }
 function storyNext(c) { for (const o of OPS) if (!c.storyDone.includes(o.id)) return { s: o, ok: opNeedOk(c, o), need: o.need || {} }; return null; }
 // difficulty comes from where the operation sits in the story, the squad size and the tier, plus a little for experience
-function threatOf(c, players, tier, op) { const ch = (op && op.ch) || chapterOf(c); return +(1 + .7 * (ch - 1) + .45 * Math.max(0, players - 1) + Math.min(1.5, .04 * c.done) + (TIERS[tier] || TIERS.normal).bonus).toFixed(1); }
+function threatOf(c, players, tier, op) { const ch = (op && op.ch) || chapterOf(c); return +(1 + (ch <= 4 ? .7 * (ch - 1) : 2.1 + .45 * (ch - 4)) + .45 * Math.max(0, players - 1) + Math.min(1.5, .04 * c.done) + (TIERS[tier] || TIERS.normal).bonus).toFixed(1); }
 function unlockedTowns(c) { const maxCh = 1 + Math.min(4, c.b.radio); return Object.keys(TOWNS).filter(t => TOWNS[t].ch <= maxCh); }
-const OPPAY = { 1: { scrap: 35, food: 20, meds: 8, ammo: 25 }, 2: { scrap: 50, food: 25, meds: 12, fuel: 20, ammo: 30 }, 3: { scrap: 65, food: 30, meds: 15, fuel: 30, ammo: 40 }, 4: { scrap: 85, food: 40, meds: 20, fuel: 40, ammo: 50 } };
+const OPPAY = { 1: { scrap: 35, food: 20, meds: 8, ammo: 25 }, 2: { scrap: 50, food: 25, meds: 12, fuel: 20, ammo: 30 }, 3: { scrap: 65, food: 30, meds: 15, fuel: 30, ammo: 40 }, 4: { scrap: 85, food: 40, meds: 20, fuel: 40, ammo: 50 },
+  5: { scrap: 100, food: 45, meds: 24, fuel: 50, ammo: 60 }, 6: { scrap: 115, food: 50, meds: 28, fuel: 60, ammo: 70 }, 7: { scrap: 130, food: 55, meds: 32, fuel: 70, ammo: 80 }, 8: { scrap: 150, food: 60, meds: 36, fuel: 80, ammo: 90 } };
 function rewardOf(op, threat, tier, replay) {
   const k = (TIERS[tier] || TIERS.normal).pay * (1 + .12 * threat) * (replay ? .7 : 1), base = OPPAY[op.ch || 1] || OPPAY[1];
   const r = {}; for (const x in base) r[x] = Math.round(base[x] * k); return r; }
 function makeBoard(c) {
   const list = [];
-  const sn = storyNext(c); if (sn) list.push({ mid: 'story:' + sn.s.id, story: true, locked: !sn.ok, need: sn.need, name: sn.s.name, type: 'operation', town: sn.s.town, brief: sn.s.brief, ch: sn.s.ch, night: !!sn.s.night, tips: sn.s.tips, steps: sn.s.stages.map(x => x.txt.split('.')[0]) });
+  const sn = storyNext(c); if (sn) list.push({ mid: 'story:' + sn.s.id, story: true, locked: !sn.ok, need: sn.need, name: sn.s.name, type: 'operation', town: sn.s.town, brief: sn.s.brief, ch: sn.s.ch, chn: CHN[sn.s.ch], num: OPS.indexOf(sn.s) + 1, night: !!sn.s.night, tips: sn.s.tips, steps: sn.s.stages.map(x => x.txt.split('.')[0]) });
   if (c.done > 0 && c.done % 4 === 3) list.push({ mid: 'siege:' + rid(3), story: false, name: SIEGE.name, type: 'siege', town: SIEGE.town, brief: SIEGE.brief, tips: SIEGE.tips, warn: 'Skipping it costs a building level.', steps: SIEGE.stages.map(x => x.txt) });
   // every finished operation stays on the board to replay, harder if you like, for supplies
-  for (const o of OPS) if (c.storyDone.includes(o.id)) list.push({ mid: 'replay:' + o.id, replay: true, name: o.name, type: 'replay · chapter ' + o.ch, town: o.town, brief: o.brief, ch: o.ch, night: !!o.night, tips: o.tips });
+  for (const o of OPS) if (c.storyDone.includes(o.id)) list.push({ mid: 'replay:' + o.id, replay: true, name: o.name, type: 'replay · chapter ' + o.ch + ' · ' + CHN[o.ch], num: OPS.indexOf(o) + 1, town: o.town, brief: o.brief, ch: o.ch, night: !!o.night, tips: o.tips });
   c.board = list; c.boardT = now(); save(); return list;
 }
 function opView(M) { return { id: M.id, mid: M.mid, name: M.name, type: M.type, town: M.town, tier: M.tier, threat: M.threat, stage: M.stage >= 0 && M.stages[M.stage] ? M.stages[M.stage].txt : 'Deploying', squad: [...M.squad].map(pid => (M.names[pid] || '?')), full: M.squad.size >= MAX_SQUAD, bonus: M.bonus.txt }; }
@@ -235,7 +336,7 @@ function startMission(room, starter, mid, tier, squadPids) {
   if (!op) return send(starter, { t: 'err', m: 'Unknown operation.' });
   const threat = threatOf(c, squad.length, tierN, op), T = TOWNS[op.town] || TOWNS['HARBOR ROW'];
   const bonus = BONUS[crypto.randomInt(BONUS.length)];
-  const M = { id: rid(4), mid, op: op.id, story: kind === 'story' ? op.id : null, name: op.name, type: kind === 'siege' ? 'siege' : 'operation', town: op.town, site: op.site || null, grab: !!op.grab, tier: tierN, threat,
+  const M = { id: rid(4), mid, op: op.id, story: kind === 'story' ? op.id : null, name: op.name, type: kind === 'siege' ? 'siege' : 'operation', town: op.town, site: op.site || null, grab: !!op.grab, spit: !!op.spit, tier: tierN, threat,
     night: !!op.night, seed: crypto.randomInt(1e9), T, stage: -1, stages: [], pts: {}, claims: {}, kills: {}, elites: 0, downs: 0, alarms: 0, started: now(), t: 0, tAll: 0, waveT: 0, holdT: 0, left: null, crack: 0,
     reward: rewardOf(op, threat, tierN, kind === 'replay'), brief: op.brief, done: kind === 'story' ? op.done : null, ended: false, bars: [], cargo: null, ohp: null, lureT: 0, lureHold: 0,
     squad: new Set(squad.map(q => q.pid)), names: Object.fromEntries(squad.map(q => [q.pid, q.name])), host: null, bonus };
@@ -244,6 +345,9 @@ function startMission(room, starter, mid, tier, squadPids) {
   M.stages = op.stages.map(x => Object.assign({}, x));
   for (const st of M.stages) {
     if (st.k === 'twokey') st.need = Math.max(1, Math.min(st.n || 2, SQ));
+    if (st.k === 'fuel') st.n = clampN((st.n || 6) - 3 + SQ, 3, 8);
+    if (st.k === 'defuse' && SQ === 1) st.limit = Math.round(st.limit * 1.25);
+    if (st.k === 'relay' && SQ === 1) st.win = Math.round(st.win * 1.3);
     if (st.k === 'collect' && !st.nest && !st.lure) st.n = clampN(st.n + (SQ >= 3 ? 1 : 0), 1, 8);
     if (st.k === 'hold') st.secs = Math.round(st.secs * ((TIERS[tierN] || TIERS.normal).bonus ? 1.15 : 1));
   }
@@ -255,14 +359,24 @@ function startMission(room, starter, mid, tier, squadPids) {
   c.log.push({ t: now(), m: squad.map(q => q.name).join(', ') + ' headed out: ' + M.name + '.' }); crewUpdate(room);
 }
 function armoryOf(p) { const pr = DB.profiles[p.pid]; return pr && pr.armory ? Object.keys(pr.armory) : []; }
-function publicMission(M) { const op = opById(M.op) || {}; return { id: M.id, name: M.name, type: M.type, town: M.town, tier: M.tier, threat: M.threat, night: M.night, brief: M.brief, stages: M.stages.map(s => s.txt), stage: M.stage, pts: M.pts, claims: M.claims, reward: M.reward, T: M.T, bonus: M.bonus.txt, tips: op.tips || [], grab: M.grab, bars: M.bars }; }
+function publicMission(M) { const op = opById(M.op) || {}; return { id: M.id, name: M.name, type: M.type, town: M.town, tier: M.tier, threat: M.threat, night: M.night, brief: M.brief, stages: M.stages.map(s => s.txt), stage: M.stage, pts: M.pts, claims: M.claims, reward: M.reward, T: M.T, bonus: M.bonus.txt, tips: op.tips || [], grab: M.grab, spit: M.spit, bars: M.bars, ch: op.ch || 0, chn: CHN[op.ch] || '', num: OPS.indexOf(op) + 1 }; }
 function goMission(room, M) {
   if (!M || M.go || M.ended) return; M.go = true; clearTimeout(M.loadTimer);
   setHost(room, M, pickHost(room, M) || squadOf(room, M)[0], 'start');
   // ask the host to work out the concrete spots (it has the real map)
   const need = { n: 0, nests: 0, keys: 0, bars: 0, hbars: 0, lure: 0, item: 0 };
   for (const st of M.stages) { if (st.k === 'collect') { if (st.nest) need.nests = Math.max(need.nests, st.n); else need.n = Math.max(need.n, st.n); if (st.lure) need.lure = 1; }
-    if (st.k === 'twokey') need.keys = Math.max(need.keys, st.n || 2); if (st.k === 'build') { if (st.at === 'haven') need.hbars = Math.max(need.hbars, st.n); else need.bars = Math.max(need.bars, st.n); } if (st.k === 'carry') need.item = 1; }
+    if (st.k === 'twokey') need.keys = Math.max(need.keys, st.n || 2); if (st.k === 'build') { if (st.at === 'haven') need.hbars = Math.max(need.hbars, st.n); else { need.bars = Math.max(need.bars, st.n); if (st.at) need.barsAt = st.at; } } if (st.k === 'carry') need.item = 1;
+    // build 57
+    if (st.k === 'collect' && st.fire) need.fires = Math.max(need.fires || 0, st.n);
+    if (st.k === 'relay') need.relays = Math.max(need.relays || 0, st.n);
+    if (st.k === 'fuel') need.cans = Math.max(need.cans || 0, st.n);
+    if (st.k === 'defuse') need.charges = Math.max(need.charges || 0, st.n);
+    if (st.k === 'twokey' && st.zone && st.at !== 'haven') need.zones = Math.max(need.zones || 0, st.n);
+    if (st.k === 'twokey' && st.zone && st.at === 'haven') need.hbars = Math.max(need.hbars, st.n);
+    if (st.k === 'escort') { need.route = st.dest || 'far'; }
+    if (st.k === 'hunt') { need.lairs = (st.ph || 3) + 1; need.lairsAt = st.at || 'center'; }
+    for (const a of [st.at, st.from, st.to, st.dest]) if (a && /^(shore|lz|far|entry|high)$/.test(a)) (need.at = need.at || []).includes(a) || need.at.push(a); }
   const h = room.players.get(M.host); if (h) send(h, Object.assign({ t: 'needpts', type: M.type, town: M.town, T: M.T, site: M.site }, need));
   M.ptsTimer = setTimeout(() => { if (!M.pts.haven) setPoints(room, M, { haven: HAVEN_PT, center: { x: M.T.x, y: M.T.y }, caches: [] }); }, 25000);
   bop(room, M, { t: 'mission.go' });
@@ -273,47 +387,93 @@ function setPoints(room, M, pts) {
   if (!M || M.pts.haven) return; clearTimeout(M.ptsTimer);
   const center = pts.center || { x: M.T.x, y: M.T.y }, haven = pts.haven || HAVEN_PT;
   M.pts = { haven, center, caches: (pts.caches || []).slice(0, 12), nests: (pts.nests || []).slice(0, 6), keys: (pts.keys || []).slice(0, 4), bars: (pts.bars || []).slice(0, 6), hbars: (pts.hbars || []).slice(0, 6),
-    lure: pts.lure || null, item: pts.item || null };
+    lure: pts.lure || null, item: pts.item || null,
+    fires: (pts.fires || []).slice(0, 8), relays: (pts.relays || []).slice(0, 8), cans: (pts.cans || []).slice(0, 10), charges: (pts.charges || []).slice(0, 6), zones: (pts.zones || []).slice(0, 4),
+    route: (pts.route || []).slice(0, 200), lairs: (pts.lairs || []).slice(0, 6) };
+  for (const a of ['shore', 'lz', 'far', 'entry', 'high']) if (pts[a] && isFinite(pts[a].x)) M.pts[a] = { x: Math.round(pts[a].x), y: Math.round(pts[a].y) };
+  { const FB0 = { shore: [600, 0], lz: [900, 300], far: [1500, 0], entry: [-900, -300], high: [-1200, 600] }; for (const a in FB0) if (!M.pts[a]) M.pts[a] = { x: center.x + FB0[a][0], y: center.y + FB0[a][1] }; }
   // fallbacks, so a stage never ends up with nothing to do
   const most = f => Math.max(0, ...M.stages.filter(f).map(s => s.n || 2));   // only invent spots when the host could not find enough real ones
   const nk = Math.min(M.squad.size, most(s => s.k === 'twokey')), nb = most(s => s.k === 'build' && s.at !== 'haven'), nh = most(s => s.k === 'build' && s.at === 'haven');
   if (nk && M.pts.keys.length < nk) M.pts.keys = M.pts.keys.concat(ring(center, 3, 320, .4)).slice(0, Math.max(nk, M.pts.keys.length));
-  if (nb && M.pts.bars.length < Math.min(nb, 2)) M.pts.bars = ring(center, nb, 260, .2);
+  if (nb && M.pts.bars.length < Math.min(nb, 2)) { const bs = M.stages.find(s => s.k === 'build' && s.at !== 'haven'); M.pts.bars = ring((bs && bs.at && M.pts[bs.at]) || center, nb, 260, .2); }
   if (nh && M.pts.hbars.length < Math.min(nh, 2)) M.pts.hbars = ring(haven, nh, 300, .2);
   if (M.stages.some(s => s.lure) && !M.pts.lure) M.pts.lure = { x: center.x + 700, y: center.y };
   if (!M.pts.item) M.pts.item = { x: center.x + 40, y: center.y + 40 };
+  // build 57 fallbacks: only when the host could not find real spots
+  const FB = { shore: [600, 0], lz: [900, 300], far: [1500, 0], entry: [-900, -300], high: [-1200, 600] };
+  for (const a in FB) if (!M.pts[a]) M.pts[a] = { x: center.x + FB[a][0], y: center.y + FB[a][1] };
+  const cnt = k => Math.max(0, ...M.stages.filter(s => s.k === k).map(s => s.n || 0));
+  if (M.stages.some(s => s.fire) && M.pts.fires.length < 2) M.pts.fires = ring(center, cnt('collect'), 380, .3);
+  if (cnt('relay') && M.pts.relays.length < 2) M.pts.relays = Array.from({ length: cnt('relay') }, (_, i) => ({ x: Math.round(center.x - 900 + i * 520), y: Math.round(center.y + (i % 2 ? 260 : -260)) }));
+  if (cnt('fuel') && M.pts.cans.length < 2) M.pts.cans = ring(center, cnt('fuel'), 650, .5);
+  if (cnt('defuse') && M.pts.charges.length < 2) M.pts.charges = ring(center, cnt('defuse'), 420, .2);
+  if (M.stages.some(s => s.zone && s.at !== 'haven') && M.pts.zones.length < 2) M.pts.zones = ring(center, 3, 420, .6);
+  if (M.stages.some(s => s.zone && s.at === 'haven') && M.pts.hbars.length < 3) M.pts.hbars = ring(haven, 4, 300, .2);
+  const esc = M.stages.find(s => s.k === 'escort'); if (esc && M.pts.route.length < 2) M.pts.route = [{ x: center.x, y: center.y }, M.pts[esc.dest || 'far']];
+  const hs = M.stages.find(s => s.k === 'hunt'); if (hs && M.pts.lairs.length < 2) { const c0 = hs.at === 'haven' ? haven : M.pts[hs.at] || center; M.pts.lairs = ring(c0, (hs.ph || 3) + 1, 520, .4); M.pts.lairs[0] = { x: c0.x + 260, y: c0.y }; }
   if (M.type === 'siege') M.pts.center = M.pts.haven;
   for (const st of M.stages) {
     if (st.k === 'collect' && !st.nest) st.n = Math.min(st.n, M.pts.caches.length || 1);
     if (st.k === 'build') st.n = Math.min(st.n, (st.at === 'haven' ? M.pts.hbars : M.pts.bars).length);
-    if (st.k === 'twokey') { st.need = Math.min(st.need, M.pts.keys.length); }
+    if (st.k === 'twokey') { st.need = Math.min(st.need, stagePts(M, Object.assign({}, st, { need: 99 })).length); }
+    if (st.k === 'collect' && st.fire) st.n = Math.min(st.n, M.pts.fires.length);
+    if (st.k === 'relay') st.n = Math.min(st.n, M.pts.relays.length);
+    if (st.k === 'fuel') st.n = Math.min(st.n, M.pts.cans.length);
+    if (st.k === 'defuse') st.n = Math.min(st.n, M.pts.charges.length);
   }
   const ns = M.stages.find(s => s.nest); if (ns && !M.pts.nests.length) M.stages = M.stages.filter(s => !s.nest); else if (ns) ns.n = Math.min(ns.n, M.pts.nests.length);
   nextStage(room, M);
 }
-function stagePts(M, s) { if (!s) return []; if (s.k === 'collect') return s.nest ? M.pts.nests : M.pts.caches; if (s.k === 'build') return s.at === 'haven' ? M.pts.hbars : M.pts.bars; if (s.k === 'twokey') return M.pts.keys.slice(0, s.need); return []; }
-function stageTarget(M, s) { if (!s) return null; if (s.at === 'haven') return M.pts.haven; if (s.town && TOWNS[s.town]) return { x: TOWNS[s.town].x, y: TOWNS[s.town].y };
-  if (s.k === 'carry') return s.to === 'haven' ? M.pts.haven : M.pts.center;
+function stagePts(M, s) { if (!s) return []; if (s.k === 'collect') return s.fire ? M.pts.fires : s.nest ? M.pts.nests : M.pts.caches; if (s.k === 'build') return s.at === 'haven' ? M.pts.hbars : M.pts.bars;
+  if (s.k === 'twokey') return (s.zone ? (s.at === 'haven' ? M.pts.hbars : M.pts.zones) : M.pts.keys).slice(0, s.need);
+  if (s.k === 'relay') return M.pts.relays.slice(0, s.n); if (s.k === 'defuse') return M.pts.charges.slice(0, s.n); if (s.k === 'fuel') return M.pts.cans.slice(0, s.n); return []; }
+function ptAt(M, a) { if (!a) return null; if (a === 'haven') return M.pts.haven; if (a === 'center') return M.pts.center; if (a === 'anchor') return M.anchor || M.pts.center; if (a === 'hunt') return M.huntPt || M.pts.center; return M.pts[a] || null; }
+function stageTarget(M, s) { if (!s) return null;
+  if (s.k === 'carry') return ptAt(M, s.to) || M.pts.center;
+  if (s.k === 'escort') return M.esc ? { x: Math.round(M.esc.x), y: Math.round(M.esc.y) } : M.pts.center;
+  if (s.k === 'hunt') return M.huntPt || ptAt(M, s.at) || M.pts.center;
+  if (s.k === 'relay') { const r = M.pts.relays[Math.min(M.ri || 0, M.pts.relays.length - 1)]; return r || M.pts.center; }
+  if (s.k === 'fuel') return M.pts.center;
+  if (s.at && s.k !== 'twokey') return ptAt(M, s.at) || M.pts.center; if (s.town && TOWNS[s.town]) return { x: TOWNS[s.town].x, y: TOWNS[s.town].y };
   if (s.k === 'twokey') { const k = M.pts.keys.slice(0, s.need); return k.length ? { x: Math.round(k.reduce((a, p) => a + p.x, 0) / k.length), y: Math.round(k.reduce((a, p) => a + p.y, 0) / k.length) } : M.pts.center; }
-  if (s.k === 'travel' || s.k === 'crack' || s.k === 'hold' || s.k === 'clear' || s.k === 'build') return M.pts.center; if (s.k === 'extract') return M.pts.haven; return null; }
+  if (s.k === 'travel' || s.k === 'crack' || s.k === 'hold' || s.k === 'clear' || s.k === 'build' || s.k === 'defuse') return M.pts.center; if (s.k === 'extract') return M.pts.haven; if (s.k === 'evac') return ptAt(M, s.at) || M.pts.center; return null; }
 function stageMsg(M, s) { return { t: 'stage', i: M.stage, txt: s.txt, k: s.k, target: stageTarget(M, s), n: s.n || 0, need: s.need || 0, secs: s.secs || 0, nest: s.nest ? 1 : 0, bar: s.k === 'build' ? 1 : 0,
   caches: (s.k === 'collect' || s.k === 'build') ? stagePts(M, s).slice(0, s.n) : null, keys: s.k === 'twokey' ? stagePts(M, s) : null, claims: M.claims, quiet: s.quiet ? 1 : 0, cover: s.cover ? 1 : 0,
-  lure: s.lure ? M.pts.lure : null, lureT: M.lureT, prot: s.prot || null, ohp: M.ohp, cargo: M.cargo, item: s.item || null, heavy: s.heavy ? 1 : 0, bars: M.bars }; }
+  lure: s.lure ? M.pts.lure : null, lureT: M.lureT, prot: s.prot || null, ohp: M.ohp, cargo: M.cargo, item: s.item || null, heavy: s.heavy ? 1 : 0, bars: M.bars,
+  // build 57
+  say: s.say || null, fire: s.fire ? 1 : 0, zone: s.zone ? 1 : 0, r: s.r || 0, relays: s.k === 'relay' ? stagePts(M, s) : null, ri: M.ri || 0, win: s.win || 0,
+  charges: s.k === 'defuse' ? stagePts(M, s) : null, dp: M.dp || null, limit: s.limit || 0, cans: s.k === 'fuel' ? s.n : 0, fi: M.fi || 0,
+  esc: s.k === 'escort' ? { veh: s.veh || 'plow', x: M.esc.x, y: M.esc.y, a: M.esc.a, dest: M.pts.route[M.pts.route.length - 1] } : null, route: s.k === 'escort' ? M.pts.route : null,
+  gas: s.gas ? { x: M.pts.center.x, y: M.pts.center.y, r: 1500 } : null, anchor: s.gas ? (M.anchor || null) : null, boat: s.boat ? 1 : 0, heli: s.heli ? 1 : 0,
+  hunt: s.k === 'hunt' ? { ph: s.ph || 3, lairs: M.pts.lairs, at: M.huntPt || null } : null, ch: (opById(M.op) || {}).ch || 0 }; }
 function nextStage(room, M) {
   M.stage++; const s = M.stages[M.stage];
   if (!s) return endMission(room, M, true);
   M.t = 0; M.holdT = 0; M.crack = 0; M.waveT = 6; M.left = null; M.claims = {}; M.lureT = 0; M.lureHold = 0; M.jam = 0; M.ohp = s.prot ? 100 : null;
-  if (s.k === 'carry') M.cargo = { x: M.pts.item.x, y: M.pts.item.y, pid: null, item: s.item || 'crate', heavy: s.heavy ? 1 : 0 }; else M.cargo = null;
+  if (s.k === 'carry') { const f = ptAt(M, s.from) || M.pts.item; M.cargo = { x: f.x, y: f.y, pid: null, item: s.item || 'crate', heavy: s.heavy ? 1 : 0 }; } else M.cargo = null;
+  // build 57
+  M.ri = 0; M.rT = 0; M.fi = 0; M.dp = null; M.evacIn = null; M.nk = null; M.ez = 0;
+  if (s.k === 'fuel') { const c0 = M.pts.cans[0] || M.pts.item; M.cargo = { x: c0.x, y: c0.y, pid: null, item: 'can', heavy: 0 }; }
+  if (s.k === 'defuse') M.dp = Array.from({ length: s.n }, () => 0);
+  if (s.k === 'escort') { const r0 = M.pts.route[0] || M.pts.center, r1 = M.pts.route[1] || r0; M.esc = { x: r0.x, y: r0.y, a: Math.atan2(r1.y - r0.y, r1.x - r0.x), i: 0, moving: 0 }; M.ohp = 100; }
+  if (s.k === 'hunt') { M.huntPt = M.pts.lairs[0] || ptAt(M, s.at) || M.pts.center; M.huntSeen = M.t; M.huntPh = 0; }
   const th = M.threat, elite = Math.floor(th / 2.5), grab = M.grab ? Math.max(1, Math.round(th / 2)) : 0, c = M.pts.center;
   // spawn directives for the sim host
   if (s.k === 'travel' && M.type !== 'siege') hostDo(room, M, { k: 'infest', x: c.x, y: c.y, r: Math.min(900, M.T.r * .6), n: Math.round(14 + th * 4.5), run: Math.min(.5, .05 * th), spec: th >= 2, scream: s.quiet ? 2 : 0, tag: 'town', elite: Math.max(0, elite - 1), grab });
   if (s.k === 'clear') hostDo(room, M, { k: 'horde', x: c.x, y: c.y, r: 420, n: Math.round((s.boss ? 12 : 18) + th * (s.boss ? 3.5 : 5.5)), run: Math.min(.55, .07 * th), spec: th >= 2, tag: 'clear', brute: Math.floor(th / 3), elite, boss: s.boss ? 1 : 0, grab: grab + (s.boss ? 1 : 0) });
   if (s.k === 'crack') hostDo(room, M, { k: 'wave', x: c.x, y: c.y, n: Math.round(8 + th * 2.4), run: Math.min(.55, .07 * th), spec: th >= 2.5, tag: 'wave', elite: elite ? 1 : 0, grab: Math.min(1, grab) });
   if (s.k === 'extract' && th >= 1.5) hostDo(room, M, { k: 'chase', n: Math.round(4 + th * 1.6), run: Math.min(.7, .1 * th), tag: 'wave' });
+  if (s.k === 'relay' || s.k === 'defuse' || s.k === 'escort' || s.k === 'fuel') hostDo(room, M, { k: 'infest', x: c.x, y: c.y, r: 1100, n: Math.round(16 + th * 4), run: Math.min(.45, .05 * th), spec: th >= 2, tag: 'town', elite: Math.max(0, elite - 1), grab });
+  if (s.k === 'hunt') { hostDo(room, M, { k: 'hunt', x: M.huntPt.x, y: M.huntPt.y, ph: s.ph || 3, lairs: M.pts.lairs }); hostDo(room, M, { k: 'horde', x: M.huntPt.x, y: M.huntPt.y, r: 380, n: Math.round(10 + th * 3), run: Math.min(.5, .06 * th), spec: true, tag: 'wave', grab }); }
+  if (s.k === 'evac') waveAt(room, M, stageTarget(M, s).x, stageTarget(M, s).y, 1.3, { run: Math.min(.7, .1 * th) });
+  if (s.k === 'twokey' && s.zone) for (const k of stagePts(M, s)) waveAt(room, M, k.x, k.y, .5);
   if (s.k === 'collect' && s.lure) hostDo(room, M, { k: 'horde', x: c.x, y: c.y, r: 500, n: Math.round(30 + th * 8), run: .1, spec: false, tag: 'lure', grab: 0 });   // the crowd you have to bait away
   bop(room, M, stageMsg(M, s));
 }
-function hostDo(room, M, d) { const h = room.players.get(M.host); if (h) send(h, { t: 'do', d, threat: M.threat, b: (DB.crews[room.code] || {}).b }); }
+function hostDo(room, M, d) { const h = room.players.get(M.host); if (!h) return;
+  if (M.spit && d.k !== 'lure' && d.k !== 'hunt' && d.spit === undefined && d.tag !== 'lure') d.spit = d.k === 'chase' ? 0 : Math.max(1, Math.round(M.threat / (d.k === 'wave' ? 3.5 : 2.5)));   // build 57: spitters in the waves of ops that have them
+  send(h, { t: 'do', d, threat: M.threat, b: (DB.crews[room.code] || {}).b }); }
 function alivePlayers(room, M) { return squadOf(room, M).filter(p => p.loaded && !p.down && !p.dead && p.st); }
 function waveAt(room, M, x, y, mul, extra) { const th = M.threat; hostDo(room, M, Object.assign({ k: 'wave', x, y, n: Math.round((6 + th * 2.2) * (mul || 1)), run: Math.min(.6, .06 * th), spec: th >= 2.5, tag: 'wave', grab: M.grab && Math.random() < .5 ? 1 : 0 }, extra || {})); }
 function missionTick(room, M, dt) {
@@ -324,14 +484,14 @@ function missionTick(room, M, dt) {
   if (!squadOf(room, M).length) return endMission(room, M, false, 'Everyone left.');
   if (!all.length) return;
   const near = (r, at) => alive.filter(p => dist(p.st, at || tgt) < r);
-  if (s.k === 'travel') { if (near(s.drive ? 260 : 350).length) nextStage(room, M); else if (s.secs) { bop(room, M, { t: 'prog', v: Math.min(1, M.t / s.secs), secs: Math.max(0, Math.round(s.secs - M.t)) }); if (M.t > s.secs) return endMission(room, M, false, 'Too slow. The horde got there first.'); } }
+  if (s.k === 'travel') { if (near(s.drive ? 260 : 350).length) nextStage(room, M); else if (s.secs) { bop(room, M, { t: 'prog', v: Math.min(1, M.t / s.secs), secs: Math.max(0, Math.round(s.secs - M.t)) }); if (M.t > s.secs) return endMission(room, M, false, s.fail || 'Too slow. The horde got there first.'); } }
   else if (s.k === 'collect' || s.k === 'build') { const got = Object.keys(M.claims).length; if (got >= s.n) return nextStage(room, M);
     if (s.lure && M.pts.lure) {   // the flare: someone holds E at it to light it, it burns for a while, then the horde turns round
       const atL = near(80, M.pts.lure).filter(p => p.st.use);
       if (M.lureT <= 0 && atL.length) { M.lureHold += dt; bop(room, M, { t: 'prog', v: Math.min(1, M.lureHold / 2), lure: 1 }); if (M.lureHold >= 2) { M.lureT = s.lsecs || 45; M.lureHold = 0; hostDo(room, M, { k: 'lure', on: 1, x: M.pts.lure.x, y: M.pts.lure.y }); bop(room, M, { t: 'lure', on: 1, secs: M.lureT }); } }
       else if (!atL.length) M.lureHold = 0;
       if (M.lureT > 0) { M.lureT -= dt; if (M.lureT <= 0) { M.lureT = 0; hostDo(room, M, { k: 'lure', on: 0 }); bop(room, M, { t: 'lure', on: 0 }); const p = alive[0]; if (p) waveAt(room, M, p.st.x, p.st.y, .8); } else if (Math.round(M.lureT * 4) % 4 === 0) bop(room, M, { t: 'lure', on: 1, secs: Math.round(M.lureT) }); } }
-    else if (s.nest || s.k === 'build') { M.waveT -= dt; if (M.waveT <= 0) { const p = alive[Math.floor(Math.random() * alive.length)]; if (p) waveAt(room, M, p.st.x, p.st.y, s.k === 'build' ? .6 : .8, { spec: true }); M.waveT = s.k === 'build' ? Math.max(18, 30 - M.threat * 2) : Math.max(16, 34 - M.threat * 2); } } }
+    else if (s.nest || s.fire || s.k === 'build') { M.waveT -= dt; if (M.waveT <= 0) { const p = alive[Math.floor(Math.random() * alive.length)]; if (p) waveAt(room, M, p.st.x, p.st.y, s.k === 'build' ? .6 : .8, { spec: true }); M.waveT = s.k === 'build' ? Math.max(18, 30 - M.threat * 2) : Math.max(16, 34 - M.threat * 2); } } }
   else if (s.k === 'crack') {
     const at = near(90).filter(p => p.st.use); const jam = s.cover && (M.nearZ || 0) > 0;
     if (at.length && !jam) M.crack += dt * Math.min(1.6, .8 + .4 * at.length);
@@ -339,15 +499,58 @@ function missionTick(room, M, dt) {
     M.waveT -= dt; if (M.waveT <= 0) { waveAt(room, M, tgt.x, tgt.y, .7); M.waveT = Math.max(14, 24 - M.threat * 1.5); }
     if (M.crack >= s.secs) nextStage(room, M); }
   else if (s.k === 'twokey') {   // every switch needs someone on it, holding E, at the same moment
-    const keys = stagePts(M, s), manned = keys.map(k => alive.some(p => p.st.use && dist(p.st, k) < 75)), ok = manned.every(Boolean);
+    const keys = stagePts(M, s), manned = keys.map(k => alive.some(p => (s.zone || p.st.use) && dist(p.st, k) < (s.zone ? s.r || 150 : 75))), ok = manned.every(Boolean);
     if (ok) M.crack += dt; else M.crack = Math.max(0, M.crack - dt * .5);
     bop(room, M, { t: 'prog', v: Math.min(1, M.crack / s.secs), keys: manned.map(b => b ? 1 : 0) });
-    M.waveT -= dt; if (M.waveT <= 0) { const k = keys[Math.floor(Math.random() * keys.length)]; if (k) waveAt(room, M, k.x, k.y, .55); M.waveT = Math.max(12, 22 - M.threat * 1.5); }
+    M.waveT -= dt; if (M.waveT <= 0) { if (s.zone) { for (const k of keys) waveAt(room, M, k.x, k.y, .45, { brute: Math.random() < .25 ? 1 : 0 }); M.waveT = Math.max(14, 26 - M.threat * 1.5); } else { const k = keys[Math.floor(Math.random() * keys.length)]; if (k) waveAt(room, M, k.x, k.y, .55); M.waveT = Math.max(12, 22 - M.threat * 1.5); } }
+    if (s.zone) bop(room, M, { t: 'prog', v: Math.min(1, M.crack / s.secs), secs: Math.max(0, Math.round(s.secs - M.crack)), keys: manned.map(b => b ? 1 : 0) });
     if (M.crack >= s.secs) nextStage(room, M); }
+  /* ---- build 57 stages ---- */
+  else if (s.k === 'relay') {   // boxes in order: each one has to be woken inside the window, or the chain drops back to the first
+    const R = stagePts(M, s), cur = R[M.ri]; if (!cur) return nextStage(room, M);
+    const at = alive.filter(p => p.st.use && dist(p.st, cur) < 75);
+    if (at.length) M.crack += dt; else M.crack = Math.max(0, M.crack - dt);
+    if (M.crack >= 2.2) { M.crack = 0; M.ri++; M.rT = s.win; if (M.ri >= R.length) { bop(room, M, { t: 'relay', ri: M.ri, win: 0, n: R.length }); return nextStage(room, M); }
+      bop(room, M, { t: 'relay', ri: M.ri, win: M.rT, n: R.length, ok: 1 }); waveAt(room, M, R[M.ri].x, R[M.ri].y, .55); }
+    else if (M.ri > 0) { M.rT -= dt; if (M.rT <= 0) { M.ri = 0; M.crack = 0; bop(room, M, { t: 'relay', ri: 0, win: 0, n: R.length, drop: 1 }); bop(room, M, { t: 'chat', name: '', m: 'The chain dropped. Back to the first box.' }); } }
+    bop(room, M, { t: 'prog', v: Math.min(1, M.crack / 2.2), secs: Math.max(0, Math.round(M.rT)) });
+    M.waveT -= dt; if (M.waveT <= 0) { const p = alive[Math.floor(Math.random() * alive.length)]; if (p) waveAt(room, M, p.st.x, p.st.y, .6); M.waveT = Math.max(15, 28 - M.threat * 1.5); } }
+  else if (s.k === 'fuel') {   // cans one at a time to the generator: the carrier cannot shoot, the generator gets louder with every can
+    const C = M.cargo; if (C.pid) { const q = room.players.get(C.pid); if (!q || q.op !== M.id || q.down || !q.st) { if (q && q.st) { C.x = q.st.x; C.y = q.st.y; } C.pid = null; bop(room, M, { t: 'cargo', c: C, why: q && q.down ? q.name + ' dropped the can' : '' }); } else { C.x = q.st.x; C.y = q.st.y; } }
+    M.cargoT = (M.cargoT || 0) - dt; if (M.cargoT <= 0) { M.cargoT = .5; bop(room, M, { t: 'cargo', c: C }); }
+    if (dist(C, M.pts.center) < 110) { M.fi++; const who = C.pid && room.players.get(C.pid); bop(room, M, { t: 'fuel', fi: M.fi, n: s.n, name: who ? who.name : '' });
+      if (M.fi >= s.n) return nextStage(room, M);
+      const nx = M.pts.cans[M.fi]; M.cargo = { x: nx.x, y: nx.y, pid: null, item: 'can', heavy: 0 }; bop(room, M, { t: 'cargo', c: M.cargo }); waveAt(room, M, M.pts.center.x, M.pts.center.y, .5 + .12 * M.fi); }
+    M.waveT -= dt; if (M.waveT <= 0) { const p = alive[Math.floor(Math.random() * alive.length)]; if (p) waveAt(room, M, p.st.x, p.st.y, .7 + .08 * M.fi, { spec: true }); M.waveT = Math.max(13, 26 - M.threat * 1.5 - M.fi); } }
+  else if (s.k === 'defuse') {   // several charges, one clock: each one needs someone holding E and nothing close to it
+    const P_ = stagePts(M, s); M.limT = (M.limT || 0); const left = s.limit - M.t;
+    if (left <= 0) return endMission(room, M, false, 'The charges went off.');
+    P_.forEach((c, i) => { if (M.dp[i] >= s.secs) return; const at = alive.some(p => p.st.use && dist(p.st, c) < 75), jam = M.nk && M.nk[i] > 0; if (at && !jam) M.dp[i] = Math.min(s.secs, M.dp[i] + dt); });
+    bop(room, M, { t: 'prog', v: M.dp.reduce((a, x) => a + x, 0) / (s.secs * P_.length), secs: Math.max(0, Math.round(left)), dp: M.dp.map(x => +(x / s.secs).toFixed(2)), jams: M.nk || null });
+    if (M.dp.every(x => x >= s.secs)) return nextStage(room, M);
+    M.waveT -= dt; if (M.waveT <= 0) { for (const c of P_) waveAt(room, M, c.x, c.y, .4); M.waveT = Math.max(14, 24 - M.threat * 1.2); } }
+  else if (s.k === 'escort') {   // the vehicle crawls along its route while somebody walks with it and nothing stands in front of it
+    const E = M.esc, R = M.pts.route, nxt = R[E.i + 1]; if (M.ohp !== null && M.ohp <= 0) return endMission(room, M, false, (s.veh === 'boat' ? 'The boat' : 'The plow') + ' was torn apart.');
+    if (!nxt) return nextStage(room, M);
+    const crew = alive.filter(p => dist(p.st, E) < 170).length, blocked = (M.ez || 0) >= 2, go = crew > 0 && !blocked;
+    if (go) { const d = dist(E, nxt), step = Math.min(d, (s.veh === 'boat' ? 34 : 40) * dt); E.a = Math.atan2(nxt.y - E.y, nxt.x - E.x); E.x += Math.cos(E.a) * step; E.y += Math.sin(E.a) * step; if (d - step < 4) E.i++; }
+    E.moving = go ? 1 : 0; E.why = go ? '' : !crew ? 'nobody' : 'blocked';
+    const tot = R.length - 1; M.escT = (M.escT || 0) - dt; if (M.escT <= 0) { M.escT = .25; bop(room, M, { t: 'esc', x: Math.round(E.x), y: Math.round(E.y), a: +E.a.toFixed(2), mv: E.moving, why: E.why, v: +(E.i / Math.max(1, tot)).toFixed(3), ohp: M.ohp }); }
+    M.waveT -= dt; if (M.waveT <= 0) { const ahead = R[Math.min(R.length - 1, E.i + 6)] || E; hostDo(room, M, { k: 'wave', x: ahead.x, y: ahead.y, n: Math.round(6 + M.threat * 2.2), run: Math.min(.55, .06 * M.threat), spec: M.threat >= 2.5, tag: 'wave', grab: M.grab ? 1 : 0, prot: .4, brute: Math.random() < .3 ? 1 : 0 }); M.waveT = Math.max(13, 24 - M.threat * 1.4); } }
+  else if (s.k === 'hunt') {   // the host runs the boss and tells us where it is; it is done when the host says the boss is dead
+    if (M.t - (M.huntSeen || 0) > 40 && M.t > 40) { M.huntSeen = M.t; hostDo(room, M, { k: 'hunt', x: M.huntPt.x, y: M.huntPt.y, ph: s.ph || 3, lairs: M.pts.lairs, from: M.huntPh || 0, again: 1 }); }
+    M.waveT -= dt; if (M.waveT <= 0) { waveAt(room, M, M.huntPt.x, M.huntPt.y, .5, { spec: true }); M.waveT = Math.max(16, 30 - M.threat * 1.5); } }
+  else if (s.k === 'evac') {   // the ride is here and it is not waiting: everyone still standing inside the ring before the clock runs out
+    const tg = stageTarget(M, s), inR = alive.filter(p => dist(p.st, tg) < 230), left = s.secs - M.t;
+    bop(room, M, { t: 'prog', v: alive.length ? inR.length / alive.length : 0, secs: Math.max(0, Math.round(left)), inn: inR.length, of: alive.length });
+    if (alive.length && inR.length === alive.length) return nextStage(room, M);
+    if (left <= 0) { if (!inR.length) return endMission(room, M, false, s.boat ? 'The boat left without you.' : 'The helicopter left without you.');
+      const lost = alive.filter(p => !inR.includes(p)).map(p => p.name); M.bonusLost = 1; bop(room, M, { t: 'chat', name: '', m: lost.join(', ') + (lost.length > 1 ? ' were' : ' was') + ' left behind, and walked home the long way.' }); return nextStage(room, M); }
+    M.waveT -= dt; if (M.waveT <= 0) { waveAt(room, M, tg.x, tg.y, .8, { run: Math.min(.7, .1 * M.threat) }); M.waveT = 10; } }
   else if (s.k === 'carry') {
     const C = M.cargo; if (C.pid) { const q = room.players.get(C.pid); if (!q || q.op !== M.id || q.down || !q.st) { if (q && q.st) { C.x = q.st.x; C.y = q.st.y; } C.pid = null; bop(room, M, { t: 'cargo', c: C, why: q && q.down ? q.name + ' dropped it' : '' }); } else { C.x = q.st.x; C.y = q.st.y; } }
     M.cargoT = (M.cargoT || 0) - dt; if (M.cargoT <= 0) { M.cargoT = .5; bop(room, M, { t: 'cargo', c: C }); }
-    if (dist(C, tgt) < 240) return nextStage(room, M);
+    if (dist(C, tgt) < 240) { M.anchor = { x: Math.round(C.x), y: Math.round(C.y) }; return nextStage(room, M); }
     M.waveT -= dt; if (M.waveT <= 0) { hostDo(room, M, { k: 'chase', n: Math.round(3 + M.threat * 1.3), run: Math.min(.6, .08 * M.threat), tag: 'wave', at: { x: C.x, y: C.y }, grab: M.grab && Math.random() < .35 ? 1 : 0 }); M.waveT = Math.max(15, 26 - M.threat * 1.6); } }
   else if (s.k === 'hold') {
     const inside = near(380).length; if (inside) M.holdT += dt; else M.outT = (M.outT || 0) + dt;
@@ -367,7 +570,7 @@ function bonusMet(M) { const b = M.bonus, k = Object.values(M.kills).reduce((a, 
 function endMission(room, M, win, why) {
   if (!M || M.ended) return; M.ended = true; clearTimeout(M.loadTimer); clearTimeout(M.ptsTimer);
   const c = DB.crews[room.code], players = squadOf(room, M);
-  let paid = {}; const bonus = win && bonusMet(M);
+  let paid = {}; const bonus = win && !M.bonusLost && bonusMet(M);
   if (c) {
     if (win) { for (const k in M.reward) { const v = Math.round(M.reward[k] * (bonus ? 1.5 : 1)); c.res[k] = (c.res[k] || 0) + v; paid[k] = v; } c.done++; if (M.story && !c.storyDone.includes(M.story)) c.storyDone.push(M.story); }
     else { c.fails++; for (const k in c.res) { const loss = Math.floor(c.res[k] * .05); c.res[k] -= loss; } if (M.type === 'siege') { const ks = Object.keys(c.b).filter(k => c.b[k] > 0); if (ks.length) { const k = ks[Math.floor(Math.random() * ks.length)]; c.b[k]--; c.log.push({ t: now(), m: BUILDINGS[k].name + ' lost a level in the siege.' }); } } }
@@ -464,6 +667,7 @@ function handle(p, m) {
   const c = DB.crews[room.code];
   switch (m.t) {
     case 'ready': p.ready = !!m.v; crewUpdate(room); return;
+    case 'test.skip': if (process.env.CS_TEST === '1') { const n = Math.max(1, Math.min(OPS.length + 1, m.to | 0)); c.storyDone = OPS.slice(0, n - 1).map(o => o.id); c.done = n - 1; for (const k in c.res) c.res[k] += 5000; c.b.power = Math.max(c.b.power, 3); c.b.radio = Math.max(c.b.radio, 4); makeBoard(c); crewUpdate(room); } return;
     case 'board.refresh': if (!room.ops.size) { makeBoard(c); crewUpdate(room); } return;
     case 'upgrade': { const b = m.b; if (!BUILDINGS[b] || c.b[b] >= 5) return; const nd = upNeed(b, c.b[b]); if (nd) for (const k in nd) if ((c.b[k] || 0) < nd[k]) return send(p, { t: 'err', m: BUILDINGS[b].name + ' level ' + (c.b[b] + 1) + ' needs ' + BUILDINGS[k].name + ' level ' + nd[k] + '.' });
       const cost = upCost(b, c.b[b]); for (const k in cost) if ((c.res[k] || 0) < cost[k]) return send(p, { t: 'err', m: 'Not enough ' + k + '.' });
@@ -488,14 +692,20 @@ function handle(p, m) {
     case 'claim': { if (!M) return; const s = M.stages[M.stage]; if (!s || (s.k !== 'collect' && s.k !== 'build')) return; const pts = stagePts(M, s); const i = m.i | 0, pt = pts[i]; if (!pt || M.claims[i] || i >= s.n) return; if (!p.st || dist(p.st, pt) > 90) return;
       if (s.lure && M.lureT <= 0 && M.pts.lure && dist(p.st, M.pts.lure) > 400) { /* looting while the horde is not baited is allowed: it is just much harder */ }
       M.claims[i] = p.pid; let bar = null; if (s.k === 'build') { bar = { i: M.bars.length, x: pt.x, y: pt.y, cx: stageTarget(M, s).x, cy: stageTarget(M, s).y }; M.bars.push(bar); }
-      bop(room, M, { t: 'claimed', i, pid: p.pid, name: p.name, got: Object.keys(M.claims).length, n: s.n, nest: s.nest ? 1 : 0, bar }); return; }
+      bop(room, M, { t: 'claimed', i, pid: p.pid, name: p.name, got: Object.keys(M.claims).length, n: s.n, nest: s.nest ? 1 : 0, fire: s.fire ? 1 : 0, bar }); return; }
     // build 56: co-op mechanics
-    case 'mon': if (M && p.pid === M.host) { M.nearZ = m.n | 0; if (m.ohp !== undefined && M.ohp !== null) M.ohp = Math.max(0, Math.min(M.ohp, +m.ohp || 0)); } return;
+    case 'mon': if (M && p.pid === M.host) { if (m.n !== undefined) M.nearZ = m.n | 0; if (m.ez !== undefined) M.ez = m.ez | 0; if (Array.isArray(m.nk)) M.nk = m.nk.slice(0, 6).map(x => x | 0); if (m.ohp !== undefined && M.ohp !== null) M.ohp = Math.max(0, Math.min(M.ohp, +m.ohp || 0)); } return;
     case 'cargo.grab': { if (!M || !M.cargo || M.cargo.pid || !p.st || p.down) return; if (dist(p.st, M.cargo) > 90) return; M.cargo.pid = p.pid; bop(room, M, { t: 'cargo', c: M.cargo, why: p.name + ' picked it up' }); return; }
     case 'cargo.drop': { if (!M || !M.cargo || M.cargo.pid !== p.pid) return; if (p.st) { M.cargo.x = p.st.x; M.cargo.y = p.st.y; } M.cargo.pid = null; bop(room, M, { t: 'cargo', c: M.cargo, why: p.name + ' put it down' }); return; }
     case 'alarm': { if (!M || p.pid !== M.host) return; const s = M.stages[M.stage]; if (!s || !s.quiet || (M.alarmT && now() - M.alarmT < 20000)) return; M.alarmT = now(); M.alarms++;
       const x = +m.x, y = +m.y; if (isFinite(x) && isFinite(y)) waveAt(room, M, x, y, 1.6, { run: Math.min(.7, .1 * M.threat), spec: true }); bop(room, M, { t: 'chat', name: '', m: 'A screamer went off. Everything on the hill heard it.' }); return; }
     case 'pin': if (M && p.pid === M.host) { const q = room.players.get(m.pid); if (q && q.op === M.id) send(q, { t: 'pin', on: m.on ? 1 : 0, nid: m.nid | 0 }); bop(room, M, { t: 'pinned', pid: m.pid, on: m.on ? 1 : 0 }, p); } return;
+    // build 57: the hunted boss, and spitter acid everyone has to see
+    case 'hunt': if (M && p.pid === M.host) { const s = M.stages[M.stage]; if (!s || s.k !== 'hunt') return; M.huntSeen = M.t;
+      if (isFinite(m.x) && isFinite(m.y)) M.huntPt = { x: Math.round(m.x), y: Math.round(m.y) }; if (m.ph !== undefined) M.huntPh = m.ph | 0;
+      bop(room, M, { t: 'huntp', x: M.huntPt.x, y: M.huntPt.y, ph: M.huntPh, hp: +m.hp || 0, flee: m.flee ? 1 : 0, sing: m.sing ? 1 : 0 }, p);
+      if (m.dead) { M.elites++; bop(room, M, { t: 'chat', name: '', m: 'It is down. It is finally down.' }); nextStage(room, M); } return; }
+    case 'acid': if (M && p.pid === M.host && isFinite(m.x) && isFinite(m.y)) bop(room, M, { t: 'acid', x: Math.round(m.x), y: Math.round(m.y), r: Math.min(140, +m.r || 55), d: Math.min(12, +m.d || 7), x0: isFinite(m.x0) ? Math.round(m.x0) : undefined, y0: isFinite(m.y0) ? Math.round(m.y0) : undefined, g: m.g === 2 ? 2 : m.g ? 1 : 0 }, p); return;
     case 'bk': if (M && p.pid === M.host) { const i = m.i | 0; M.bars = M.bars.filter(b => b.i !== i); bop(room, M, { t: 'bk', i }, p); } return;
     case 'revive': if (M) { const q = room.players.get(m.pid); if (q && q.op === M.id && q.down && p.st && q.st && dist(p.st, q.st) < 80) { send(q, { t: 'revived', by: p.name }); bop(room, M, { t: 'chat', name: '', m: p.name + ' picked up ' + q.name + '.' }); } } return;
     case 'car': if (M) bop(room, M, { t: 'car', pid: p.pid, c: m.c }, p); else bhaven(room, { t: 'car', pid: p.pid, c: m.c }, p); return;

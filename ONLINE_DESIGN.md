@@ -6,11 +6,13 @@ Co-op for 1 to 6 players. You run a crew out of a shared settlement, take missio
 
 Three weeks after the quarantine, a voice comes over every radio in the county. It calls itself WARDEN. It sends your crew on jobs and watches how you do them. Your crew sets up in the empty warehouses of Harbor Row, which you name **Haven**, and takes the work.
 
-The jobs get stranger. WARDEN is breeding things, steering hordes with sound, and testing which groups hold together. The last operation goes up the lighthouse to find out who has been talking to you.
+The jobs get stranger. WARDEN is breeding things, steering hordes with sound, and testing which groups hold together. The last operation of the first arc goes up the lighthouse to find out who has been talking to you.
 
-## Operations (build 56)
+**Arc 2: Undertow (build 57).** The tape in the lamp room was your own voice. Someone else was listening: **MERCY**, a voice on the hospital ship *St. Agnes* offering a cure, and **Captain Rook** of Meridian Recovery, paid to burn whatever Halden left behind. A downed Meridian pilot, **Okafor**, tells you the truth: MERCY is Halden's second program. WARDEN tested which groups hold together; MERCY tests what they will do for a cure. The arc ends aboard the *St. Agnes*, broadcasting everything to every radio in the county. Haven's radio operator **Quill** talks you through the operations.
 
-There are no random contracts any more. Online is **twelve hand-built operations** in four chapters. Each one is designed around something the squad has to do together. Finished operations stay on the board, so you can replay them on Hard or Nightmare for supplies, and every few operations Haven itself comes under siege.
+## Operations (builds 56 and 57)
+
+There are no random contracts any more. Online is **twenty-four hand-built operations** in eight chapters and two story arcs. Each one is designed around something the squad has to do together. Finished operations stay on the board, so you can replay them on Hard or Nightmare for supplies, and every few operations Haven itself comes under siege.
 
 The design follows two references. **Left 4 Dead** was tuned so that it can't be beaten without cooperation, and its specials punish players who wander off. **The Last of Us** paces each chapter as setup, a new place, a new problem, strain, then relief. Every operation brings in one new co-op mechanic, then later operations combine them.
 
@@ -28,6 +30,20 @@ The design follows two references. **Left 4 Dead** was tuned so that it can't be
 | 10 | WARDEN (Radio 3) | **Station Nine** | Under the Halden facility | Quiet entry, two key cards turned together, hold the lobby, cover whoever pulls the server drives. |
 | 11 | WARDEN | **The Choir** | Millbrook to Haven | Carry fuel home, barricade Haven, then keep the floodlight generator alive through the biggest siege. |
 | 12 | WARDEN | **Last Drop** | The lighthouse | Everything at once: barricades, a two-key door, a hold, the last Apex. |
+| 13 | The Listener (Radio 3) | **Dead Air** | Ridgeway | **Relay**: five repeater boxes woken in order, each within 24 seconds of the last, so someone runs ahead. Then protect the trace transmitter. |
+| 14 | The Listener | **Mercy** | Seaview beach | Introduces the **spitter**. Light four signal fires (fire draws the dead), hold, then reach MERCY's launch at the shoreline in 70 seconds and carry the medicine home. |
+| 15 | The Listener | **Rolling Thunder** | Millbrook | **Escort**: a plow truck that only crawls while someone walks with it and nothing stands in front of it; the dead tear at it. Then barricade and hold the bridge. |
+| 16 | Undertow (Radio 3) | **Lamplight** | The lighthouse | **Fuel**: carry cans to the lamp generator one at a time (the carrier can't shoot); every can makes it louder. Then keep it alive. |
+| 17 | Undertow | **Low Tide** | Marsh End | **Gas**: a spore cloud where the only clean air is a bubble around the scrubber one of you carries. Carry it in, drill samples inside the bubble, carry it out. |
+| 18 | Undertow | **The Singer** | Fairhaven | **Hunt**: the Matriarch, a boss that bursts away to a new lair each time it is badly hurt, sings to call the dead, and lobs acid. |
+| 19 | Recovery (Radio 4) | **Whitecap** | Ashford school | **Defuse**: three charges, one clock; a charge won't take while the dead are on it, so the squad splits into pairs. Introduces Rook. |
+| 20 | Recovery | **Floodgate** | Granite Falls, at night | **Zones**: three winch rings far apart, each needing someone standing in it at the same moment for 75 seconds. Then race the flood to high ground. |
+| 21 | Recovery | **Lazarus** | Kestrel | Quiet approach, cut the pilot out, stretcher carry to a landing zone, hold it, then **evac**: everyone aboard the helicopter before it leaves. |
+| 22 | St. Agnes (Radio 4) | **Dead Reckoning** | New Halden | Escort a boat trailer through the city to the water, work two crane controls together, hold the slipway, evac by boat. |
+| 23 | St. Agnes | **Burn Notice** | Haven, at night | Barricade Haven, hold all three gates at once, then kill the Matriarch riding in with the herd. |
+| 24 | St. Agnes | **Undertow** | The St. Agnes at Harbor Row | Quiet in, power the pier in a relay, carry the Station Nine drives aboard, protect the transmitter, kill the thing MERCY kept in the hold. |
+
+Every operation opens with a chapter title card, and the radio (Quill, MERCY, Rook, Okafor) talks at the stages that matter.
 
 ### Co-op mechanics
 
@@ -41,6 +57,15 @@ The design follows two references. **Left 4 Dead** was tuned so that it can't be
 | **Protect** | A machine with health that part of every wave goes for. If it dies, the operation fails. | Same. |
 | **Quiet** | During a quiet approach, a screamer going off brings a horde. | Same. |
 | **Grabbers** | A hunched special that lunges and pins one player. The pinned player can't move or shoot and takes damage until it's killed. | Mash E seven times to throw it off. |
+| **Relay** (57) | Boxes in a chain, each woken by holding E for about two seconds. After each one, the next has to be woken inside the window or the chain drops back to box one. | 30% longer window. |
+| **Escort** (57) | The vehicle crawls along a route only while a player is within 8 m of it and fewer than two zombies stand in front of it. It has health, and part of every wave goes for it. | Same; clear the front, then walk it. |
+| **Fuel** (57) | One can at a time to the generator; the next can appears somewhere else. Waves grow with each can. | 4 cans instead of 6 to 8. |
+| **Gas** (57) | Inside the spore cloud, anyone more than 10 m from the scrubber takes 6 damage a second. The bubble moves with the scrubber, carried or on the ground. | Carry it yourself. |
+| **Hunt** (57) | The Matriarch has two or three phases. At the end of each it bursts (acid), sings (calls the dead and spawns more) and runs to its next lair. While running it can't be hurt. | Same. |
+| **Defuse** (57) | Several charges, each needing about 9 seconds of E with no zombie within 7 m. One clock for all of them; when it runs out, the operation fails. | 25% more time. |
+| **Zones** (57) | Rings 20+ m apart (or Haven's barricades) that each need someone standing in them; the timer only runs while every ring is held. | One ring. |
+| **Evac** (57) | A helicopter or boat in a ring, on a timer. When everyone standing is inside, you leave. If the timer runs out with some of you aboard, the rest are left behind and the bonus is lost; with nobody aboard, the operation fails. | Same. |
+| **Spitters** (57) | Keep their distance and lob acid that pools on the ground for about 7 seconds. | Same. |
 
 Every operation ends with getting everyone home. A downed player is picked up by a teammate holding E. If the whole squad is down at once, the operation fails.
 
@@ -133,7 +158,7 @@ Online, any weapon you pick up goes into your **armory** on the server, and you 
 
 Each mission has a **threat** level that sets zombie numbers, how many are runners, how often specials appear, and how hard they hit.
 
-`threat = 1 + 0.7 × (chapter − 1) + 0.45 × (players − 1) + 0.04 × operations done (max 1.5) + tier bonus`
+`threat = 1 + chapter step + 0.45 × (players − 1) + 0.04 × operations done (max 1.5) + tier bonus`, where the chapter step is 0.7 per chapter up to chapter 4 (2.1), then 0.45 per chapter after that (3.9 at chapter 8)
 
 Tier bonus is 0 for Normal, +1.5 for Hard and +3 for Nightmare. Harder tiers pay out more.
 
