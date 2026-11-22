@@ -4469,13 +4469,56 @@ function scream(d, ang) {
     o.start(t); o.stop(t + 1.2); nb(t, .9, 'bandpass', 1600, 2, vol * .8, .25, 700, .3);
   } catch (e) {}
 }
+/* build 50: zombies you can hear. Each one near you growls, moans or snarls from where it is (panned, quieter and duller behind walls and
+   behind you); a chaser closing in brings a low dread drone and ragged breathing that swell as it gets closer; one that gets right
+   behind you gives a sharp hiss.                                                                                                   */
+const ZVO = { t: 0, bed: null, stingT: 0 };
+function zVoice(z, d, da, mood) {   // mood: 0 idle moan, 1 alert growl, 2 chase snarl
+  if (!actx) return; try { audioBus(); const t = actx.currentTime, run = z.run ? 1.15 : 1, big = z.spec === 'brute' ? .62 : z.spec === 'bloater' ? .78 : 1;
+    const dur = mood === 2 ? rnd(.35, .7) : mood === 1 ? rnd(.6, 1) : rnd(1, 1.7), f0 = (mood === 2 ? rnd(150, 210) : mood === 1 ? rnd(100, 140) : rnd(70, 105)) * run * big;
+    const near = clamp(1 - d / 640, 0, 1), behind = Math.abs(Math.atan2(Math.sin(da), Math.cos(da))) > 1.75, wall = segBlocked(P.x, P.y, z.x, z.y);
+    const vol = (mood === 2 ? .2 : mood === 1 ? .14 : .1) * near * near * (wall ? .45 : 1);
+    if (vol < .004) return;
+    const o = actx.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(f0, t); o.frequency.linearRampToValueAtTime(f0 * (mood === 2 ? rnd(.75, 1.25) : rnd(.6, .8)), t + dur);
+    const vib = actx.createOscillator(), vg = actx.createGain(); vib.frequency.value = rnd(5, 11); vg.gain.value = f0 * (mood === 2 ? .09 : .05); vib.connect(vg); vg.connect(o.frequency);
+    const src = actx.createBufferSource(); src.buffer = getNoise(); src.playbackRate.value = rnd(.6, 1);
+    const ng = actx.createGain(); ng.gain.value = mood === 2 ? .9 : .35; src.connect(ng);
+    const f1 = actx.createBiquadFilter(); f1.type = 'bandpass'; f1.frequency.value = rnd(420, 620) * big; f1.Q.value = 3; const f2 = actx.createBiquadFilter(); f2.type = 'bandpass'; f2.frequency.value = rnd(950, 1400) * big; f2.Q.value = 4;
+    const mix = actx.createGain(); mix.gain.value = 1; o.connect(f1); o.connect(f2); ng.connect(f1); ng.connect(f2); f1.connect(mix); f2.connect(mix);
+    const lp = actx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = (wall ? 700 : behind ? 1800 : 4200); mix.connect(lp);
+    const g = actx.createGain(); g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(vol, t + (mood === 2 ? .04 : .18)); g.gain.setValueAtTime(vol * .8, t + dur * .7); g.gain.linearRampToValueAtTime(.0001, t + dur); lp.connect(g);
+    let out = g; if (actx.createStereoPanner) { const pn = actx.createStereoPanner(); pn.pan.value = clamp(Math.sin(da), -1, 1) * .85; g.connect(pn); out = pn; }
+    out.connect(master || actx.destination); if (verbSend && !wall) { const w = actx.createGain(); w.gain.value = .25; g.connect(w); w.connect(verbSend); }
+    o.start(t); vib.start(t); src.start(t, Math.random() * .5); o.stop(t + dur + .05); vib.stop(t + dur + .05); src.stop(t + dur + .05);
+  } catch (e) {} }
+function zDreadBed() {   // a looping low drone + breathing, its level driven every frame
+  if (ZVO.bed || !actx) return ZVO.bed; try { audioBus(); const t = actx.currentTime;
+    const dr = actx.createOscillator(); dr.type = 'triangle'; dr.frequency.value = 46; const dr2 = actx.createOscillator(); dr2.type = 'sine'; dr2.frequency.value = 69.3;
+    const dg = actx.createGain(); dg.gain.value = 0; dr.connect(dg); dr2.connect(dg);
+    const br = actx.createBufferSource(); br.buffer = getNoise(); br.loop = true; const bf = actx.createBiquadFilter(); bf.type = 'bandpass'; bf.frequency.value = 520; bf.Q.value = 1.6;
+    const bg = actx.createGain(); bg.gain.value = 0; const lfo = actx.createOscillator(); lfo.frequency.value = .9; const lg = actx.createGain(); lg.gain.value = 0; lfo.connect(lg); lg.connect(bg.gain);
+    br.connect(bf); bf.connect(bg); const out = actx.createGain(); out.gain.value = 1; dg.connect(out); bg.connect(out); out.connect(master || actx.destination);
+    dr.start(t); dr2.start(t); br.start(t); lfo.start(t); ZVO.bed = { dg, bg, lg, lfo };
+  } catch (e) { ZVO.bed = null; } return ZVO.bed; }
+function zSting(da) { if (!actx) return; try { audioBus(); const t = actx.currentTime; nb(t, .45, 'highpass', 2600, .9, .5, .02, 0, .4);
+  const o = actx.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(190, t); o.frequency.exponentialRampToValueAtTime(70, t + .5); const f = actx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 900;
+  const g = actx.createGain(); g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.22, t + .02); g.gain.exponentialRampToValueAtTime(.0005, t + .55); o.connect(f); f.connect(g);
+  let out = g; if (actx.createStereoPanner) { const pn = actx.createStereoPanner(); pn.pan.value = clamp(Math.sin(da), -1, 1); g.connect(pn); out = pn; } out.connect(master || actx.destination); o.start(t); o.stop(t + .6); } catch (e) {} }
 function ambientTick(dt) {
-  grT -= dt;
-  if (grT <= 0) {
-    grT = rnd(2.5, 6); let best = null, bd = 1100;
-    for (const z of zombies) { const d = dist(z, P); if (d < bd) { bd = d; best = z; } }
-    if (best) { let da = Math.atan2(best.y - P.y, best.x - P.x) - yaw; groan(bd, da); }
-  }
+  if (actx && state === 'play' && !cine) {
+    // voices: up to three of the nearest, each on its own timer, chasers more often
+    ZVO.t -= dt; const near = []; let threat = 0;
+    for (const z of zombies) { if (z.hp <= 0 || (z.lv | 0) !== (P.lv | 0)) continue; const d = Math.abs(z.x - P.x) + Math.abs(z.y - P.y); if (d > 900) continue; const e = Math.hypot(z.x - P.x, z.y - P.y); if (e > 640) continue; near.push([e, z]);
+      if (z.state === 'chase' && !z.sleep) threat = Math.max(threat, clamp(1 - (e - 90) / 460, 0, 1)); }
+    near.sort((a, b) => a[0] - b[0]);
+    for (let i = 0; i < near.length && i < 3; i++) { const [d, z] = near[i]; z.vT = (z.vT === undefined ? rnd(0, 2) : z.vT) - dt; if (z.vT > 0) continue;
+      const mood = z.sleep ? 0 : z.state === 'chase' ? 2 : z.alertT > 0 || z.state === 'alert' ? 1 : 0; z.vT = mood === 2 ? rnd(1.1, 2.6) : mood === 1 ? rnd(2.2, 4) : rnd(3.5, 7);
+      if (z.sleep && Math.random() < .6) continue; const da = Math.atan2(z.y - P.y, z.x - P.x) - yaw; zVoice(z, d, da, mood); }
+    // the dread bed follows the closest chaser
+    const B = zDreadBed(); if (B) { const k = driving ? threat * .35 : threat, t = actx.currentTime; B.dg.gain.setTargetAtTime(.05 * k, t, .35); B.lg.gain.setTargetAtTime(.035 * k, t, .25); B.lfo.frequency.setTargetAtTime(.8 + k * 1.6, t, .5); }
+    // something right behind you
+    ZVO.stingT -= dt; if (ZVO.stingT <= 0 && !driving) for (const [d, z] of near) { if (d > 150) break; if (z.state !== 'chase' || z.sleep) continue; const da = Math.atan2(z.y - P.y, z.x - P.x) - yaw; if (Math.abs(Math.atan2(Math.sin(da), Math.cos(da))) > 1.9) { zSting(da); ZVO.stingT = 6; break; } }
+  } else if (ZVO.bed && actx) { const t = actx.currentTime; ZVO.bed.dg.gain.setTargetAtTime(0, t, .3); ZVO.bed.lg.gain.setTargetAtTime(0, t, .3); }
   if (P.hp < 35) { hbT -= dt; if (hbT <= 0) { hbT = 0.7 + P.hp / 120; beep(55, .12, 'sine', .14); setTimeout(() => beep(48, .14, 'sine', .1), 170); } }
 }
 function startWind() {
@@ -6653,7 +6696,7 @@ function renderTitle() {
   } else if (titleMode === 'credits') {
     h += '<div class="panel"><h3>Credits</h3><p>ColdShore prototype. Characters, zombies, vehicles, buildings, trees and animation built procedurally in Blender. Engine: three.js. Voices: your browser&#39;s speech engine.</p><p style="font-size:12px;opacity:.8">Vehicle and weapon models from BlendSwap, reduced for the browser: M1 Humvee by panko10 (CC-BY); Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0); Dodge Challenger 1970 R/T; Low Quality Weapon Pack (CC0).</p><div class="btns"><span class="btn" data-m="back">Back</span></div></div>';
   }
-  h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 49</div>';
+  h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 50</div>';
   titleEl.innerHTML = h; titleEl.classList.add('on');
   titleEl.querySelectorAll('[data-m]').forEach(a => a.onclick = () => titleAction(a.dataset.m));
   titleEl.querySelectorAll('[data-k]').forEach(a => a.onclick = () => pickBg(a.dataset.k));
