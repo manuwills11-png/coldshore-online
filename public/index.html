@@ -4161,7 +4161,7 @@ function setQuality(n, auto) {
   if (auto && toasts) toast('Framerate low: graphics set to ' + ['LOW', 'MEDIUM', 'HIGH'][quality]);
 }
 function renderFrame(dt) {
-  if (!TPROPS.done && HPG && state === 'play') { try { townDress(); } catch (e) { console.warn('town props', e); TPROPS.done = true; } } townPropsTick();
+  if (!TPROPS.done && HPG && (HKG || HKFAIL) && state === 'play') { try { townDress(); } catch (e) { console.warn('town props', e); TPROPS.done = true; } } townPropsTick();
   if (quality >= 1 && composer) {
     const u = finalPass.uniforms; u.time.value = elapsed; u.hurt.value = Math.min(1, flash * 3); u.low.value = (P && P.hp < 35) ? 1 : 0; u.res.value.set(VW, VH);
     composer.render(dt);
@@ -6733,7 +6733,7 @@ function renderTitle() {
   } else if (titleMode === 'credits') {
     h += '<div class="panel"><h3>Credits</h3><p>ColdShore prototype. Characters, zombies, vehicles, buildings, trees and animation built procedurally in Blender. Engine: three.js. Voices: your browser&#39;s speech engine.</p><p style="font-size:12px;opacity:.8">Models from BlendSwap, reduced for the browser: M1 Humvee by panko10 (CC-BY); Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0); Ford Crown Victoria Police Interceptor 2005 (CC-BY 3.0); Mercedes-AMG GLS (CC0); BMW 3 Series Coupe by mikepan (CC-BY-SA 3.0); Trees &amp; Bushes pack by Painkiller5555; Dodge Challenger 1970 R/T; Low Quality Weapon Pack (CC0).</p><div class="btns"><span class="btn" data-m="back">Back</span></div></div>';
   }
-  h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 59</div>';
+  h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 60</div>';
   titleEl.innerHTML = h; titleEl.classList.add('on');
   titleEl.querySelectorAll('[data-m]').forEach(a => a.onclick = () => titleAction(a.dataset.m));
   titleEl.querySelectorAll('[data-k]').forEach(a => a.onclick = () => pickBg(a.dataset.k));
@@ -10797,25 +10797,28 @@ giveNearest = function () { if (!NET.on) { toast('Giving works online, next to a
    Every county town gets the aftermath: burnt-out cars at the kerb, rubbish bags, rubble, abandoned luggage, shopping carts,
    bus shelters, benches, news boxes, a phone booth, a police roadblock on the way in, a billboard, and relief camps in three towns.
    Town props are instanced per town (a handful of draw calls each) and culled by town; the big ones block like walls. */
-let HPG = null; const HPPROTO = {};
+let HPG = null, HKG = null, HKFAIL = false; const HPPROTO = {};
+function hpSrc(name) { return (HPG && HPG.scene.getObjectByName(name)) || (HKG && HKG.scene.getObjectByName(name)) || null; }
 function hpPrep(g) { g.scene.traverse(o => { if (!o.isMesh) return; const m = o.material; o.castShadow = true; o.receiveShadow = true; m.metalness = Math.min(m.metalness, .35); m.roughness = Math.max(m.roughness, .4);
     if (/HV_glass/.test(m.name)) { m.transparent = true; m.opacity = .35; m.depthWrite = false; m.side = THREE.DoubleSide; }
     if (/HV_(canvas|tarp|wire|net|tentW|galv)/.test(m.name) || o.geometry.attributes.position.count < 400) m.side = THREE.DoubleSide; if (/HV_bulb/.test(m.name)) { m.emissiveIntensity = 2; } }); }
 function hpProto(name) {   // the meshes of one prop with their transforms relative to its root
-  if (HPPROTO[name]) return HPPROTO[name]; const src = HPG && HPG.scene.getObjectByName(name); if (!src) return null; src.updateMatrixWorld(true);
+  if (HPPROTO[name]) return HPPROTO[name]; const src = hpSrc(name); if (!src) return null; src.updateMatrixWorld(true);
   const inv = new THREE.Matrix4().copy(src.matrixWorld).invert(), parts = []; src.traverse(o => { if (o.isMesh) { o.geometry.computeBoundingBox(); parts.push({ geo: o.geometry, mat: o.material, local: new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld) }); } });
   return HPPROTO[name] = parts; }
-function hpClone(name, P_, x, y, ry, y0) { const src = HPG && HPG.scene.getObjectByName(name); if (!src) return null; const o = src.clone(true); o.position.set(hx(x), y0 || 0, hz(y)); o.rotation.y = ry || 0; P_.add(o); return o; }
+function hpClone(name, P_, x, y, ry, y0) { const src = hpSrc(name); if (!src) return null; const o = src.clone(true); o.position.set(hx(x), y0 || 0, hz(y)); o.rotation.y = ry || 0; P_.add(o); return o; }
 /* ---------- Haven ---------- */
 function havenDress(B) {
-  if (!HPG || !HV.rec) return; const R = HVR, gx = HVGATE.x, P_ = havenPart('dress'), rec = HV.rec, placed = [];
+  if (!HPG || !HV.rec) return; const R = HVR, gx = HVGATE.x, P_ = havenPart('dress'), rec = HV.rec, placed = HV.dressed = [];
   const paths = [{ x: gx - 95, y: R.y0 - 400, w: 190, h: 1550 }, { x: R.x0 + 75, y: 3475, w: R.x1 - R.x0 - 150, h: 150 }];
-  const hit = (x0, y0, x1, y1) => rec.walls.some(w => x0 < w.x + w.w && x1 > w.x && y0 < w.y + w.h && y1 > w.y) || placed.some(w => x0 < w.x1 && x1 > w.x0 && y0 < w.y1 && y1 > w.y0) || paths.some(w => x0 < w.x + w.w && x1 > w.x && y0 < w.y + w.h && y1 > w.y);
+  // roofs and canopies (anything big hanging above head height) mark ground a prop must not sit on: building interiors, under trees
+  const over = []; { const bb = new THREE.Box3(); for (const k in HV.parts) if (k !== 'dress') HV.parts[k].traverse(o => { if (!o.isMesh || o.isInstancedMesh) return; bb.setFromObject(o); if (bb.min.y > 1.6 && (bb.max.x - bb.min.x) * (bb.max.z - bb.min.z) > 3) over.push({ x: bb.min.x / S3, y: bb.min.z / S3, w: (bb.max.x - bb.min.x) / S3, h: (bb.max.z - bb.min.z) / S3 }); }); }
+  const hit = (x0, y0, x1, y1) => over.some(w => x0 < w.x + w.w && x1 > w.x && y0 < w.y + w.h && y1 > w.y) || rec.walls.some(w => x0 < w.x + w.w && x1 > w.x && y0 < w.y + w.h && y1 > w.y) || placed.some(w => x0 < w.x1 && x1 > w.x0 && y0 < w.y1 && y1 > w.y0) || paths.some(w => x0 < w.x + w.w && x1 > w.x && y0 < w.y + w.h && y1 > w.y);
   const inside = (x0, y0, x1, y1) => x0 > R.x0 + 45 && x1 < R.x1 - 45 && y0 > R.y0 + 45 && y1 < R.y1 - 45;
   // put a prop if its footprint (w x h game units, after turning) is clear; solid ones block like walls
   const put = (name, x, y, ry, w, h, solid, out, hgt) => { const q = Math.round((ry || 0) / (Math.PI / 2)) % 2 !== 0, fw = q ? h : w, fh = q ? w : h, x0 = x - fw / 2, y0 = y - fh / 2;
     if (hit(x0 - 8, y0 - 8, x0 + fw + 8, y0 + fh + 8) || (!out && !inside(x0, y0, x0 + fw, y0 + fh))) return false; if (!hpClone(name, P_, x, y, ry)) return false;
-    placed.push({ x0, y0, x1: x0 + fw, y1: y0 + fh }); if (solid) hvWall(P_, x0, y0, fw, fh, null, hgt || 2); return true; };
+    placed.push({ x0, y0, x1: x0 + fw, y1: y0 + fh, n: name }); if (solid) hvWall(P_, x0, y0, fw, fh, null, hgt || 2); return true; };
   const firstFree = (name, cands, ry, w, h, solid, hgt) => { for (const [x, y] of cands) if (put(name, x, y, ry, w, h, solid, false, hgt)) return [x, y]; return null; };
   const grid = (x0, y0, x1, y1, st) => { const out = []; for (let y = y0; y <= y1; y += st) for (let x = x0; x <= x1; x += st) out.push([x, y]); return out; };
   const lv = Object.values(B).reduce((a, b) => a + (b | 0), 0);
@@ -10829,7 +10832,11 @@ function havenDress(B) {
   const cont = ['HP_container_b', 'HP_container_r', 'HP_container_g', 'HP_container_y'], nC = 2 + Math.min(4, Math.floor(lv / 4)); let c0 = null;
   for (let i = 0; i < nC; i++) { const at = firstFree(cont[i % 4], grid(R.x0 + 120, R.y0 + 90, R.x1 - 120, R.y1 - 90, 60).sort((a, b) => Math.hypot(a[0] - (c0 ? c0[0] : R.x0), a[1] - (c0 ? c0[1] : R.y0)) - Math.hypot(b[0] - (c0 ? c0[0] : R.x0), b[1] - (c0 ? c0[1] : R.y0))), 0, 125, 52, true, 2.6); if (at && !c0) c0 = at;
     if (at && i === 1 && lv >= 6) hpClone(cont[3], P_, at[0], at[1], 0, 2.6); }
-  if (c0) { firstFree('HP_drums', grid(c0[0] - 160, c0[1] - 140, c0[0] + 160, c0[1] + 140, 40), 0, 50, 40, true, 1); firstFree('HP_pallets', grid(c0[0] - 180, c0[1] - 160, c0[0] + 180, c0[1] + 160, 40), 0, 70, 40, true, 1.2); firstFree('HP_shelves', grid(c0[0] - 180, c0[1] - 160, c0[0] + 180, c0[1] + 160, 40), 0, 60, 40, true, 2.4); }
+  if (c0) { firstFree('HP_drums', grid(c0[0] - 160, c0[1] - 140, c0[0] + 160, c0[1] + 140, 40), 0, 50, 40, true, 1); firstFree('HP_pallets', grid(c0[0] - 180, c0[1] - 160, c0[0] + 180, c0[1] + 160, 40), 0, 70, 40, true, 1.2); firstFree('HP_shelves', grid(c0[0] - 180, c0[1] - 160, c0[0] + 180, c0[1] + 160, 40), 0, 60, 40, true, 2.4);
+    const yard = r => grid(c0[0] - r, c0[1] - r, c0[0] + r, c0[1] + r, 30).sort((a, b) => Math.hypot(a[0] - c0[0], a[1] - c0[1]) - Math.hypot(b[0] - c0[0], b[1] - c0[1]));
+    firstFree('HK_rack', yard(320), 0, 140, 34, true, 5.8); firstFree('HK_forklift', yard(300), Math.PI / 2, 46, 92, true, 2.6); firstFree('HK_palletjack', yard(260), 0, 36, 22, true, 1.2);
+    for (let i = 0; i < 2; i++) firstFree('HK_boxes', yard(260), 0, 38, 32, true, 2); for (let i = 0; i < 3; i++) firstFree('HK_barrel', yard(240), 0, 16, 16, true, 1.2);
+    if (lv >= 10) firstFree('HK_container40', yard(420), Math.PI / 2, 60, 236, true, 3.6); }
   firstFree('HP_watertower', [[R.x1 - 90, R.y1 - 90], [R.x1 - 90, (R.y0 + R.y1) / 2], [R.x0 + 90, R.y1 - 90], ...grid(R.x0 + 100, R.y0 + 100, R.x1 - 100, R.y1 - 100, 80).reverse()], 0, 68, 68, true, 8);
   // living clutter: woodpile, outhouses, lean-tos, picnic tables, burn barrels, a scrap heap and tyres by the workshop
   const near = (cx, cy, r) => grid(cx - r, cy - r, cx + r, cy + r, 35).sort((a, b) => Math.hypot(a[0] - cx, a[1] - cy) - Math.hypot(b[0] - cx, b[1] - cy));
@@ -10868,6 +10875,15 @@ function townDress() {
     pave('HP_bags', 26, Math.round(10 * big), false, 0, 0, 40); pave('HP_luggage', 24, Math.round(4 * big), false, 0, 0, 40); pave('HP_cart', 16, Math.round(3 * big), false, 0, 0, 40);
     for (let i = 0, n = 0; i < 120 && n < Math.round(6 * big); i++) { const a = rnd_() * 6.283, r = rnd_() * T.r, x = T.x + Math.cos(a) * r, y = T.y + Math.sin(a) * r; if (!ok(x, y, 40) || onRoad(x, y, 30)) continue; add('HP_rubble', x, y, rnd_() * 6.283); n++; }
     for (let i = 0, n = 0; i < 120 && n < Math.round(8 * big); i++) { const h = pk(houses.filter(q => Math.hypot(q.x + q.w / 2 - T.x, q.y + q.h / 2 - T.y) < T.r) || [{ x: T.x, y: T.y, w: 1, h: 1 }]); if (!h) break; const x = h.x + (rnd_() < .5 ? -35 : h.w + 35), y = h.y + rnd_() * h.h; if (!ok(x, y, 28) || onRoad(x, y, 12)) continue; add('HP_bags', x, y, rnd_() * 6.283); n++; }
+    { const hs = houses.filter(q => Math.hypot(q.x + q.w / 2 - T.x, q.y + q.h / 2 - T.y) < T.r).sort((a, b) => b.w * b.h - a.w * a.h);
+      for (const h of hs.slice(0, 4)) { let done = false; for (const side of ['n', 's', 'w', 'e']) { if (done) break; const hor = side === 'n' || side === 's';
+          for (const off of [70, 95, 125]) { if (done) break; const y = side === 'n' ? h.y - off : side === 's' ? h.y + h.h + off : h.y + h.h / 2, x = side === 'w' ? h.x - off : side === 'e' ? h.x + h.w + off : h.x + h.w / 2;
+            if (!ok(x, y, 0) || inHouse(x, y, 20) || onRoad(x, y, 75) || !spotFree(x, y, 0, 72)) continue; const ry = hor ? 0 : Math.PI / 2; add('HK_rack', x, y, ry); block(x, y, hor ? 140 : 34, hor ? 34 : 140);
+            const out = side === 'n' || side === 'w' ? -1 : 1;
+            for (const [fx, fy] of hor ? [[x + 125, y + out * 45], [x - 125, y + out * 45], [x, y + out * 80]] : [[x + out * 45, y + 125], [x + out * 45, y - 125], [x + out * 80, y]]) if (ok(fx, fy, 0) && !inHouse(fx, fy, 30) && !onRoad(fx, fy, 40) && spotFree(fx, fy, 0, 48)) { add('HK_forklift', fx, fy, hor ? Math.PI / 2 : 0); block(fx, fy, 50, 50); break; }
+            for (const [bx, by] of hor ? [[x - 115, y], [x + 115, y]] : [[x, y - 115], [x, y + 115]]) if (ok(bx, by, 0) && !inHouse(bx, by, 10) && spotFree(bx, by, 0, 24)) { add('HK_boxes', bx, by, rnd_()); block(bx, by, 36, 30); break; }
+            done = true; } } } }
+    for (let i = 0, n = 0; i < 80 && n < Math.round(4 * big); i++) { const a = rnd_() * 6.283, r = rnd_() * T.r, x = T.x + Math.cos(a) * r, y = T.y + Math.sin(a) * r; if (!ok(x, y, 20) || onRoad(x, y, 25)) continue; add(rnd_() < .55 ? 'HK_barrel' : 'HK_boxes', x, y, rnd_() * 6.283); n++; }
     // a police roadblock on the way in: jersey barriers, sawhorses, a sandbag nest by the road
     { let best = null; for (const q of tr) { const hor = q.w > q.h, L = hor ? q.w : q.h; for (let t = 40; t < L - 40; t += 60) { const x = hor ? q.x + t : q.x + q.w / 2, y = hor ? q.y + q.h / 2 : q.y + t, d = Math.hypot(x - T.x, y - T.y), sc = Math.abs(d - T.r * .78);
           if (d > T.r * .4 && (!best || sc < best.sc)) best = { q, f: (hor ? x - T.x : y - T.y) > 0 ? 1 : 0, d, sc, hor, x: hor ? x : q.x + q.w / 2, y: hor ? q.y + q.h / 2 : y }; } }
@@ -10882,14 +10898,14 @@ function townDress() {
     if (camps.has(T.n)) { for (let i = 0; i < 80; i++) { const a = rnd_() * 6.283, r = T.r * (.35 + rnd_() * .5), x = T.x + Math.cos(a) * r, y = T.y + Math.sin(a) * r; let clear = true;
         for (let dx = -260; dx <= 260 && clear; dx += 65) for (let dy = -200; dy <= 200 && clear; dy += 65) if (!ok(x + dx, y + dy, 20) || onRoad(x + dx, y + dy, 20)) clear = false; if (!clear) continue;
         for (let k = 0; k < 4; k++) { const tx = x - 170 + (k % 2) * 200, ty = y - 90 + Math.floor(k / 2) * 150; add('HP_tent', tx + 50, ty, 0); block(tx + 50, ty, 120, 80); }
-        add('HP_container_b', x + 230, y + 10, Math.PI / 2); block(x + 230, y + 10, 52, 125); add('HP_drums', x + 160, y + 170, 0); add('HP_pallets', x - 230, y + 170, 0);
+        if (hpSrc('HK_container40')) { add('HK_container40', x + 230, y + 10, 0); block(x + 230, y + 10, 60, 236); } else { add('HP_container_b', x + 230, y + 10, Math.PI / 2); block(x + 230, y + 10, 52, 125); } add('HK_boxes', x + 150, y - 120, .3); add('HP_drums', x + 160, y + 170, 0); add('HP_pallets', x - 230, y + 170, 0);
         for (let k = -3; k <= 3; k++) if (k) add('HP_sawhorse', x + k * 60, y - 220, 0); add('HP_lampm', x - 260, y - 200, 0); add('HP_lampm', x + 260, y - 200, 0); add('HP_signpost', x, y - 260, 0); break; } }
   }
   // instancing: one InstancedMesh per prop part per town, culled with the town
   const groupsByTown = new Map();
   for (const name in list) { const parts = hpProto(name); if (!parts) continue; const L = list[name];
     for (const part of parts) { const mats = L.map(([x, y, ry, y0]) => new THREE.Matrix4().compose(new THREE.Vector3(x * S3, y0, y * S3), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), ry), new THREE.Vector3(1, 1, 1)).multiply(part.local));
-      const im = new THREE.InstancedMesh(part.geo, part.mat, mats.length); mats.forEach((m4, i) => im.setMatrixAt(i, m4)); im.castShadow = /burnt|container|tent|billboard|busstop|nest|jersey/.test(name); im.receiveShadow = true;
+      const im = new THREE.InstancedMesh(part.geo, part.mat, mats.length); mats.forEach((m4, i) => im.setMatrixAt(i, m4)); im.castShadow = /burnt|container|tent|billboard|busstop|nest|jersey|rack|forklift/.test(name); im.receiveShadow = true;
       let cx = 0, cz = 0; for (const [x, y] of L) { cx += x * S3; cz += y * S3; } cx /= L.length; cz /= L.length; let r = 0; for (const [x, y] of L) r = Math.max(r, Math.hypot(x * S3 - cx, y * S3 - cz)); im.frustumCulled = false; im.userData.cull = { x: cx, z: cz, r: r + 12 };
       world3.add(im); TPROPS.groups.push(im); } }
   // the billboards' faces
@@ -10901,6 +10917,8 @@ function townDress() {
 function townPropsTick() { if (!TPROPS.groups.length || !camera) return; const cx = camera.position.x, cz = camera.position.z, far = 260;
   for (const o of TPROPS.groups) { const c = o.userData.cull; o.visible = Math.hypot(c.x - cx, c.z - cz) - c.r < far; } }
 loadGlbJson('props.json').then(g => { hpPrep(g); HPG = g; if (HV.b && world3 && typeof havenBuild === 'function' && NET.on) havenBuild(HV.b); }).catch(e => console.warn('props', e));
+// pieces from two CC0 BlendSwap packs (tools/kit2_blend.py): forklift, pallet jack, barrel, loaded pallet racking, boxes, a 40 ft container
+loadGlbJson('kit2.json').then(g => { hpPrep(g); HKG = g; if (HPG && HV.b && world3 && typeof havenBuild === 'function' && NET.on) havenBuild(HV.b); }).catch(e => { console.warn('kit2', e); HKFAIL = true; });
 /* ---------- the online loop: never pause, catch up slow frames ---------- */
 function netOnlineStep(raw, paused) {
   let rem = Math.min(.25, raw); const sk = paused ? Object.assign({}, keys) : null, md = mouse.down;
