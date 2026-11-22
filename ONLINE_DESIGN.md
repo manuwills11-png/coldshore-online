@@ -55,8 +55,16 @@ There are no rules about who goes where. Every player picks for themselves.
 - **Humvee: driver and gunner.** Online, one player drives the Humvee and another mans the roof gun. Walk up to a Humvee a teammate is driving and press **E** to climb onto the turret (Shift+E takes the gun on a parked one). The gunner aims with the mouse and holds fire. The gun overheats if held too long, and the driver can't fire while someone is on it. Offline, you drive and shoot yourself (hold fire or F).
 - **Riding along.** Press **E** next to any car a teammate is driving to ride in it. Passengers can shoot their own weapon out of the window. E gets you out.
 - **Pings.** Press **P** (or click the middle mouse button) to mark where you're looking. Your squad sees an orange beam, your name and the distance for 14 seconds.
-- **Sharing.** Press **.** (full stop) next to a teammate to hand over a bandage and half a magazine of your current gun's ammo.
+- **Giving.** Press **.** (full stop) next to a teammate to open the give menu: a bandage, half your reserve ammo, the gun in your hands (with its ammo; it goes into their armory), or supplies (scrap, cloth, fuel, pipe bombs, molotovs).
 - Players already **revive** each other (hold E on a downed teammate).
+
+## Netcode
+
+- Teammates are drawn slightly in the past (about 100 to 350 ms, adapting to how jittery the connection is), between two real updates, so they move smoothly. They face the way they walk, play a reversed walk when backing up, and face their aim when shooting.
+- Every state message carries the sender's clock, so packets that arrive bunched together are still spaced out correctly.
+- The sim host streams only zombies that moved or changed, every 0.1 s near players and at least once a second for the rest (about a third of the old traffic). Puppets keep moving at their last speed between updates.
+- Teammates' cars are smoothed the same way.
+- Online, the game never pauses: opening the map, a menu or switching tabs keeps your game (and the zombies you host) running. Slow frames are caught up in small steps instead of slowing the game down.
 
 ## The settlement: Haven
 

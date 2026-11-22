@@ -357,7 +357,9 @@ function handle(p, m) {
     case 'car': if (M) bop(room, M, { t: 'car', pid: p.pid, c: m.c }, p); else bhaven(room, { t: 'car', pid: p.pid, c: m.c }, p); return;
     case 'ping': { if (!isFinite(m.x) || !isFinite(m.y)) return; const o = { t: 'ping', pid: p.pid, name: p.name, x: Math.round(m.x), y: Math.round(m.y) }; if (M) bop(room, M, o, p); else bhaven(room, o, p); return; }
     case 'give': { const q = room.players.get(m.to); if (!q || q === p || (q.op || null) !== (p.op || null) || !p.st || !q.st || dist(p.st, q.st) > 140) return; const k = m.pack || {}, pack = {};
-      if (k.band) pack.band = 1; if (k.ammo > 0) { pack.ammo = Math.min(120, k.ammo | 0); pack.k = ['ammo', 'shells', 'rifleammo', 'huntammo', 'bolts'].includes(k.k) ? k.k : 'ammo'; } send(q, { t: 'given', name: p.name, pack }); return; }
+      if (k.band) pack.band = 1; if (k.ammo > 0) { pack.ammo = Math.min(200, k.ammo | 0); pack.k = ['ammo', 'shells', 'rifleammo', 'huntammo', 'bolts'].includes(k.k) ? k.k : 'ammo'; } if (k.gun && typeof k.gun.id === 'string' && (ARMS.has(k.gun.id) || ['pistol', 'smg', 'shotgun', 'rifle', 'hunting'].includes(k.gun.id))) pack.gun = { id: k.gun.id, mag: Math.max(0, Math.min(150, k.gun.mag | 0)), ammo: Math.max(0, Math.min(400, k.gun.ammo | 0)) };
+      if (k.items && typeof k.items === 'object') { const it = {}; for (const key of ['scrap', 'cloth', 'fuel', 'pipe', 'molo']) { const n = k.items[key] | 0; if (n > 0) it[key] = Math.min(10, n); } if (Object.keys(it).length) pack.items = it; }
+      if (!Object.keys(pack).length) return; send(q, { t: 'given', name: p.name, pack }); return; }
     case 'armory': { const id = String(m.id || ''); if (!ARMS.has(id)) return; const prof = DB.profiles[p.pid] || (DB.profiles[p.pid] = { name: p.name, xp: 0, kills: 0, missions: 0 }); prof.armory = prof.armory || {}; if (!prof.armory[id]) { prof.armory[id] = now(); save(); bcast(room, { t: 'chat', name: '', m: p.name + ' found a ' + String(m.name || id).slice(0, 30) + '.' }); } return; }
   }
 }
