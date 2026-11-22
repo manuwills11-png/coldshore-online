@@ -314,7 +314,7 @@ function joinOp(room, p, M) {
   M.squad.add(p.pid); M.names[p.pid] = p.name; p.op = M.id; p.loaded = false; p.down = false; p.ready = false;
   send(p, { t: 'mission.load', m: publicMission(M), seed: M.seed, armory: armoryOf(p) }); crewUpdate(room);
 }
-const ARMS = new Set(['shotgun', 'rifle', 'smg', 'hunting', 'machete', 'revolver', 'sawnoff', 'ak', 'lmg', 'crossbow', 'katana', 'axe', 'bat', 'sledge', 'scar', 'g36', 'mp5sd', 'uzi', 'svd', 'm14', 'spas']);
+const ARMS = new Set(['shotgun', 'rifle', 'smg', 'hunting', 'machete', 'revolver', 'sawnoff', 'ak', 'lmg', 'crossbow', 'katana', 'axe', 'bat', 'sledge', 'scar', 'g36', 'mp5sd', 'uzi', 'svd', 'm14', 'spas', 'm1911', 'glock', 'p226', 'usp', 'skorpion', 'mp5', 'mx4', 'mp7', 'hk53', 'ar15', 'qbz', 'r870', 'model7', 'galil', 'psg1']);
 function handle(p, m) {
   const room = p.room, M = opOf(p);
   switch (m.t) {

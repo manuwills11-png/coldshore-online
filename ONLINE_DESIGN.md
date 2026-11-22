@@ -91,7 +91,7 @@ Supplies: **scrap, food, fuel, meds, ammo**. Missions pay them out. The farm mak
 
 Guns are scarce. You start with a pistol. The workshop issues the standard guns, and everything else has to be found.
 
-Fourteen weapons, each with a rarity: common, uncommon, rare, epic or legendary.
+Thirty-six weapons, each with a rarity: common, uncommon, rare, epic or legendary.
 
 | Weapon | Rarity | Notes |
 |---|---|---|
@@ -104,6 +104,12 @@ Fourteen weapons, each with a rarity: common, uncommon, rare, epic or legendary.
 | Sledgehammer | Rare | Slow; flattens a crowd |
 | AK 7.62 | Epic | Hard-hitting full auto |
 | M249 SAW | Legendary | 100-round belt |
+| Colt 1911, Glock 27, P226, USP .45 | Common to rare | Pistols |
+| Skorpion, MP5, MX4, MP7 | Uncommon to rare | Submachine guns; the MP7 goes through two |
+| HK53, AR-15, QBZ-97B, SCAR-H, G36C, M14 | Uncommon to epic | Rifles |
+| Remington 870, SPAS-12 | Common, rare | Shotguns |
+| Model 7, Galil SR, SVD | Uncommon to epic | Scoped rifles |
+| PSG-1 | Legendary | Sniper rifle; one round goes through three |
 
 Weapons drop from crates (about 3.5% at the start), specials, brutes and elites (far more often), and airdrops. Both the drop chance and the odds of a rare one climb with campaign level, or with the threat of an operation. A dropped weapon stands in a beam of its rarity colour.
 
