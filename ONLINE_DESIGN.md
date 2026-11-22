@@ -29,6 +29,11 @@ Every mission ends the same way: **get everyone still alive back to the extracti
 | **Defend** | Hold a point (relay mast, generator, barricade) for 3 to 6 minutes. At least one player must stay inside the circle. | Waves grow every minute, with specials (screamers, bloaters, brutes). |
 | **Clear** | Wipe out an infested zone, including its nest. | The nest keeps spawning until destroyed. Brutes guard it. |
 | **Convoy** | Drive to a town, pick up the load, drive it back. | Road hordes, pile-ups and grab attempts on every leg. A low-health truck slows the run. |
+| **Rescue** | Crack a trapped survivor out (hold E at the door), then hold the spot until they're on their feet. | Every second at the door makes noise. |
+| **Hunt** | Track down and kill an apex brute: a huge elite with more than double health. | It hits hard and calls the pack. |
+| **Gauntlet** | Run a timed route through several towns. Miss a checkpoint's clock and the run fails. | No time to loot. Roads are blocked. |
+| **Blackout** | At night: collect the fuses, then hold the substation while the lights come back. | Dark, fast runners, flashlights only. |
+| **Demolition** | Collect the charges, plant them, then get out before they go. | Blast radius and the horde it pulls. |
 | **Siege** | WARDEN's experiment comes to Haven. Defend the settlement through waves. | Damage to Haven lowers building levels if you lose. Walls and watchtowers decide how much help you get. |
 
 Clear missions end with **nests**: flesh mounds spread around the town. Hold E at each one to burn it while waves keep coming.
@@ -44,6 +49,14 @@ There are no rules about who goes where. Every player picks for themselves.
 - Clicking anywhere else on the map sets a waypoint: a diamond on screen with the distance, a beam in the world and a dot on the minimap. Right-click or X clears it.
 - Each squad has its own sim host, its own zombies and its own objectives. Players at Haven see each other walking around.
 - Pulling out of an operation with others still in it leaves the squad running.
+
+## Playing together
+
+- **Humvee: driver and gunner.** Online, one player drives the Humvee and another mans the roof gun. Walk up to a Humvee a teammate is driving and press **E** to climb onto the turret (Shift+E takes the gun on a parked one). The gunner aims with the mouse and holds fire. The gun overheats if held too long, and the driver can't fire while someone is on it. Offline, you drive and shoot yourself (hold fire or F).
+- **Riding along.** Press **E** next to any car a teammate is driving to ride in it. Passengers can shoot their own weapon out of the window. E gets you out.
+- **Pings.** Press **P** (or click the middle mouse button) to mark where you're looking. Your squad sees an orange beam, your name and the distance for 14 seconds.
+- **Sharing.** Press **.** (full stop) next to a teammate to hand over a bandage and half a magazine of your current gun's ammo.
+- Players already **revive** each other (hold E on a downed teammate).
 
 ## The settlement: Haven
 
@@ -119,3 +132,7 @@ Failing a mission costs a share of the supplies carried, never the settlement.
 ## Rewards
 
 Each player earns XP and kills for their own profile. The crew earns supplies, chapter progress and new board missions. Rewards scale with threat and tier.
+
+## Asset credits
+
+Vehicle and weapon models are from BlendSwap and were reduced for the browser: M1 Humvee by panko10 (CC-BY), Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0), Dodge Challenger 1970 R/T (license not stated on the upload; check before release), Low Quality Weapon Pack (CC0).

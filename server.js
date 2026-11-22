@@ -66,8 +66,11 @@ const STORY = [
   { id: 's4b', ch: 4, need: { radio: 3, done: 12 }, name: 'Halden Tower', type: 'clear', town: 'NEW HALDEN', brief: "Clear the street around Halden Tower. The transmitter is up there.", done: "WARDEN: You found me. Come up, then. Bring everyone." },
   { id: 's5a', ch: 5, need: { radio: 4, done: 16 }, name: 'Last Drop', type: 'siege', town: 'HARBOR ROW', secs: 420, brief: "WARDEN: One last experiment. Everything I have, against everything you built.", done: "Haven stands. The radio is quiet. For now, the county is yours." }
 ];
-const CONTRACT_TYPES = ['scavenge', 'airdrop', 'defend', 'clear', 'convoy'];
-const TYPE_TEXT = { scavenge: 'Scavenge', airdrop: 'Airdrop', defend: 'Defend', clear: 'Clear', convoy: 'Convoy', siege: 'Siege' };
+const CONTRACT_TYPES = ['scavenge', 'airdrop', 'defend', 'clear', 'convoy', 'rescue', 'hunt', 'gauntlet', 'blackout', 'demolition'];
+const TYPE_TEXT = { scavenge: 'Scavenge', airdrop: 'Airdrop', defend: 'Defend', clear: 'Clear', convoy: 'Convoy', siege: 'Siege', rescue: 'Rescue', hunt: 'Hunt', gauntlet: 'Gauntlet', blackout: 'Blackout', demolition: 'Demolition' };
+// contract names: a different call-sign every time
+const OPA = ['Silent', 'Broken', 'Red', 'Iron', 'Long', 'Cold', 'Black', 'Last', 'Grey', 'Hollow', 'Burning', 'Salt', 'Paper', 'Ghost', 'Rusted', 'Lantern', 'Feral', 'Copper'], OPB = ['Harbor', 'Choir', 'Mile', 'Signal', 'Orchard', 'Saint', 'Engine', 'Tide', 'Ferry', 'Steeple', 'Crossing', 'Furnace', 'Garden', 'Window', 'Junction', 'Mercy', 'Static', 'Sunday'];
+const opName = () => OPA[Math.floor(Math.random() * OPA.length)] + ' ' + OPB[Math.floor(Math.random() * OPB.length)];
 const TIERS = { normal: { bonus: 0, pay: 1 }, hard: { bonus: 1.5, pay: 1.6 }, nightmare: { bonus: 3, pay: 2.4 } };
 
 /* ---------------- helpers ---------------- */
@@ -92,14 +95,14 @@ function storyNext(c) { for (const s of STORY) { if (c.storyDone.includes(s.id))
 function threatOf(c, players, tier) { return +(1 + .25 * c.done + .4 * Math.max(0, players - 1) + (TIERS[tier] || TIERS.normal).bonus).toFixed(1); }
 function unlockedTowns(c) { const maxCh = 1 + Math.min(4, c.b.radio); return Object.keys(TOWNS).filter(t => TOWNS[t].ch <= maxCh); }
 function rewardOf(type, threat, tier) {
-  const k = (TIERS[tier] || TIERS.normal).pay * (1 + .15 * threat), base = { scavenge: { scrap: 30, food: 20, meds: 6 }, airdrop: { ammo: 40, meds: 10, food: 10 }, defend: { scrap: 25, ammo: 25, fuel: 8 }, clear: { scrap: 35, ammo: 20 }, convoy: { fuel: 30, scrap: 20, food: 15 }, siege: { scrap: 60, ammo: 40, meds: 20 } }[type];
+  const k = (TIERS[tier] || TIERS.normal).pay * (1 + .15 * threat), base = { rescue: { meds: 12, food: 20, scrap: 15 }, hunt: { ammo: 45, scrap: 25 }, gauntlet: { fuel: 25, food: 25, scrap: 20 }, blackout: { fuel: 20, scrap: 35, ammo: 10 }, demolition: { scrap: 45, ammo: 20 }, scavenge: { scrap: 30, food: 20, meds: 6 }, airdrop: { ammo: 40, meds: 10, food: 10 }, defend: { scrap: 25, ammo: 25, fuel: 8 }, clear: { scrap: 35, ammo: 20 }, convoy: { fuel: 30, scrap: 20, food: 15 }, siege: { scrap: 60, ammo: 40, meds: 20 } }[type];
   const r = {}; for (const x in base) r[x] = Math.round(base[x] * k); return r; }
 function makeBoard(c) {
   const towns = unlockedTowns(c), list = [];
   const sn = storyNext(c); if (sn) list.push({ mid: 'story:' + sn.s.id, story: true, locked: !sn.ok, need: sn.need, name: sn.s.name, type: sn.s.type, town: sn.s.town, brief: sn.s.brief, ch: sn.s.ch });
-  const types = CONTRACT_TYPES.slice().sort(() => Math.random() - .5).slice(0, 4);   // four different kinds of job every time
-  for (let i = 0; i < 4; i++) { const type = types[i], town = towns[Math.floor(Math.random() * towns.length)];
-    list.push({ mid: 'c:' + rid(4), name: TYPE_TEXT[type] + ': ' + town[0] + town.slice(1).toLowerCase(), type, town: type === 'convoy' && town === 'HARBOR ROW' ? 'MILLBROOK' : town, night: Math.random() < .25 }); }
+  const types = CONTRACT_TYPES.slice().sort(() => Math.random() - .5).slice(0, 6);   // six different kinds of job every time
+  for (let i = 0; i < 6; i++) { const type = types[i], town = towns[Math.floor(Math.random() * towns.length)];
+    list.push({ mid: 'c:' + rid(4), name: 'Op ' + opName() + ' (' + TYPE_TEXT[type] + ', ' + town[0] + town.slice(1).toLowerCase() + ')', via: [towns[Math.floor(Math.random() * towns.length)], towns[Math.floor(Math.random() * towns.length)]], type, town: type === 'convoy' && town === 'HARBOR ROW' ? 'MILLBROOK' : town, night: Math.random() < .25 }); }
   if (c.done > 0 && c.done % 5 === 4 && !list.some(m => m.type === 'siege')) list.push({ mid: 'c:' + rid(4), name: 'Siege: Haven', type: 'siege', town: 'HARBOR ROW', warn: 'Skipping it costs a building level.' });
   c.board = list; c.boardT = now(); save(); return list;
 }
@@ -153,6 +156,11 @@ function startMission(room, starter, mid, tier, squadPids) {
   if (type === 'airdrop') M.stages = [{ k: 'travel', txt: 'Reach the drop zone in ' + entry.town }, { k: 'crack', secs: 10 + Math.round(threat), txt: 'Crack the crate open (hold E at the crate)' }, { k: 'extract', txt: 'Get everyone back to Haven' }];
   if (type === 'defend' || type === 'siege') M.stages = [{ k: 'travel', txt: type === 'siege' ? 'Man the barricade at Haven' : 'Get to the point in ' + entry.town }, { k: 'hold', secs: (story && story.secs) || (type === 'siege' ? 300 : 180 + Math.round(threat * 10)), txt: 'Hold the point' }, ...(type === 'siege' ? [] : [{ k: 'extract', txt: 'Get everyone back to Haven' }])];
   if (type === 'clear') M.stages = [{ k: 'travel', txt: 'Get to ' + entry.town }, { k: 'clear', txt: 'Clear the infestation' }, { k: 'collect', n: nests, nest: 1, txt: 'Burn the nests (hold E at each)' }, { k: 'extract', txt: 'Get everyone back to Haven' }];
+  if (type === 'rescue') M.stages = [{ k: 'travel', txt: 'Find the survivors in ' + entry.town }, { k: 'crack', secs: 8, txt: 'Get them out of the house (hold E at the door)' }, { k: 'hold', secs: 90 + Math.round(threat * 8), txt: 'Hold the house while they pack' }, { k: 'extract', txt: 'Get everyone back to Haven' }];
+  if (type === 'hunt') M.stages = [{ k: 'travel', txt: 'Track the Apex to ' + entry.town }, { k: 'clear', boss: 1, txt: 'Kill the Apex and its pack' }, { k: 'extract', txt: 'Get everyone back to Haven' }];
+  if (type === 'gauntlet') { const via = (entry.via || []).filter(v => TOWNS[v] && v !== entry.town).slice(0, 2); M.stages = [...via.map((v, i) => ({ k: 'travel', town: v, secs: 150, txt: 'Checkpoint ' + (i + 1) + ': ' + v[0] + v.slice(1).toLowerCase() + ' (against the clock)' })), { k: 'travel', secs: 150, txt: 'Final checkpoint: ' + entry.town }, { k: 'crack', secs: 6, txt: 'Unload the goods (hold E)' }, { k: 'extract', txt: 'Get everyone back to Haven' }]; }
+  if (type === 'blackout') { M.night = true; M.stages = [{ k: 'travel', txt: 'Get to ' + entry.town + ' in the dark' }, { k: 'collect', n: 3, txt: 'Throw the three breakers' }, { k: 'hold', secs: 100 + Math.round(threat * 8), txt: 'Hold the transformer while it spins up' }, { k: 'extract', txt: 'Get everyone back to Haven' }]; }
+  if (type === 'demolition') M.stages = [{ k: 'travel', txt: 'Get to the overpass in ' + entry.town }, { k: 'collect', n: 3, txt: 'Plant the charges' }, { k: 'extract', txt: 'Get clear and get home before it blows' }];
   if (type === 'convoy') M.stages = [{ k: 'travel', txt: 'Drive to the pickup in ' + entry.town, drive: 1 }, { k: 'crack', secs: 6, txt: 'Load the truck (hold E at the pickup)' }, { k: 'extract', txt: 'Drive the load back to Haven' }];
   room.ops.set(M.id, M);
   for (const p of squad) { p.op = M.id; p.loaded = false; p.down = false; p.dead = false; p.ready = false; }
@@ -180,7 +188,7 @@ function setPoints(room, M, pts) {
   const ns = M.stages.find(s => s.nest); if (ns) { if (M.pts.nests.length) ns.n = Math.min(ns.n, M.pts.nests.length); else M.stages = M.stages.filter(s => !s.nest); }
   nextStage(room, M);
 }
-function stageTarget(M, s) { if (!s) return null; if (s.k === 'travel' || s.k === 'crack' || s.k === 'hold' || s.k === 'clear') return M.pts.center; if (s.k === 'extract') return M.pts.haven; return null; }
+function stageTarget(M, s) { if (!s) return null; if (s.town && TOWNS[s.town]) return { x: TOWNS[s.town].x, y: TOWNS[s.town].y }; if (s.k === 'travel' || s.k === 'crack' || s.k === 'hold' || s.k === 'clear') return M.pts.center; if (s.k === 'extract') return M.pts.haven; return null; }
 function stageMsg(M, s) { return { t: 'stage', i: M.stage, txt: s.txt, k: s.k, target: stageTarget(M, s), n: s.n || 0, secs: s.secs || 0, nest: s.nest ? 1 : 0, caches: s.k === 'collect' ? (s.nest ? M.pts.nests : M.pts.caches).slice(0, s.n) : null, claims: M.claims }; }
 function nextStage(room, M) {
   M.stage++; const s = M.stages[M.stage];
@@ -189,7 +197,7 @@ function nextStage(room, M) {
   const th = M.threat, elite = Math.floor(th / 2.5);
   // spawn directives for the sim host
   if (s.k === 'travel' && M.type !== 'siege' && M.type !== 'defend') hostDo(room, M, { k: 'infest', x: M.pts.center.x, y: M.pts.center.y, r: Math.min(900, M.T.r * .6), n: Math.round(12 + th * 4.5), run: Math.min(.55, .06 * th), spec: th >= 2.5, tag: 'town', elite: Math.max(0, elite - 1) });
-  if (s.k === 'clear') hostDo(room, M, { k: 'horde', x: M.pts.center.x, y: M.pts.center.y, r: 420, n: Math.round(16 + th * 5.5), run: Math.min(.55, .07 * th), spec: th >= 2, tag: 'clear', brute: Math.floor(th / 3), elite });
+  if (s.k === 'clear') hostDo(room, M, { k: 'horde', x: M.pts.center.x, y: M.pts.center.y, r: 420, n: Math.round((s.boss ? 10 : 16) + th * (s.boss ? 3 : 5.5)), run: Math.min(.55, .07 * th), spec: th >= 2, tag: 'clear', brute: Math.floor(th / 3), elite, boss: s.boss ? 1 : 0 });
   if (s.k === 'crack') hostDo(room, M, { k: 'wave', x: M.pts.center.x, y: M.pts.center.y, n: Math.round(8 + th * 2.4), run: Math.min(.55, .07 * th), spec: th >= 2.5, tag: 'wave', elite: elite ? 1 : 0 });
   if (s.k === 'extract' && th >= 2) hostDo(room, M, { k: 'chase', n: Math.round(4 + th * 1.5), run: Math.min(.7, .1 * th), tag: 'wave' });   // the walk home is not free any more
   bop(room, M, stageMsg(M, s));
@@ -204,7 +212,7 @@ function missionTick(room, M, dt) {
   if (!squadOf(room, M).length) return endMission(room, M, false, 'Everyone left.');
   if (!all.length) return;
   const near = (r) => alive.filter(p => dist(p.st, tgt) < r);
-  if (s.k === 'travel') { if (near(s.drive ? 260 : 350).length) nextStage(room, M); }
+  if (s.k === 'travel') { if (near(s.drive ? 260 : 350).length) nextStage(room, M); else if (s.secs) { bop(room, M, { t: 'prog', v: Math.min(1, M.t / s.secs), secs: Math.max(0, Math.round(s.secs - M.t)) }); if (M.t > s.secs) return endMission(room, M, false, 'Too slow. The checkpoint closed.'); } }
   else if (s.k === 'collect') { const got = Object.keys(M.claims).length; if (got >= s.n) nextStage(room, M);
     if (s.nest) { M.waveT -= dt; if (M.waveT <= 0) { const p = alive[0]; if (p) hostDo(room, M, { k: 'wave', x: p.st.x, y: p.st.y, n: Math.round(5 + M.threat * 1.6), run: Math.min(.6, .08 * M.threat), spec: true, tag: 'wave' }); M.waveT = Math.max(16, 34 - M.threat * 2); } } }
   else if (s.k === 'crack') { const at = near(90).filter(p => p.st.use); if (at.length) { M.crack += dt * Math.min(2, at.length); bop(room, M, { t: 'prog', v: Math.min(1, M.crack / s.secs) }); } if (M.crack >= s.secs) nextStage(room, M); }
@@ -306,7 +314,7 @@ function joinOp(room, p, M) {
   M.squad.add(p.pid); M.names[p.pid] = p.name; p.op = M.id; p.loaded = false; p.down = false; p.ready = false;
   send(p, { t: 'mission.load', m: publicMission(M), seed: M.seed, armory: armoryOf(p) }); crewUpdate(room);
 }
-const ARMS = new Set(['shotgun', 'rifle', 'smg', 'hunting', 'machete', 'revolver', 'sawnoff', 'ak', 'lmg', 'crossbow', 'katana', 'axe', 'bat', 'sledge']);
+const ARMS = new Set(['shotgun', 'rifle', 'smg', 'hunting', 'machete', 'revolver', 'sawnoff', 'ak', 'lmg', 'crossbow', 'katana', 'axe', 'bat', 'sledge', 'scar', 'g36', 'mp5sd', 'uzi', 'svd', 'm14', 'spas']);
 function handle(p, m) {
   const room = p.room, M = opOf(p);
   switch (m.t) {
@@ -346,7 +354,10 @@ function handle(p, m) {
     case 'claim': { if (!M) return; const s = M.stages[M.stage]; if (!s || s.k !== 'collect') return; const pts = s.nest ? M.pts.nests : M.pts.caches; const i = m.i | 0, pt = pts[i]; if (!pt || M.claims[i] || i >= s.n) return; if (!p.st || dist(p.st, pt) > 90) return;
       M.claims[i] = p.pid; bop(room, M, { t: 'claimed', i, pid: p.pid, name: p.name, got: Object.keys(M.claims).length, n: s.n, nest: s.nest ? 1 : 0 }); return; }
     case 'revive': if (M) { const q = room.players.get(m.pid); if (q && q.op === M.id && q.down && p.st && q.st && dist(p.st, q.st) < 80) { send(q, { t: 'revived', by: p.name }); bop(room, M, { t: 'chat', name: '', m: p.name + ' picked up ' + q.name + '.' }); } } return;
-    case 'car': if (M) bop(room, M, { t: 'car', pid: p.pid, c: m.c }, p); return;
+    case 'car': if (M) bop(room, M, { t: 'car', pid: p.pid, c: m.c }, p); else bhaven(room, { t: 'car', pid: p.pid, c: m.c }, p); return;
+    case 'ping': { if (!isFinite(m.x) || !isFinite(m.y)) return; const o = { t: 'ping', pid: p.pid, name: p.name, x: Math.round(m.x), y: Math.round(m.y) }; if (M) bop(room, M, o, p); else bhaven(room, o, p); return; }
+    case 'give': { const q = room.players.get(m.to); if (!q || q === p || (q.op || null) !== (p.op || null) || !p.st || !q.st || dist(p.st, q.st) > 140) return; const k = m.pack || {}, pack = {};
+      if (k.band) pack.band = 1; if (k.ammo > 0) { pack.ammo = Math.min(120, k.ammo | 0); pack.k = ['ammo', 'shells', 'rifleammo', 'huntammo', 'bolts'].includes(k.k) ? k.k : 'ammo'; } send(q, { t: 'given', name: p.name, pack }); return; }
     case 'armory': { const id = String(m.id || ''); if (!ARMS.has(id)) return; const prof = DB.profiles[p.pid] || (DB.profiles[p.pid] = { name: p.name, xp: 0, kills: 0, missions: 0 }); prof.armory = prof.armory || {}; if (!prof.armory[id]) { prof.armory[id] = now(); save(); bcast(room, { t: 'chat', name: '', m: p.name + ' found a ' + String(m.name || id).slice(0, 30) + '.' }); } return; }
   }
 }
