@@ -303,7 +303,7 @@ function crewView(c, room) {
     board: (c.board || makeBoard(c)).map(m => busy.has(m.mid) ? Object.assign({}, m, { taken: true }) : m),
     costs: Object.fromEntries(Object.keys(BUILDINGS).map(b => [b, c.b[b] >= 5 ? null : upCost(b, c.b[b])])), needs: Object.fromEntries(Object.keys(BUILDINGS).map(b => [b, c.b[b] >= 5 ? null : upNeed(b, c.b[b])])), log: c.log.slice(-8),
     ops: room ? [...room.ops.values()].map(opView) : [], maxOps: MAX_OPS,
-    online: room ? [...room.players.values()].map(p => ({ pid: p.pid, name: p.name, look: p.look, ready: p.ready, op: p.op || null })) : [] };
+    online: room ? [...room.players.values()].map(p => ({ pid: p.pid, name: p.name, look: p.look, ready: p.ready, op: p.op || null, slot: p.slot | 0, wpt: p.wpt || null })) : [] };
 }
 
 /* ---------------- rooms / sessions ---------------- */
@@ -639,7 +639,8 @@ function joinRoom(p, c) {
   crewFix(c); const room = roomOf(c.code);
   if (room.players.size >= MAX_PLAYERS) return send(p, { t: 'err', m: 'That crew already has ' + MAX_PLAYERS + ' players online.' });
   if (room.players.has(p.pid)) { const old = room.players.get(p.pid); if (old.op) dropFromOp(room, old); try { old.ws.close(); } catch (e) { } room.players.delete(p.pid); }
-  room.players.set(p.pid, p); p.room = room; p.ready = false; p.op = null;
+  { const used = new Set([...room.players.values()].map(q => q.slot)); let sl = 0; while (used.has(sl)) sl++; p.slot = sl; }   // build 58: a colour slot per player
+  room.players.set(p.pid, p); p.room = room; p.ready = false; p.op = null; p.wpt = null;
   c.members[p.pid] = { name: p.name, joined: (c.members[p.pid] || {}).joined || now(), last: now() }; save();
   send(p, { t: 'joined', code: c.code, crew: crewView(c, room), you: p.pid, armory: armoryOf(p) });
   bcast(room, { t: 'join.player', pid: p.pid, name: p.name, look: p.look }, p);
@@ -710,10 +711,15 @@ function handle(p, m) {
     case 'revive': if (M) { const q = room.players.get(m.pid); if (q && q.op === M.id && q.down && p.st && q.st && dist(p.st, q.st) < 80) { send(q, { t: 'revived', by: p.name }); bop(room, M, { t: 'chat', name: '', m: p.name + ' picked up ' + q.name + '.' }); } } return;
     case 'car': if (M) bop(room, M, { t: 'car', pid: p.pid, c: m.c }, p); else bhaven(room, { t: 'car', pid: p.pid, c: m.c }, p); return;
     case 'ping': { if (!isFinite(m.x) || !isFinite(m.y)) return; const o = { t: 'ping', pid: p.pid, name: p.name, x: Math.round(m.x), y: Math.round(m.y) }; if (M) bop(room, M, o, p); else bhaven(room, o, p); return; }
-    case 'give': { const q = room.players.get(m.to); if (!q || q === p || (q.op || null) !== (p.op || null) || !p.st || !q.st || dist(p.st, q.st) > 140) return; const k = m.pack || {}, pack = {};
-      if (k.band) pack.band = 1; if (k.ammo > 0) { pack.ammo = Math.min(200, k.ammo | 0); pack.k = ['ammo', 'shells', 'rifleammo', 'huntammo', 'bolts'].includes(k.k) ? k.k : 'ammo'; } if (k.gun && typeof k.gun.id === 'string' && (ARMS.has(k.gun.id) || ['pistol', 'smg', 'shotgun', 'rifle', 'hunting'].includes(k.gun.id))) pack.gun = { id: k.gun.id, mag: Math.max(0, Math.min(150, k.gun.mag | 0)), ammo: Math.max(0, Math.min(400, k.gun.ammo | 0)) };
-      if (k.items && typeof k.items === 'object') { const it = {}; for (const key of ['scrap', 'cloth', 'fuel', 'pipe', 'molo']) { const n = k.items[key] | 0; if (n > 0) it[key] = Math.min(10, n); } if (Object.keys(it).length) pack.items = it; }
-      if (!Object.keys(pack).length) return; send(q, { t: 'given', name: p.name, pack }); return; }
+    case 'wpt': { if (m.clear || !isFinite(m.x) || !isFinite(m.y)) p.wpt = null; else p.wpt = { x: Math.round(m.x), y: Math.round(m.y), label: m.label ? String(m.label).slice(0, 40) : null }; crewUpdate(room); return; }
+    case 'give': { const id = m.id | 0, no = why => send(p, { t: 'gave', id, ok: 0, why }); const q = room.players.get(m.to);
+      if (!q || q === p) return no('They are not online.'); if ((q.op || null) !== (p.op || null)) return no('They are not with you.'); if (!p.st || !q.st || dist(p.st, q.st) > 160) return no('Stand closer to them.');
+      const k = m.pack || {}, pack = {};
+      if (k.band > 0) pack.band = Math.min(20, k.band | 0); if (k.ammo > 0) { pack.ammo = Math.min(400, k.ammo | 0); pack.k = ['ammo', 'shells', 'rifleammo', 'huntammo', 'bolts'].includes(k.k) ? k.k : 'ammo'; } if (k.gun && typeof k.gun.id === 'string' && (ARMS.has(k.gun.id) || ['pistol', 'smg', 'shotgun', 'rifle', 'hunting', 'machete'].includes(k.gun.id))) pack.gun = { id: k.gun.id, mag: Math.max(0, Math.min(150, k.gun.mag | 0)), ammo: Math.max(0, Math.min(400, k.gun.ammo | 0)) };
+      if (k.items && typeof k.items === 'object') { const it = {}; for (const key of ['scrap', 'cloth', 'fuel', 'pipe', 'molo', 'bottle']) { const n = k.items[key] | 0; if (n > 0) it[key] = Math.min(99, n); } if (Object.keys(it).length) pack.items = it; }
+      if (!Object.keys(pack).length) return no('Nothing to give.');
+      if (pack.gun) { const pr = DB.profiles[p.pid]; if (pr && pr.armory && pr.armory[pack.gun.id]) { delete pr.armory[pack.gun.id]; save(); } }   // a gun you hand over leaves your armory too
+      send(q, { t: 'given', name: p.name, pid: p.pid, pack }); send(p, { t: 'gave', id, ok: 1, name: q.name, pack }); return; }
     case 'armory': { const id = String(m.id || ''); if (!ARMS.has(id)) return; const prof = DB.profiles[p.pid] || (DB.profiles[p.pid] = { name: p.name, xp: 0, kills: 0, missions: 0 }); prof.armory = prof.armory || {}; if (!prof.armory[id]) { prof.armory[id] = now(); save(); bcast(room, { t: 'chat', name: '', m: p.name + ' found a ' + String(m.name || id).slice(0, 30) + '.' }); } return; }
   }
 }
