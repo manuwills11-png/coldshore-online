@@ -2132,8 +2132,11 @@ function shoot() {
   const w = Object.assign({ id: curW }, W_());
   if (w.melee) {
     if (mouse.fired) return; mouse.fired = true; P.cd = w.rate; vmOne('Fire', 0.03); whoosh(); noise = Math.max(noise, .4);
-    setTimeout(() => { let hit = 0; for (const z of zombies) { if (z.hp <= 0) continue; const d = dist(z, P); if (d > w.reach) continue; let da = Math.atan2(z.y - P.y, z.x - P.x) - yaw; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(da) > (w.cleave ? 1.05 : .85) || hit >= (w.cleave || 2) || segBlocked(P.x, P.y, z.x, z.y)) continue;
-      hit++; const head = pitch > -.15 && Math.random() < .45; z.hp -= (head ? w.head * 1.4 : w.dmg) * (1 + .3 * pk('melee')); z.byP = true; z.lastHead = head; PR.hit = .2; PR.hitH = head; PR.hitK = z.hp <= 0; z.x += Math.cos(yaw) * 10; z.y += Math.sin(yaw) * 10; z.state = 'chase'; z.stag = w.stagger ? 1.1 : .5; z.hitT = .35; if (w.knock && z.spec !== 'brute' && z.hp > 0) { z.down = 2.2; z.stag = 0; z.x += Math.cos(yaw) * 14; z.y += Math.sin(yaw) * 14; } blood(z.x, z.y, 1.6, 9); fleshHit(head); S.firearms += .03; }
+    setTimeout(() => { let hit = 0; const cand = [];   // build 52: arm's reach (not 4 m), a narrow arc, nearest first; extra targets only for cleaving weapons, at half damage
+      for (const z of zombies) { if (z.hp <= 0 || (z.lv | 0) !== (P.lv | 0)) continue; const d = dist(z, P) - (z.r || 12) * .5; if (d > w.reach) continue; let da = Math.atan2(z.y - P.y, z.x - P.x) - yaw; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(da) > (w.cleave ? .75 : .55) || segBlocked(P.x, P.y, z.x, z.y)) continue; cand.push([d + Math.abs(da) * 20, z]); }
+      cand.sort((a, b) => a[0] - b[0]);
+      for (const [, z] of cand.slice(0, w.cleave || 1)) {
+      const main = hit === 0; hit++; const head = main && pitch > -.1 && Math.random() < .3; z.hp -= (head ? w.head * 1.3 : w.dmg) * (main ? 1 : .5) * (1 + .2 * pk('melee')); z.byP = true; z.lastHead = head; PR.hit = .2; PR.hitH = head; PR.hitK = z.hp <= 0; z.x += Math.cos(yaw) * 6; z.y += Math.sin(yaw) * 6; z.state = 'chase'; z.stag = w.stagger ? .9 : .45; z.hitT = .35; if (w.knock && main && z.spec !== 'brute' && z.hp > 0 && Math.random() < w.knock) { z.down = 1.6; z.stag = 0; z.x += Math.cos(yaw) * 8; z.y += Math.sin(yaw) * 8; } blood(z.x, z.y, 1.6, 9); fleshHit(head); S.firearms += .03; }
       if (hit) { camShake = Math.max(camShake, .08); if (actx) nb(actx.currentTime, .08, 'lowpass', 700, 1, .7, .05, 120, .3); } }, 140);
     return;
   }
@@ -2150,7 +2153,7 @@ function shoot() {
   } else {
     P.cd = 0.6; swingT = VM ? 0 : 0.25; vmOne('Melee', 0.05); whoosh();
     for (const z of zombies) {
-      const d = dist(z, P); if (d > (curW === 'pistol' ? 56 : 64)) continue;
+      const d = dist(z, P); if (d > 46 || (z.lv | 0) !== (P.lv | 0)) continue;
       let da = Math.atan2(z.y - P.y, z.x - P.x) - yaw; da = Math.atan2(Math.sin(da), Math.cos(da));
       if (Math.abs(da) < 0.9) { z.hp -= curW === 'pistol' ? 1 : 1.5; z.x += Math.cos(yaw) * 16; z.y += Math.sin(yaw) * 16; blood(z.x, z.y, 1.2, 5); z.state = 'chase'; z.stag = .4; }
     }
@@ -4553,7 +4556,7 @@ const WPN = {
   rifle: { name: 'CARBINE 5.56', cap: 30, rate: .105, auto: true, dmg: 1.6, head: 3, spread: .016, pellets: 1, recoil: [.009, .014], range: 950, snd: 'rifle', rlT: 2.15, ads: -.17 },
   smg: { name: 'SMG  9MM', cap: 30, rate: .072, auto: true, dmg: .85, head: 2, spread: .026, pellets: 1, recoil: [.006, .011], range: 620, snd: 'smg', rlT: 1.9, ads: -.2, anim: 64 },
   hunting: { name: 'BOLT .308  SCOPED', cap: 5, rate: 1.15, auto: false, dmg: 5, head: 8, spread: .003, pellets: 1, recoil: [.07, .09], range: 1900, snd: 'hunting', rlT: 2.6, ads: -.14, zoom: 3.4, pierce: 3, anim: 42 },
-  machete: { name: 'MACHETE', melee: true, cap: 0, rate: .52, dmg: 3.2, head: 3.2, reach: 78 }
+  machete: { name: 'MACHETE', melee: true, cap: 0, rate: .52, dmg: 3.0, head: 3.6, reach: 48 }
 };
 const WORDER = ['pistol', 'shotgun', 'rifle', 'smg', 'hunting', 'machete'], WLBL = { pistol: 'PISTOL', shotgun: 'SHOTGUN', rifle: 'RIFLE', smg: 'SMG', hunting: 'HUNTING RIFLE', machete: 'MACHETE' };
 const W_ = () => WPN[curW];
@@ -4765,13 +4768,14 @@ function coverageMips(tex) {
   } catch (e) { console.warn('mips', e); }
 }
 /* ---------- Blender trees (instanced) ---------- */
-let TREEG = null, treeFB = null, treeFBm = null, bushPos = [];
+let TREEG = null, treeFB = null, treeFBm = null, bushPos = [], TREEG2 = null;
+const TREE2P = loadGlbJson('trees2.json').then(g => { g.scene.traverse(o => { if (o.isMesh) { o.material.side = THREE.DoubleSide; o.material.roughness = .85; o.material.metalness = 0; o.castShadow = true; o.receiveShadow = true; } }); TREEG2 = g; }).catch(e => console.warn('trees2', e));
 fetch('trees.json').then(r => r.json()).then(j => {
   const bin = atob(j.glb), buf = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-  new THREE.GLTFLoader().parse(buf.buffer, '', g => { TREEG = g; assetsReady.trees = true; refreshMenu(); if (world3 && treeFBm) { world3.remove(treeFBm); treeFBm = null; placeTrees(); } }, e => console.warn('trees failed', e));
+  new THREE.GLTFLoader().parse(buf.buffer, '', g => Promise.race([TREE2P, new Promise(r => setTimeout(r, 20000))]).then(() => { TREEG = g; assetsReady.trees = true; refreshMenu(); if (world3 && treeFBm) { world3.remove(treeFBm); treeFBm = null; placeTrees(); } }), e => console.warn('trees failed', e));
 }).catch(e => console.warn('trees fetch failed', e));
 function treeProto(name) {
-  const root = TREEG.scene.getObjectByName(name); if (!root) return [];
+  const root = TREEG.scene.getObjectByName(name) || (TREEG2 && TREEG2.scene.getObjectByName(name)); if (!root) return [];
   root.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), out = [];
   root.traverse(o => {
     if (!o.isMesh) return;
@@ -4859,14 +4863,16 @@ function treeLodTick(cx, cz, force) {
 }
 function placeTrees() {
   const sets = { Pine: [], PineS: [], Oak: [], Dead: [], Bush: [] }, q = new THREE.Quaternion(), e = new THREE.Euler();
+  if (TREEG2) for (let k = 1; k <= 6; k++) sets['Broad' + k] = []; if (TREEG2) for (let k = 1; k <= 3; k++) sets['Shrub' + k] = [];
   trees.forEach((t, i) => {
     if (t.wreck) return;
-    const r = (Math.sin(i * 12.9898) * 43758.5453) % 1, k = Math.abs(r), type = k < .4 ? 'Pine' : k < .62 ? 'PineS' : k < .9 ? 'Oak' : 'Dead';
-    const sc = (t.r / 18) * (0.85 + 0.3 * Math.abs(Math.sin(i * 7.1)));
+    const r = (Math.sin(i * 12.9898) * 43758.5453) % 1, k = Math.abs(r); let type = k < .4 ? 'Pine' : k < .62 ? 'PineS' : k < .9 ? 'Oak' : 'Dead';
+    let sc = (t.r / 18) * (0.85 + 0.3 * Math.abs(Math.sin(i * 7.1)));
+    if (TREEG2 && (type === 'Oak' || (type === 'PineS' && hashI(i) % 3 === 0))) { type = 'Broad' + (1 + hashI(i * 31) % 6); sc *= .82; }   // broadleaf trees from the Blender pack
     e.set((Math.sin(i) * 0.04), i * 2.4, Math.cos(i) * 0.04); q.setFromEuler(e);
     sets[type].push(new THREE.Matrix4().compose(new THREE.Vector3(t.x * S3, 0, t.y * S3), q, new THREE.Vector3(sc, sc, sc)));
   });
-  bushPos.forEach(([x, y], i) => { e.set(0, i * 1.7, 0); q.setFromEuler(e); const sc = 0.7 + 0.6 * Math.abs(Math.sin(i * 3.3)); sets.Bush.push(new THREE.Matrix4().compose(new THREE.Vector3(x * S3, 0, y * S3), q, new THREE.Vector3(sc, sc * 0.8, sc))); });
+  bushPos.forEach(([x, y], i) => { e.set(0, i * 1.7, 0); q.setFromEuler(e); if (TREEG2 && hashI(i * 13) % 4 === 0) { const s2 = .35 + .25 * Math.abs(Math.sin(i * 2.1)); sets['Shrub' + (1 + hashI(i) % 3)].push(new THREE.Matrix4().compose(new THREE.Vector3(x * S3, 0, y * S3), q, new THREE.Vector3(s2, s2, s2))); return; } const sc = 0.7 + 0.6 * Math.abs(Math.sin(i * 3.3)); sets.Bush.push(new THREE.Matrix4().compose(new THREE.Vector3(x * S3, 0, y * S3), q, new THREE.Vector3(sc, sc * 0.8, sc))); });
   for (const n in sets) instanceSet(n, sets[n]);
 }
 /* ---------- Blender-baked world textures ---------- */
@@ -6694,9 +6700,9 @@ function renderTitle() {
   } else if (titleMode === 'settings') {
     h += '<div class="panel"><h3>Settings</h3><table><tr><td>Graphics</td><td>' + ['Low', 'Medium', 'High'].map((q, i) => '<span class="btn" data-q="' + i + '" style="padding:4px 12px;margin-right:6px;' + (quality === i ? 'border-color:#9fd6e6' : '') + '">' + q + '</span>').join('') + '</td></tr><tr><td>Voices</td><td><span class="btn" data-v="1" style="padding:4px 12px">' + (voicesOn ? 'On' : 'Off') + '</span> ' + (ttsOk ? '' : '<small>(no speech voices on this device: subtitles only)</small>') + '</td></tr></table><div class="btns"><span class="btn" data-m="back">Back</span></div></div>';
   } else if (titleMode === 'credits') {
-    h += '<div class="panel"><h3>Credits</h3><p>ColdShore prototype. Characters, zombies, vehicles, buildings, trees and animation built procedurally in Blender. Engine: three.js. Voices: your browser&#39;s speech engine.</p><p style="font-size:12px;opacity:.8">Vehicle and weapon models from BlendSwap, reduced for the browser: M1 Humvee by panko10 (CC-BY); Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0); Dodge Challenger 1970 R/T; Low Quality Weapon Pack (CC0).</p><div class="btns"><span class="btn" data-m="back">Back</span></div></div>';
+    h += '<div class="panel"><h3>Credits</h3><p>ColdShore prototype. Characters, zombies, vehicles, buildings, trees and animation built procedurally in Blender. Engine: three.js. Voices: your browser&#39;s speech engine.</p><p style="font-size:12px;opacity:.8">Models from BlendSwap, reduced for the browser: M1 Humvee by panko10 (CC-BY); Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0); Ford Crown Victoria Police Interceptor 2005 (CC-BY 3.0); Mercedes-AMG GLS (CC0); BMW 3 Series Coupe by mikepan (CC-BY-SA 3.0); Trees &amp; Bushes pack by Painkiller5555; Dodge Challenger 1970 R/T; Low Quality Weapon Pack (CC0).</p><div class="btns"><span class="btn" data-m="back">Back</span></div></div>';
   }
-  h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 51</div>';
+  h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 52</div>';
   titleEl.innerHTML = h; titleEl.classList.add('on');
   titleEl.querySelectorAll('[data-m]').forEach(a => a.onclick = () => titleAction(a.dataset.m));
   titleEl.querySelectorAll('[data-k]').forEach(a => a.onclick = () => pickBg(a.dataset.k));
@@ -8644,10 +8650,10 @@ const ARSENAL = {
   ak: { base: 'rifle', file: 'vm_rifle.json', rar: 'epic', ammoK: 'rifleammo', blurb: 'Hard-hitting full auto. Kicks like a mule, never jams.', stats: { name: 'AK 7.62', cap: 30, rate: .1, auto: true, dmg: 2.2, head: 3.8, spread: .02, pellets: 1, recoil: [.013, .021], range: 1000, snd: 'ak', rlT: 2.3, ads: -.17 } },
   lmg: { base: 'rifle', file: 'vm_rifle.json', rar: 'legendary', ammoK: 'rifleammo', blurb: 'A hundred-round belt. Hold the line by yourself.', stats: { name: 'M249 SAW', cap: 100, rate: .078, auto: true, dmg: 1.8, head: 3, spread: .028, pellets: 1, recoil: [.009, .015], range: 950, snd: 'ak', rlT: 4.4, ads: -.17 } },
   crossbow: { base: 'rifle', file: 'vm_rifle.json', rar: 'rare', ammoK: 'bolts', blurb: 'Silent. Bolts go through one and into the next.', stats: { name: 'CROSSBOW', cap: 1, rate: .35, auto: false, dmg: 7, head: 12, spread: .004, pellets: 1, recoil: [.025, .035], range: 1500, snd: 'xbow', rlT: 1.5, ads: -.17, pierce: 2, silent: true } },
-  katana: { base: 'machete', file: 'vm_machete.json', rar: 'rare', blurb: 'Folded steel. Fast enough to take two at once.', stats: { name: 'KATANA', melee: true, cap: 0, rate: .36, dmg: 4.4, head: 5.5, reach: 92, cleave: 3 } },
-  axe: { base: 'machete', file: 'vm_machete.json', rar: 'uncommon', blurb: 'A firefighter\'s axe. Slow, and it knocks them flat.', stats: { name: 'FIRE AXE', melee: true, cap: 0, rate: .85, dmg: 6.5, head: 8, reach: 86, knock: 1 } },
-  bat: { base: 'machete', file: 'vm_machete.json', rar: 'common', blurb: 'Ash, nails and barbed wire. Staggers anything.', stats: { name: 'NAIL BAT', melee: true, cap: 0, rate: .58, dmg: 3.4, head: 3.8, reach: 84, stagger: 1 } },
-  sledge: { base: 'machete', file: 'vm_machete.json', rar: 'rare', blurb: 'Ten pounds of steel on a stick. Flattens a crowd.', stats: { name: 'SLEDGEHAMMER', melee: true, cap: 0, rate: 1.1, dmg: 8, head: 10, reach: 90, knock: 1, cleave: 3 } }
+  katana: { base: 'machete', file: 'vm_machete.json', rar: 'rare', blurb: 'Folded steel. Quick, and a good swing catches two.', stats: { name: 'KATANA', melee: true, cap: 0, rate: .45, dmg: 3.3, head: 4.4, reach: 52, cleave: 2 } },
+  axe: { base: 'machete', file: 'vm_machete.json', rar: 'uncommon', blurb: 'A firefighter\'s axe. Slow, and it knocks them flat.', stats: { name: 'FIRE AXE', melee: true, cap: 0, rate: .9, dmg: 3.6, head: 5.5, reach: 50, knock: .35 } },
+  bat: { base: 'machete', file: 'vm_machete.json', rar: 'common', blurb: 'Ash, nails and barbed wire. Staggers anything.', stats: { name: 'NAIL BAT', melee: true, cap: 0, rate: .6, dmg: 2.8, head: 3.4, reach: 50, stagger: 1 } },
+  sledge: { base: 'machete', file: 'vm_machete.json', rar: 'rare', blurb: 'Ten pounds of steel on a stick. Slow, but it can drop one and stagger the next.', stats: { name: 'SLEDGEHAMMER', melee: true, cap: 0, rate: 1.45, dmg: 4.0, head: 6, reach: 52, knock: .5, cleave: 2 } }
 };
 // the original six get a rarity too
 const RAR_OF = { pistol: 'common', machete: 'common', shotgun: 'uncommon', smg: 'uncommon', rifle: 'rare', hunting: 'rare' };
@@ -8881,6 +8887,25 @@ function havenDrop() {
   for (const it of R.ia) { it.gone = true; const k = Math.floor(it.x / 200) * 10000 + Math.floor(it.y / 200), a = IAG.get(k); if (a) { const i = a.indexOf(it); if (i >= 0) a.splice(i, 1); } const j = IA.indexOf(it); if (j >= 0) IA.splice(j, 1); }
   HV.rec = null; HV.parts = {}; HV.beams = []; HV.pools = []; HV.beasts = []; HV.spin = []; HV.blink = []; HV.smoke = []; HV.glow = [];
 }
+/* build 52: Haven's structures are modelled in Blender (haven.json): towers, wall modules and gates for every level, the garage,
+   radio mast and generator yard at each level, tents, coop, greenhouse, command table, mission board and fire pit.
+   Until the file arrives (or if it fails) the old box-built versions are used. */
+let HVG = null;
+loadGlbJson('haven.json').then(g => { g.scene.traverse(o => { if (!o.isMesh) return; const m = o.material; o.castShadow = true; o.receiveShadow = true; m.metalness = Math.min(m.metalness, .3); m.roughness = Math.max(m.roughness, .45);
+    if (/HV_glass/.test(m.name)) { m.transparent = true; m.opacity = .35; m.depthWrite = false; m.side = THREE.DoubleSide; }
+    if (/HV_(canvas|tarp|wire|solar)/.test(m.name) || o.geometry.attributes.position.count < 400) m.side = THREE.DoubleSide; });
+  HVG = g; if (HV.b && world3 && typeof havenBuild === 'function' && NET.on) havenBuild(HV.b); }).catch(e => console.warn('haven models', e));
+function hvClone(name, P_, x, y, ry) { const src = HVG && HVG.scene.getObjectByName(name); if (!src) return null; const o = src.clone(true); o.position.set(hx(x), 0, hz(y)); o.rotation.y = ry || 0; P_.add(o); return o; }
+function hvWallTiles(P_, segs, wt, R) {   // one InstancedMesh per piece of the wall module, laid end to end along every wall segment
+  const src = HVG && HVG.scene.getObjectByName('HV_wall_' + wt); if (!src) return false; src.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(src.matrixWorld).invert(), parts = []; src.traverse(o => { if (o.isMesh) parts.push({ o, local: new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld), list: [] }); });
+  const q = new THREE.Quaternion(), m4 = new THREE.Matrix4(), Y = new THREE.Vector3(0, 1, 0);
+  for (const S of segs) { const hor = S[2] > S[3], L = hor ? S[2] : S[3], n = Math.max(1, Math.round(L * S3 / 4)), len = L * S3 / n;
+    const ry = hor ? (S[1] <= R.y0 + 1 ? 0 : Math.PI) : (S[0] <= R.x0 + 1 ? Math.PI / 2 : -Math.PI / 2); q.setFromAxisAngle(Y, ry);
+    for (let i = 0; i < n; i++) { const t = (i + .5) / n * L, x = hor ? S[0] + t : S[0] + 15, y = hor ? S[1] + 15 : S[1] + t;
+      m4.compose(new THREE.Vector3(hx(x), 0, hz(y)), q, new THREE.Vector3(len / 4, 1, 1)); for (const p of parts) p.list.push(m4.clone().multiply(p.local)); } }
+  for (const p of parts) { const im = new THREE.InstancedMesh(p.o.geometry, p.o.material, p.list.length); p.list.forEach((M4, i) => im.setMatrixAt(i, M4)); im.castShadow = true; im.receiveShadow = true; im.frustumCulled = false; P_.add(im); }
+  return true; }
 function havenPart(k) { const g = new THREE.Group(); g.name = 'hv_' + k; HV.rec.g.add(g); HV.parts[k] = g; return g; }
 function havenBuild(B, grow) {
   if (!world3 || !colGrid) return; havenDrop(); omat(); const H = HM();
@@ -8893,9 +8918,9 @@ function havenBuild(B, grow) {
     path(gx - 90, R.y0, 180, 1150); path(R.x0 + 80, 3480, R.x1 - R.x0 - 160, 140); }
   // ---- walls
   { const P_ = havenPart('walls'), wt = B.walls, segs = [[R.x0, R.y0, gx - GATE / 2 - R.x0, 30], [gx + GATE / 2, R.y0, R.x1 - gx - GATE / 2, 30], [R.x0, R.y0, 30, R.y1 - R.y0], [R.x1 - 30, R.y0, 30, R.y1 - R.y0], [R.x0, R.y1 - 30, R.x1 - R.x0, 30]];
-    const hgt = [1.3, 3.0, 3.6, 4.2, 4.8, 5.4][wt];
+    const hgt = [1.3, 3.0, 3.6, 4.2, 4.8, 5.4][wt]; const tiled = hvWallTiles(P_, segs, wt, R);
     for (const S of segs) { const hor = S[2] > S[3], L = hor ? S[2] : S[3];
-      hvWall(P_, S[0], S[1], S[2], S[3], null, hgt, wt === 0);
+      hvWall(P_, S[0], S[1], S[2], S[3], null, hgt, wt === 0); if (tiled) continue;
       if (wt === 0) {   // scrap barricade: crates, pallets, tyres and car doors
         for (let t = 20; t < L; t += 70) { const x = hor ? S[0] + t : S[0] + 15, y = hor ? S[1] + 15 : S[1] + t, k = hashI(Math.round(x * 7 + y)) % 4;
           if (k === 0) hvBox(P_, H.plankD, 1.2, 1.1, 1.1, hx(x), .55, hz(y), (k * .3)); else if (k === 1) { for (let j = 0; j < 3; j++) { const ty = new THREE.Mesh(new THREE.TorusGeometry(.38, .16, 6, 12), M.tire || H.steel); ty.rotation.x = Math.PI / 2; ty.position.set(hx(x), .16 + j * .3, hz(y)); P_.add(ty); } }
@@ -8912,25 +8937,25 @@ function havenBuild(B, grow) {
         if (wt >= 4) { const coil = new THREE.Mesh(new THREE.TorusGeometry(.28, .025, 4, 10), H.wire), cn = Math.floor(hx(L) / .45), ci = new THREE.InstancedMesh(coil.geometry, H.wire, cn), m4 = new THREE.Matrix4(), q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, hor ? 0 : Math.PI / 2, 0));
           for (let i = 0; i < cn; i++) { const t = (i + .5) / cn * L; m4.compose(V3(hx(hor ? S[0] + t : S[0] + 15), hgt + .28, hz(hor ? S[1] + 15 : S[1] + t)), q, V3(1, 1, 1)); ci.setMatrixAt(i, m4); } P_.add(ci); } } }
     // the gate: two leaves, a sign
-    const gt = wt ? hgt : 1.2; for (const s of [-1, 1]) { hvBox(P_, wt >= 3 ? H.steel : H.plank, .5, gt + .6, .5, hx(gx + s * (GATE / 2 + 4)), (gt + .6) / 2, hz(R.y0 + 15)); hvBox(P_, wt >= 3 ? H.rust : H.plankD, hx(GATE / 2 - 12), gt * .9, .14, hx(gx + s * (GATE / 4 + 6)), gt * .45, hz(R.y0 - 8 - s * 18), s * .9); }
-    hvBox(P_, H.plank, hx(GATE + 30), .7, .12, hx(gx), gt + .9, hz(R.y0 + 15)); havenSign(P_, 'HAVEN', hx(gx), gt + .9, hz(R.y0 + 15) - .08); }
+    const gt = wt ? hgt : 1.2; if (tiled && hvClone('HV_gate_' + wt, P_, gx, R.y0 + 15)) havenSign(P_, 'HAVEN', hx(gx), gt + .9, hz(R.y0 + 15) - .17, .34); else for (const s of [-1, 1]) { hvBox(P_, wt >= 3 ? H.steel : H.plank, .5, gt + .6, .5, hx(gx + s * (GATE / 2 + 4)), (gt + .6) / 2, hz(R.y0 + 15)); hvBox(P_, wt >= 3 ? H.rust : H.plankD, hx(GATE / 2 - 12), gt * .9, .14, hx(gx + s * (GATE / 4 + 6)), gt * .45, hz(R.y0 - 8 - s * 18), s * .9); }
+    if (!tiled) { hvBox(P_, H.plank, hx(GATE + 30), .7, .12, hx(gx), gt + .9, hz(R.y0 + 15)); havenSign(P_, 'HAVEN', hx(gx), gt + .9, hz(R.y0 + 15) - .08); } }
   // ---- towers (corners first, then over the gate)
   { const P_ = havenPart('tower'), spots = [[R.x0 + 40, R.y0 + 40], [R.x1 - 40, R.y0 + 40], [R.x0 + 40, R.y1 - 40], [R.x1 - 40, R.y1 - 40], [gx + GATE / 2 + 70, R.y0 + 60]];
-    spots.slice(0, Math.min(5, B.tower)).forEach(([x, y], i) => { const hh = 6 + (B.tower >= 4 ? 1.2 : 0), mat = B.tower >= 3 ? H.steel : H.log;
-      for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) hvBox(P_, mat, .22, hh, .22, hx(x) + dx * 1.3, hh / 2, hz(y) + dy * 1.3);
-      for (const yy of [hh * .35, hh * .7]) for (const s of [-1, 1]) { hvBox(P_, H.plankD, 2.8, .1, .1, hx(x), yy, hz(y) + s * 1.3, 0); hvBox(P_, H.plankD, .1, .1, 2.8, hx(x) + s * 1.3, yy, hz(y)); }
-      hvBox(P_, H.plank, 3.4, .2, 3.4, hx(x), hh, hz(y)); for (const s of [-1, 1]) { hvBox(P_, H.plankD, 3.4, 1, .08, hx(x), hh + .5, hz(y) + s * 1.7); hvBox(P_, H.plankD, .08, 1, 3.4, hx(x) + s * 1.7, hh + .5, hz(y)); }
-      const rf = new THREE.Mesh(new THREE.ConeGeometry(2.7, 1.3, 4), OM.roof[i % 4]); rf.rotation.y = Math.PI / 4; rf.position.set(hx(x), hh + 2.6, hz(y)); rf.castShadow = true; P_.add(rf); for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) hvBox(P_, H.plankD, .1, 1.9, .1, hx(x) + dx * 1.6, hh + 1, hz(y) + dy * 1.6);
+    spots.slice(0, Math.min(5, B.tower)).forEach(([x, y], i) => { const hh = 6 + (B.tower >= 4 ? 1.2 : 0), mat = B.tower >= 3 ? H.steel : H.log, built = !!hvClone('HV_tower_' + Math.max(1, B.tower), P_, x, y);
+      if (!built) for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) hvBox(P_, mat, .22, hh, .22, hx(x) + dx * 1.3, hh / 2, hz(y) + dy * 1.3);
+      if (!built) for (const yy of [hh * .35, hh * .7]) for (const s of [-1, 1]) { hvBox(P_, H.plankD, 2.8, .1, .1, hx(x), yy, hz(y) + s * 1.3, 0); hvBox(P_, H.plankD, .1, .1, 2.8, hx(x) + s * 1.3, yy, hz(y)); }
+      if (!built) { hvBox(P_, H.plank, 3.4, .2, 3.4, hx(x), hh, hz(y)); for (const s of [-1, 1]) { hvBox(P_, H.plankD, 3.4, 1, .08, hx(x), hh + .5, hz(y) + s * 1.7); hvBox(P_, H.plankD, .08, 1, 3.4, hx(x) + s * 1.7, hh + .5, hz(y)); }
+      const rf = new THREE.Mesh(new THREE.ConeGeometry(2.7, 1.3, 4), OM.roof[i % 4]); rf.rotation.y = Math.PI / 4; rf.position.set(hx(x), hh + 2.6, hz(y)); rf.castShadow = true; P_.add(rf); for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) hvBox(P_, H.plankD, .1, 1.9, .1, hx(x) + dx * 1.6, hh + 1, hz(y) + dy * 1.6); }
       hvWall(P_, x - 34, y - 34, 68, 68, null, hh);
       if (B.tower >= 3) {   // a searchlight: an additive cone that sweeps the ground outside the wall (no real light, it is cheap)
-        const piv = new THREE.Group(); piv.position.set(hx(x), hh + 1.3, hz(y)); P_.add(piv); const cone = new THREE.Mesh(new THREE.ConeGeometry(4, 30, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0xfff2d0, transparent: true, opacity: .07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+        const piv = new THREE.Group(); piv.position.set(hx(x), hh + (built && B.tower >= 4 ? 2.85 : 1.3), hz(y)); P_.add(piv); const cone = new THREE.Mesh(new THREE.ConeGeometry(4, 30, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0xfff2d0, transparent: true, opacity: .07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
         cone.geometry.translate(0, -15, 0); cone.rotation.x = Math.PI / 2 + .55; piv.add(cone); HV.spin.push({ o: piv, axis: 'y', rate: .35 + i * .05 }); HV.beams = HV.beams || []; HV.beams.push(cone);
-        const head = hvCyl(P_, H.steel, .28, .34, .5, hx(x), hh + 1.3, hz(y)); head.rotation.x = Math.PI / 2; } }); }
+        const head = hvCyl(P_, H.steel, .28, .34, .5, hx(x), hh + (built && B.tower >= 4 ? 2.85 : 1.3), hz(y)); head.rotation.x = Math.PI / 2; } }); }
   // ---- housing: tents, then cabins
   { const P_ = havenPart('housing'), n = B.housing ? 2 + 2 * B.housing : 0;
     for (let i = 0; i < Math.max(2, n); i++) { const col = i % 2, row = Math.floor(i / 2), x = R.x0 + 110 + col * 330, y = R.y0 + 300 + row * 160;
       if (y + 120 > R.y1 - 60) break;
-      if (!B.housing) { havenTent(P_, x + 90, y + 50, i); continue; }
+      if (!B.housing) { if (!hvClone('HV_tent', P_, x + 90, y + 50, (i % 2) * Math.PI)) havenTent(P_, x + 90, y + 50, i); continue; }
       oBuilding(HV.rec, P_, { x, y, w: 240, h: 120, door: col ? 'w' : 'e', kind: 'cabin', col: (i * 3 + 1) % 7, roof: i % 4 });
       if (B.power) for (const s of [-1, 1]) { const w = hvBox(P_, HM().bulb, .9, .7, .04, hx(x + 120) + s * 1.6, 1.55, hz(y + (col ? 0 : 120)) + (col ? -.3 : .3), 0, false); HV.glow.push(w); } }
     // laundry lines and a water butt between the cabins
@@ -8946,19 +8971,20 @@ function havenBuild(B, grow) {
       havenCrops(P_, x, y, w, h, kind); hvWall(P_, x - 6, y - 6, w + 12, 6, null, .7, true); }
     if (F) for (let i = 0; i < 2; i++) { const sx = fx0 + 280, sy = fy0 + 40 + i * 330; hvCyl(P_, H.plankD, .05, .05, 1.8, hx(sx), .9, hz(sy)); hvBox(P_, H.plankD, .9, .06, .06, hx(sx), 1.5, hz(sy)); const hd = new THREE.Mesh(new THREE.SphereGeometry(.16, 8, 6), H.canvas); hd.position.set(hx(sx), 1.85, hz(sy)); P_.add(hd); hvBox(P_, H.canvasG, .4, .6, .2, hx(sx), 1.35, hz(sy)); }   // scarecrows
     const yb = R.y1 - 520;
-    if (F >= 1) { havenPen(P_, fx0 - 20, yb, 200, 160); const cp = { x: fx0 + 20, y: yb + 20 }; hvBox(P_, H.plank, 2.2, 1.3, 1.6, hx(cp.x + 30), .9, hz(cp.y + 25)); const rf = hvBox(P_, OM.roof[2], 2.5, .1, 1.9, hx(cp.x + 30), 1.65, hz(cp.y + 25)); rf.rotation.z = .2; hvBox(P_, H.plankD, .3, .05, .9, hx(cp.x + 30) + 1.2, .35, hz(cp.y + 25), 0, false);
+    if (F >= 1) { havenPen(P_, fx0 - 20, yb, 200, 160); const cp = { x: fx0 + 20, y: yb + 20 }; if (!hvClone('HV_coop', P_, cp.x + 30, cp.y + 25)) { hvBox(P_, H.plank, 2.2, 1.3, 1.6, hx(cp.x + 30), .9, hz(cp.y + 25)); const rf = hvBox(P_, OM.roof[2], 2.5, .1, 1.9, hx(cp.x + 30), 1.65, hz(cp.y + 25)); rf.rotation.z = .2; hvBox(P_, H.plankD, .3, .05, .9, hx(cp.x + 30) + 1.2, .35, hz(cp.y + 25), 0, false); }
       for (let i = 0; i < 6 + F; i++) havenBeast(P_, 'chicken', fx0 + 40 + Math.random() * 130, yb + 40 + Math.random() * 90, { x0: fx0, y0: yb + 10, x1: fx0 + 170, y1: yb + 150 }); }
-    if (F >= 2) { havenPen(P_, fx0 + 210, yb, 200, 180); hvBox(P_, H.water, 1.6, .25, .5, hx(fx0 + 300), .2, hz(yb + 150)); hvBox(P_, H.soilW, hx(170), .03, hz(150), hx(fx0 + 310), .03, hz(yb + 90), 0, false);
+    if (F >= 2) { havenPen(P_, fx0 + 210, yb, 200, 180); hvClone('HV_pigshed', P_, fx0 + 340, yb + 50); hvBox(P_, H.water, 1.6, .25, .5, hx(fx0 + 300), .2, hz(yb + 150)); hvBox(P_, H.soilW, hx(170), .03, hz(150), hx(fx0 + 310), .03, hz(yb + 90), 0, false);
       for (let i = 0; i < 2 + Math.floor(F / 2); i++) havenBeast(P_, 'pig', fx0 + 240 + Math.random() * 130, yb + 40 + Math.random() * 100, { x0: fx0 + 225, y0: yb + 20, x1: fx0 + 395, y1: yb + 165 }); }
     if (F >= 3) { const px = fx0 - 40, py = yb + 200; havenPen(P_, px, py, 470, 280); hvBox(P_, H.hay, 1.2, 1.2, 1.2, hx(px + 60), .6, hz(py + 60)); hvBox(P_, H.hay, 1.2, 1.2, 1.2, hx(px + 90), .6, hz(py + 75), .5); hvBox(P_, H.water, 2.2, .3, .6, hx(px + 400), .25, hz(py + 240));
       for (let i = 0; i < 2 + (F - 3) * 2; i++) havenBeast(P_, 'cow', px + 80 + Math.random() * 320, py + 60 + Math.random() * 180, { x0: px + 30, y0: py + 30, x1: px + 450, y1: py + 260 }); }
-    if (F >= 4) { const gh = { x: R.x1 - 640, y: R.y0 + 790 }; hvBox(P_, H.glass, hx(240), 2.4, hz(140), hx(gh.x + 120), 1.2, hz(gh.y + 70)); for (let k = 0; k <= 4; k++) hvBox(P_, H.frame, .06, 2.5, hz(140), hx(gh.x + k * 60), 1.25, hz(gh.y + 70)); havenCrops(P_, gh.x + 10, gh.y + 10, 220, 120, 'green'); }
+    if (F >= 4) { const gh = { x: R.x1 - 640, y: R.y0 + 790 }; if (hvClone('HV_greenhouse', P_, gh.x + 120, gh.y + 70)) hvWall(P_, gh.x, gh.y, 240, 140, null, 2.4); else hvBox(P_, H.glass, hx(240), 2.4, hz(140), hx(gh.x + 120), 1.2, hz(gh.y + 70)); if (!HVG) for (let k = 0; k <= 4; k++) hvBox(P_, H.frame, .06, 2.5, hz(140), hx(gh.x + k * 60), 1.25, hz(gh.y + 70)); if (!HVG) havenCrops(P_, gh.x + 10, gh.y + 10, 220, 120, 'green'); }
     if (F >= 5) havenWindmill(P_, R.x1 - 110, R.y0 + 110, H.plank, 7); }
   // ---- power: a generator, solar arrays, a wind turbine, floodlights and string lights
   { const P_ = havenPart('power'), L = B.power, gx0 = gx + 60, gy0 = R.y1 - 300;
-    if (L >= 1) { hvBox(P_, H.steel, 2.2, 1.3, 1.2, hx(gx0), .65, hz(gy0)); hvBox(P_, H.rust, 2.3, .1, 1.3, hx(gx0), 1.35, hz(gy0)); hvCyl(P_, H.steel, .08, .08, 1.2, hx(gx0) + .8, 1.9, hz(gy0) - .3); HV.smoke.push({ x: hx(gx0) + .8, y: 2.5, z: hz(gy0) - .3, t: 0 }); hvBox(P_, H.red, .5, .4, .02, hx(gx0) - .5, .9, hz(gy0) - .61, 0, false);
+    if (L >= 1 && hvClone('HV_power_' + Math.min(5, L), P_, gx0, gy0)) { HV.smoke.push({ x: hx(gx0) + (L >= 4 ? 1.3 : .9), y: L >= 4 ? 3.6 : 2.3, z: hz(gy0) - (L >= 4 ? .5 : .3), t: 0 }); hvWall(P_, gx0 - (L >= 4 ? 60 : 50), gy0 - 40, L >= 4 ? 120 : 100, 70, null, 2.4); if (L >= 2) hvWall(P_, gx0 - 80, gy0 - 14, 26, 28, null, 2.2); if (L >= 3) hvWall(P_, gx0 + 40, gy0 - 30, 32, 60, null, 1.8); if (L >= 5) { hvWall(P_, gx0 - 50, gy0 + 30, 60, 40, null, 1.3); hvWall(P_, gx0 + 64, gy0 + 10, 48, 44, null, 2.6); } }
+    else if (L >= 1) { hvBox(P_, H.steel, 2.2, 1.3, 1.2, hx(gx0), .65, hz(gy0)); hvBox(P_, H.rust, 2.3, .1, 1.3, hx(gx0), 1.35, hz(gy0)); hvCyl(P_, H.steel, .08, .08, 1.2, hx(gx0) + .8, 1.9, hz(gy0) - .3); HV.smoke.push({ x: hx(gx0) + .8, y: 2.5, z: hz(gy0) - .3, t: 0 }); hvBox(P_, H.red, .5, .4, .02, hx(gx0) - .5, .9, hz(gy0) - .61, 0, false);
       for (let k = 0; k < 4; k++) hvCyl(P_, H.red, .28, .28, .9, hx(gx0) + 1.6 + (k % 2) * .6, .45, hz(gy0) + (k > 1 ? .6 : 0)); hvWall(P_, gx0 - 30, gy0 - 20, 60, 40, null, 1.3); }
-    for (let i = 0; i < L * 3; i++) { const x = gx + 160 + (i % 5) * 80, y = R.y1 - 330 + Math.floor(i / 5) * 90; const fr = new THREE.Group(); fr.position.set(hx(x), 0, hz(y)); P_.add(fr);
+    for (let i = 0; i < L * 3; i++) { const x = gx + 160 + (i % 5) * 80, y = R.y1 - 330 + Math.floor(i / 5) * 90; if (hvClone('HV_solar', P_, x, y)) continue; const fr = new THREE.Group(); fr.position.set(hx(x), 0, hz(y)); P_.add(fr);
       hvCyl(fr, H.frame, .05, .05, 1.1, 0, .55, .5); hvCyl(fr, H.frame, .05, .05, .6, 0, .3, -.5); const pn = hvBox(fr, H.solar, 3.2, .06, 1.7, 0, 1, 0); pn.rotation.x = -.5; }
     if (L >= 3) havenTurbine(P_, gx - 300, R.y1 - 220, 12 + L);
     if (L >= 1) { // floodlights on poles at the plaza and gate
@@ -8968,39 +8994,43 @@ function havenBuild(B, grow) {
       for (const [x, y] of pts.slice(0, 4)) hvCyl(P_, H.plankD, .06, .06, 3.5, hx(x), 1.75, hz(y)); } }
   // ---- plaza: campfire, the command table and the mission board
   { const P_ = havenPart('plaza'), cx = gx, cy = 3560; const fire = new THREE.Mesh(new THREE.ConeGeometry(.45, 1, 7), H.fire); fire.position.set(hx(cx), .5, hz(cy)); P_.add(fire); HV.fire = fire; const fl = new THREE.PointLight(0xff8a3a, 1.8, 14, 1.8); fl.position.set(hx(cx), 1.3, hz(cy)); P_.add(fl); HV.fireL = fl;
-    for (let i = 0; i < 7; i++) { const a = i / 7 * 6.283; const lg = new THREE.Mesh(new THREE.CylinderGeometry(.13, .13, 1.4, 6), H.log); lg.rotation.z = Math.PI / 2; lg.rotation.y = a; lg.position.set(hx(cx) + Math.cos(a) * .5, .14, hz(cy) + Math.sin(a) * .5); P_.add(lg); const st = hvBox(P_, H.concreteD, .35, .3, .3, hx(cx) + Math.cos(a) * .95, .15, hz(cy) + Math.sin(a) * .95); }
-    for (let i = 0; i < 4; i++) { const a = i / 4 * 6.283 + .4; const b = hvBox(P_, H.log, 1.8, .4, .45, hx(cx) + Math.cos(a) * 2.6, .25, hz(cy) + Math.sin(a) * 2.6, -a + Math.PI / 2); }
+    if (hvClone('HV_firepit', P_, cx, cy)) {} else for (let i = 0; i < 7; i++) { const a = i / 7 * 6.283; const lg = new THREE.Mesh(new THREE.CylinderGeometry(.13, .13, 1.4, 6), H.log); lg.rotation.z = Math.PI / 2; lg.rotation.y = a; lg.position.set(hx(cx) + Math.cos(a) * .5, .14, hz(cy) + Math.sin(a) * .5); P_.add(lg); const st = hvBox(P_, H.concreteD, .35, .3, .3, hx(cx) + Math.cos(a) * .95, .15, hz(cy) + Math.sin(a) * .95); }
+    if (!HVG) for (let i = 0; i < 4; i++) { const a = i / 4 * 6.283 + .4; const b = hvBox(P_, H.log, 1.8, .4, .45, hx(cx) + Math.cos(a) * 2.6, .25, hz(cy) + Math.sin(a) * 2.6, -a + Math.PI / 2); }
     hvWall(P_, cx - 18, cy - 18, 36, 36, null, .4, true);
     // command table: a map on trestles under a tarp
-    const tx = gx - 150, ty = 3300; hvBox(P_, H.plank, 2.6, .1, 1.5, hx(tx), 1, hz(ty)); for (const [dx, dz] of [[-1.1, -.6], [1.1, -.6], [-1.1, .6], [1.1, .6]]) hvBox(P_, H.plankD, .1, 1, .1, hx(tx) + dx, .5, hz(ty) + dz);
+    const tx = gx - 150, ty = 3300, tbl = hvClone('HV_table', P_, tx, ty); if (!tbl) hvBox(P_, H.plank, 2.6, .1, 1.5, hx(tx), 1, hz(ty)); if (!tbl) for (const [dx, dz] of [[-1.1, -.6], [1.1, -.6], [-1.1, .6], [1.1, .6]]) hvBox(P_, H.plankD, .1, 1, .1, hx(tx) + dx, .5, hz(ty) + dz);
     { const cv = document.createElement('canvas'); cv.width = 256; cv.height = 160; const c2 = cv.getContext('2d'); c2.fillStyle = '#c9b98e'; c2.fillRect(0, 0, 256, 160); c2.strokeStyle = '#6a5a3a'; c2.lineWidth = 2; for (let i = 0; i < 9; i++) { c2.beginPath(); c2.moveTo(Math.random() * 256, Math.random() * 160); c2.bezierCurveTo(Math.random() * 256, Math.random() * 160, Math.random() * 256, Math.random() * 160, Math.random() * 256, Math.random() * 160); c2.stroke(); } c2.fillStyle = '#2a5a7a'; c2.fillRect(0, 110, 90, 50); c2.strokeStyle = '#b02020'; c2.lineWidth = 3; c2.strokeRect(120, 60, 40, 30); c2.fillStyle = '#b02020'; c2.font = 'bold 16px Arial'; c2.fillText('HAVEN', 112, 55);
       const mp = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 1.3), new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(cv), roughness: .9 })); mp.rotation.x = -Math.PI / 2; mp.position.set(hx(tx), 1.06, hz(ty)); P_.add(mp); }
-    const tarp = hvBox(P_, H.canvasG, 4, .05, 3, hx(tx), 2.6, hz(ty)); tarp.rotation.x = .12; for (const [dx, dz] of [[-1.9, -1.4], [1.9, -1.4], [-1.9, 1.4], [1.9, 1.4]]) hvCyl(P_, H.plankD, .05, .05, 2.6, hx(tx) + dx, 1.3, hz(ty) + dz);
+    if (!tbl) { const tarp = hvBox(P_, H.canvasG, 4, .05, 3, hx(tx), 2.6, hz(ty)); tarp.rotation.x = .12; for (const [dx, dz] of [[-1.9, -1.4], [1.9, -1.4], [-1.9, 1.4], [1.9, 1.4]]) hvCyl(P_, H.plankD, .05, .05, 2.6, hx(tx) + dx, 1.3, hz(ty) + dz); }
     hvWall(P_, tx - 60, ty - 34, 120, 68, null, 1.1);
     oIA(HV.rec, tx, ty + 50, 'havenTable', { r: 40 });
     // the mission board: a corkboard of contracts
-    const bx = gx + 150, by = 3300; hvBox(P_, H.plankD, 2.4, 1.6, .12, hx(bx), 1.7, hz(by)); for (const s of [-1, 1]) hvBox(P_, H.plankD, .14, 2.6, .14, hx(bx) + s * 1.15, 1.3, hz(by));
-    for (let i = 0; i < 7; i++) hvBox(P_, [H.white, H.canvas, H.white][i % 3], .35, .45, .02, hx(bx) - .9 + (i % 4) * .55 + (i > 3 ? .25 : 0), 2.05 - (i > 3 ? .6 : 0), hz(by) + .07, 0, false);
+    const bx = gx + 150, by = 3300, brd = hvClone('HV_board', P_, bx, by); if (!brd) hvBox(P_, H.plankD, 2.4, 1.6, .12, hx(bx), 1.7, hz(by)); if (!brd) for (const s of [-1, 1]) hvBox(P_, H.plankD, .14, 2.6, .14, hx(bx) + s * 1.15, 1.3, hz(by));
+    if (!brd) for (let i = 0; i < 7; i++) hvBox(P_, [H.white, H.canvas, H.white][i % 3], .35, .45, .02, hx(bx) - .9 + (i % 4) * .55 + (i > 3 ? .25 : 0), 2.05 - (i > 3 ? .6 : 0), hz(by) + .07, 0, false);
     hvWall(P_, bx - 60, by - 10, 120, 20, null, 2.4); oIA(HV.rec, bx, by + 40, 'board', { r: 34 }); }
   // ---- workshop
   { const P_ = havenPart('workshop'), L = B.workshop, x = gx + 280, y = R.y0 + 140;
-    if (!L) { const tb = hvBox(P_, H.plank, 2.2, .1, 1, hx(x + 120), .9, hz(y + 60)); for (const s of [-1, 1]) hvBox(P_, H.plankD, .1, .9, .9, hx(x + 120) + s * 1, .45, hz(y + 60)); hvBox(P_, H.rust, .5, .4, .3, hx(x + 110), 1.15, hz(y + 60)); }
+    if (!L && hvClone('HV_bench', P_, x + 120, y + 60)) hvWall(P_, x + 70, y + 20, 100, 60, null, 1.2);
+    else if (!L) { const tb = hvBox(P_, H.plank, 2.2, .1, 1, hx(x + 120), .9, hz(y + 60)); for (const s of [-1, 1]) hvBox(P_, H.plankD, .1, .9, .9, hx(x + 120) + s * 1, .45, hz(y + 60)); hvBox(P_, H.rust, .5, .4, .3, hx(x + 110), 1.15, hz(y + 60)); }
     else { oBuilding(HV.rec, P_, { x, y, w: 240 + 40 * Math.min(2, L - 1), h: 180, door: 's', kind: L >= 3 ? 'store' : 'cabin', col: 5, roof: 2 });
-      hvBox(P_, H.steel, 1.4, 1, .8, hx(x + 60), .5, hz(y + 230)); hvBox(P_, H.rust, .8, .9, .8, hx(x + 200), .45, hz(y + 230)); if (L >= 2) { hvCyl(P_, H.red, .3, .3, 1.2, hx(x + 260), .6, hz(y + 240)); hvCyl(P_, H.steel, .3, .3, 1.2, hx(x + 280), .6, hz(y + 215)); }
+      if (hvClone('HV_wsyard_' + Math.min(5, L), P_, x + 130, y + 235)) {} else { hvBox(P_, H.steel, 1.4, 1, .8, hx(x + 60), .5, hz(y + 230)); hvBox(P_, H.rust, .8, .9, .8, hx(x + 200), .45, hz(y + 230)); } if (L >= 2 && !HVG) { hvCyl(P_, H.red, .3, .3, 1.2, hx(x + 260), .6, hz(y + 240)); hvCyl(P_, H.steel, .3, .3, 1.2, hx(x + 280), .6, hz(y + 215)); }
       if (L >= 4) { HV.blink.push({ o: hvBox(P_, new THREE.MeshBasicMaterial({ color: 0x9fd6ff }), .2, .2, .2, hx(x + 60), 1.15, hz(y + 230), 0, false), weld: 1 }); } } }
   // ---- infirmary
   { const P_ = havenPart('infirmary'), L = B.infirmary, x = gx - 520, y = R.y0 + 140;
-    if (L < 3) { havenTent(P_, x + 120, y + 80, 0, H.white, 1.4 + .2 * L); const cr = hvBox(P_, H.red, .15, .9, .25, hx(x + 120), 2.5, hz(y + 80) - 2.3, 0, false); hvBox(P_, H.red, .15, .25, .9, hx(x + 120), 2.5, hz(y + 80) - 2.3, 0, false); for (let k = 0; k < L + 1; k++) hvBox(P_, H.white, .8, .5, 2, hx(x + 60 + k * 50), .25, hz(y + 160)); }
-    else { oBuilding(HV.rec, P_, { x, y, w: 300, h: 200, door: 's', kind: 'store', col: 4, roof: 1 }); hvBox(P_, H.red, .1, 1.2, .35, hx(x + 150), 3.2, hz(y + 200) + .1, 0, false); hvBox(P_, H.red, .1, .35, 1.2, hx(x + 150), 3.2, hz(y + 200) + .1, Math.PI / 2, false); } }
+    if (L < 3 && hvClone('HV_medtent_' + Math.max(1, L), P_, x + 130, y + 80)) hvWall(P_, x + 130 - (L >= 2 ? 80 : 60), y + 80 - (L >= 2 ? 50 : 45), L >= 2 ? 160 : 120, L >= 2 ? 100 : 90, null, 2.6);
+    else if (L < 3) { havenTent(P_, x + 120, y + 80, 0, H.white, 1.4 + .2 * L); const cr = hvBox(P_, H.red, .15, .9, .25, hx(x + 120), 2.5, hz(y + 80) - 2.3, 0, false); hvBox(P_, H.red, .15, .25, .9, hx(x + 120), 2.5, hz(y + 80) - 2.3, 0, false); for (let k = 0; k < L + 1; k++) hvBox(P_, H.white, .8, .5, 2, hx(x + 60 + k * 50), .25, hz(y + 160)); }
+    else { oBuilding(HV.rec, P_, { x, y, w: 300, h: 200, door: 's', kind: 'store', col: 4, roof: 1 }); hvClone('HV_medyard', P_, x + 150, y + 270); hvBox(P_, H.red, .1, 1.2, .35, hx(x + 150), 3.2, hz(y + 200) + .1, 0, false); hvBox(P_, H.red, .1, .35, 1.2, hx(x + 150), 3.2, hz(y + 200) + .1, Math.PI / 2, false); } }
   // ---- garage
   { const P_ = havenPart('garage'), L = B.garage, x = R.x0 + 650, y = R.y1 - 360;
-    if (L) { const w = 260 + 60 * Math.min(2, L), d = 200; for (const [dx, dz] of [[0, 0], [w, 0], [0, d], [w, d], [w / 2, 0], [w / 2, d]]) hvBox(P_, H.steel, .16, 3.2, .16, hx(x + dx), 1.6, hz(y + dz)); const rf = hvBox(P_, H.rust, hx(w) + .6, .1, hz(d) + .6, hx(x + w / 2), 3.25, hz(y + d / 2)); rf.rotation.x = .05;
+    if (L && hvClone('HV_garage_' + Math.min(5, L), P_, x + (260 + 60 * Math.min(2, L)) / 2, y + 100)) { const w = 260 + 60 * Math.min(2, L); hvWall(P_, x, y + 192, w, 8, null, 3.6); hvWall(P_, x, y, 8, L >= 2 ? 200 : 8, null, 3.6); hvWall(P_, x + w - 8, y, 8, L >= 2 ? 200 : 8, null, 3.6); }
+    else if (L) { const w = 260 + 60 * Math.min(2, L), d = 200; for (const [dx, dz] of [[0, 0], [w, 0], [0, d], [w, d], [w / 2, 0], [w / 2, d]]) hvBox(P_, H.steel, .16, 3.2, .16, hx(x + dx), 1.6, hz(y + dz)); const rf = hvBox(P_, H.rust, hx(w) + .6, .1, hz(d) + .6, hx(x + w / 2), 3.25, hz(y + d / 2)); rf.rotation.x = .05;
       hvBox(P_, H.steel, 1.6, .9, .7, hx(x + 40), .45, hz(y + 30)); for (let k = 0; k < L; k++) { const ty = new THREE.Mesh(new THREE.TorusGeometry(.36, .14, 6, 12), H.steel); ty.position.set(hx(x + 20), .5 + k * .3, hz(y + d - 20)); ty.rotation.x = Math.PI / 2; P_.add(ty); } } }
   // ---- radio mast
   { const P_ = havenPart('radio'), L = B.radio, x = gx - 250, y = 3420, hh = 5 + L * 4;
-    const seg = 3; for (let k = 0; k * seg < hh; k++) { for (const [dx, dz] of [[-1, -1], [1, -1], [0, 1]]) hvBox(P_, H.steel, .07, seg, .07, hx(x) + dx * .35, k * seg + seg / 2, hz(y) + dz * .35); hvBox(P_, H.steel, .8, .05, .05, hx(x), k * seg + seg, hz(y) - .35); }
-    if (L) { const dish = new THREE.Mesh(new THREE.SphereGeometry(.7, 12, 6, 0, 6.283, 0, 1.1), H.frame); dish.rotation.x = -1.2; dish.position.set(hx(x) + .4, hh * .7, hz(y)); P_.add(dish); }
-    const tip = hvBox(P_, H.redL, .18, .18, .18, hx(x), hh + .2, hz(y), 0, false); HV.blink.push({ o: tip, rate: 1.2 }); hvBox(P_, H.steel, 1, .9, .7, hx(x) + 1, .45, hz(y) + .6); hvWall(P_, x - 20, y - 20, 40, 40, null, hh); }
+    const rad = hvClone('HV_radio_' + Math.min(5, L), P_, x, y); if (rad && L >= 2) hvWall(P_, x + 26, y - 30, 54, 46, null, 2.4); if (rad && L >= 5) { hvWall(P_, x - 90, y + 90, 180, 4, null, 2); hvWall(P_, x - 90, y - 92, 180, 4, null, 2); }
+    const seg = 3; if (!rad) for (let k = 0; k * seg < hh; k++) { for (const [dx, dz] of [[-1, -1], [1, -1], [0, 1]]) hvBox(P_, H.steel, .07, seg, .07, hx(x) + dx * .35, k * seg + seg / 2, hz(y) + dz * .35); hvBox(P_, H.steel, .8, .05, .05, hx(x), k * seg + seg, hz(y) - .35); }
+    if (L && !rad) { const dish = new THREE.Mesh(new THREE.SphereGeometry(.7, 12, 6, 0, 6.283, 0, 1.1), H.frame); dish.rotation.x = -1.2; dish.position.set(hx(x) + .4, hh * .7, hz(y)); P_.add(dish); }
+    const tip = hvBox(P_, H.redL, .18, .18, .18, hx(x), hh + (rad && L ? 2.5 : .2), hz(y), 0, false); HV.blink.push({ o: tip, rate: 1.2 }); if (!rad) hvBox(P_, H.steel, 1, .9, .7, hx(x) + 1, .45, hz(y) + .6); hvWall(P_, x - 20, y - 20, 40, 40, null, hh); }
   try { havenMerge(g); } catch (e) { console.warn('haven merge', e); }
   if (typeof havenBuildFx === 'function' && grow && HV.parts[grow]) havenBuildFx(grow);
 }
@@ -9019,7 +9049,7 @@ function havenMerge(root) {   // bake every static mesh of each part into one me
       const mm = new THREE.Mesh(geo, mat); mm.castShadow = L.some(e => e.cast); mm.receiveShadow = true; G.add(mm); } }
 }
 function havenSign(g, txt, x, y, z) { const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64; const c = cv.getContext('2d'); c.fillStyle = '#3a2a1a'; c.fillRect(0, 0, 256, 64); c.fillStyle = '#e8d8b0'; c.font = 'bold 40px Georgia'; c.textAlign = 'center'; c.fillText(txt, 128, 46);
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(2.6, .65), new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(cv), roughness: .9 })); m.position.set(x, y, z); m.rotation.y = Math.PI; g.add(m); const m2 = m.clone(); m2.rotation.y = 0; m2.position.z = z + .16; g.add(m2); }
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(2.6, .65), new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(cv), roughness: .9 })); m.position.set(x, y, z); m.rotation.y = Math.PI; g.add(m); const m2 = m.clone(); m2.rotation.y = 0; m2.position.z = z + (arguments[5] || .16); g.add(m2); }
 function havenTent(g, x, y, i, mat, sc) { const H = HM(), s = sc || 1, t = new THREE.Mesh(new THREE.ConeGeometry(1.8 * s, 2.2 * s, 4, 1, true), mat || (i % 2 ? H.canvas : H.canvasG)); t.material.side = THREE.DoubleSide; t.rotation.y = Math.PI / 4 + i * .3; t.position.set(hx(x), 1.1 * s, hz(y)); t.scale.z = 1.6; t.castShadow = true; g.add(t); hvWall(g, x - 30 * s, y - 40 * s, 60 * s, 80 * s, null, 2); }
 function havenPen(g, x, y, w, h) { const H = HM(); for (const [ax, ay, bx, by] of [[x, y, x + w, y], [x, y + h, x + w, y + h], [x, y, x, y + h], [x + w, y, x + w, y + h]]) { const L = Math.hypot(bx - ax, by - ay), n = Math.max(2, Math.round(hx(L) / 2)); for (let k = 0; k <= n; k++) hvBox(g, H.plankD, .12, 1.1, .12, hx(ax + (bx - ax) * k / n), .55, hz(ay + (by - ay) * k / n)); for (const yy of [.45, .9]) hvBox(g, H.plank, hx(Math.abs(bx - ax)) || .06, .08, hz(Math.abs(by - ay)) || .06, hx((ax + bx) / 2), yy, hz((ay + by) / 2), 0, false); hvWall(g, Math.min(ax, bx) - 3, Math.min(ay, by) - 3, Math.abs(bx - ax) + 6, Math.abs(by - ay) + 6, null, 1.1, true); } }
 function havenCrops(g, x, y, w, h, kind) { const H = HM(), rows = Math.floor(h / 34), per = Math.floor(w / 22), n = rows * per;
@@ -9419,23 +9449,42 @@ function demolish(x, y, gas) {   // the set piece: a fireball, a shockwave, and 
 // Vehicles and guns converted from .blend files, decimated for the browser:
 //   M1 Humvee by panko10 (CC-BY), Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0), Dodge Challenger 1970 R/T, Low Quality Weapon Pack (CC0).
 // Each loads once in the background; until a model is ready the game falls back to its own stand-in.
-const EXTG = {}, EXTV = { Car_humvee: 'veh_humvee.json', Car_s10: 'veh_s10.json', Car_challenger: 'veh_challenger.json' };
-const EXTFALL = { Car_humvee: 'Car_suv', Car_s10: 'Car_pickup', Car_challenger: 'Car' };
-const EXTPAINT = { Car_humvee: /^Grey/, Car_s10: /paint/i, Car_challenger: null };
+const EXTG = {}, EXTV = { Car_humvee: 'veh_humvee.json', Car_s10: 'veh_s10.json', Car_challenger: 'veh_challenger.json', Car_police: 'veh_police.json', Car_gls: 'veh_gls.json', Car_bmw: 'veh_bmw.json' };
+const EXTFALL = { Car_humvee: 'Car_suv', Car_s10: 'Car_pickup', Car_challenger: 'Car', Car_police: 'Car', Car_gls: 'Car_suv', Car_bmw: 'Car' };
+const EXTPAINT = { Car_humvee: /^Grey/, Car_s10: /paint/i, Car_challenger: null, Car_police: null, Car_gls: /^carosserie$/, Car_bmw: /^grill$/ };
+const EXTLOOK = {   // build 52: Crown Victoria police, Mercedes GLS, BMW 3 coupe
+  Car_police: (m, n) => { const set = (c, r, mt, e) => { m.color.set(c).convertSRGBToLinear(); m.roughness = r; m.metalness = mt; if (e && m.emissive) { m.emissive.set(c).convertSRGBToLinear(); m.emissiveIntensity = e; } };
+    if (/Car Paint \(Dark/.test(n)) set(0x0e1013, .35, .55); else if (/Car Paint \(White\)|Police Car Paint/.test(n)) set(0xeeeeea, .35, .4); else if (/Chrome|Mirror/.test(n)) set(0xb9bec3, .25, .9);
+    else if (/^Tire/.test(n)) set(0x141414, .92, 0); else if (/Plastic|^Bar$|Bottom|Interior|Rim \(Plastic\)|Material\.0/.test(n)) set(0x1b1d1f, .7, .1); else if (/PL Red/.test(n)) { set(0xff2020, .4, 0, .4); m.name = 'C_red'; } else if (/^Red|Red Light/.test(n)) set(0xd01818, .4, 0, .6);
+    else if (/PL Blue/.test(n)) { set(0x2050ff, .4, 0, .4); m.name = 'C_blue'; } else if (/^Blue/.test(n)) set(0x1a4ad8, .4, 0, .6); else if (/Orange|Turn Signal/.test(n)) set(0xe08a1a, .4, 0, .3); else if (/Headlight|Reverse|Clear/.test(n)) set(0xeef2f6, .15, .3, .2); else if (/Ford/.test(n)) set(0x1a3a7a, .4, .5); },
+  Car_gls: (m, n) => { if (/Mat.riau|wire/.test(n)) { m.color.set(/wire/.test(n) ? 0xcfd2d4 : 0x1c1d1f).convertSRGBToLinear(); m.roughness = .6; m.metalness = .3; } },
+  Car_bmw: (m, n) => { if (/BreakLight/.test(n)) m.name = 'C_tail'; else if (/AngelEye|Foglight/.test(n)) m.name = 'C_headlight'; else if (/Internal/.test(n)) { m.color.set(0x151515); m.roughness = .8; } else if (/Material\.002/.test(n)) { m.color.set(0xe08a1a).convertSRGBToLinear(); } }
+};
 for (const k in EXTV) loadGlbJson(EXTV[k]).then(g => {
   g.scene.traverse(o => { if (!o.isMesh || !o.material) return; const m = o.material, n = m.name || '';
-    if (/glass|window|windshield/i.test(n)) m.name = 'C_glass'; else if (EXTPAINT[k] && EXTPAINT[k].test(n)) m.name = 'X_paint'; else if (/tail|b-light|red_reflect/i.test(n)) m.name = 'C_tail'; else if (/head.?light|head_lights/i.test(n)) m.name = 'C_headlight';
+    if (EXTLOOK[k]) EXTLOOK[k](m, n);
+    if (/glass|window|windshield|carosserie\.001|HeadLightGlass/i.test(n)) m.name = 'C_glass'; else if (EXTPAINT[k] && EXTPAINT[k].test(n)) m.name = 'X_paint'; else if (/tail|b-light|red_reflect/i.test(n)) m.name = 'C_tail'; else if (/head.?light|head_lights/i.test(n)) m.name = 'C_headlight';
     o.castShadow = true; o.receiveShadow = true; });
   EXTG[k] = g; }).catch(e => console.warn('vehicle model', k, e));
 Object.assign(VEH, {
   Car_humvee: { hl: 46, hw: 24, kg: 3400, wr: .45, eye: .32, acc: 430, top: 650, wb: 66, name: 'M1 Humvee', col: 0x4a5236, cam: -.25, lat: .52 },
   Car_s10: { hl: 52, hw: 20, kg: 1650, wr: .36, eye: .08, acc: 420, top: 640, wb: 60, name: 'Chevy S-10', cam: -.15, lat: .4 },
-  Car_challenger: { hl: 48, hw: 19, kg: 1600, wr: .35, eye: -.06, acc: 560, top: 780, wb: 56, name: "'70 Challenger R/T", cam: -.38, lat: .38 }
+  Car_challenger: { hl: 48, hw: 19, kg: 1600, wr: .35, eye: -.06, acc: 560, top: 780, wb: 56, name: "'70 Challenger R/T", cam: -.38, lat: .38 },
+  Car_police: { hl: 54, hw: 21, kg: 1850, wr: .36, eye: 0, acc: 520, top: 820, wb: 58, name: 'Crown Vic Interceptor', cam: -.3, lat: .4, col: 0xe9e9e4, siren: true },
+  Car_gls: { hl: 51, hw: 21, kg: 2450, wr: .4, eye: .22, acc: 480, top: 740, wb: 60, name: 'Mercedes-AMG GLS', cam: -.1, lat: .44 },
+  Car_bmw: { hl: 46, hw: 20, kg: 1550, wr: .33, eye: -.08, acc: 560, top: 780, wb: 55, name: 'BMW 3 Coupe', cam: -.35, lat: .38 }
 });
-function extKinds() {   // a few of the county's parked cars are the new models (the same ones on every client)
-  cars.forEach((c, i) => { if (c.myTruck || c.ozVan || c.state === 'ready') return; let k = null;
-    if (c.kind === 'Car_pickup' && i % 3 === 0) k = 'Car_s10'; else if ((c.kind === 'Car' || c.kind === 'Car_hatch') && i % 11 === 4) k = 'Car_challenger';
-    if (!k) return; const V = VEH[k]; c.kind = k; c.hl = V.hl; c.hw = V.hw; c.im = 1 / V.kg; c.iI = 1 / (V.kg * ((V.hl * 2) ** 2 + (V.hw * 2) ** 2) / 12); });
+function extKinds() {   // build 52: the real models are spread all over the county (the same cars on every client); every one appears many times
+  const cnt = {}, set = (c, k) => { const V = VEH[k]; c.kind = k; c.hl = V.hl; c.hw = V.hw; c.im = 1 / V.kg; c.iI = 1 / (V.kg * ((V.hl * 2) ** 2 + (V.hw * 2) ** 2) / 12); cnt[k] = (cnt[k] || 0) + 1; };
+  const free = []; cars.forEach((c, i) => { if (c.myTruck || c.ozVan || c.state === 'ready' || c.kind === 'Car_bus' || c.kind === 'Car_truck' || c.kind === 'Car_moto') return; free.push([i, c]); });
+  for (const [i, c] of free) { const r = hashI(i * 7919 + 13) % 100;
+    if (c.kind === 'Car_pickup') { if (r < 45) set(c, 'Car_s10'); }
+    else if (c.kind === 'Car_suv' || c.kind === 'Car_van') { if (r < 30) set(c, 'Car_gls'); else if (r < 38) set(c, 'Car_humvee'); }
+    else if (c.kind === 'Car' || c.kind === 'Car_hatch') { if (r < 16) set(c, 'Car_challenger'); else if (r < 34) set(c, 'Car_bmw'); else if (r < 48) set(c, 'Car_police'); } }
+  // make sure each model turns up at least eight times, wherever the county happened to put sedans and SUVs
+  for (const k of ['Car_s10', 'Car_challenger', 'Car_police', 'Car_gls', 'Car_bmw', 'Car_humvee']) { let j = 0;
+    while ((cnt[k] || 0) < (k === 'Car_humvee' ? 5 : 8) && j < free.length) { const [, c] = free[(j * 37 + k.length * 11) % free.length]; j++; if (EXTV[c.kind]) continue; set(c, k); } }
+  window.__extCnt = cnt;
 }
 function buildExtCar(col, kind) {   // same shape of object as buildGlbCar makes, from the converted model
   const src = EXTG[kind].scene.getObjectByName(kind) || EXTG[kind].scene, g = src.clone(true), out = new THREE.Group(); out.add(g); out.userData.kind = kind;
@@ -9444,8 +9493,10 @@ function buildExtCar(col, kind) {   // same shape of object as buildGlbCar makes
     if (n === 'X_paint') { o.material = o.material.clone(); o.material.color.set(kind === 'Car_humvee' ? 0x4a5236 : col).convertSRGBToLinear(); o.material.roughness = kind === 'Car_humvee' ? .85 : .4; o.material.metalness = kind === 'Car_humvee' ? .15 : .5; if (VMENV && kind !== 'Car_humvee') { o.material.envMap = VMENV; o.material.envMapIntensity = .7; } }
     else if (n === 'C_glass') { o.material.transparent = true; o.material.opacity = .45; o.material.depthWrite = false; if (VMENV) { o.material.envMap = VMENV; o.material.envMapIntensity = 1; } }
     else if (n === 'C_tail') { if (!u.tailMat) { u.tailMat = o.material.clone(); if (u.tailMat.emissive) { u.tailMat.emissive.setRGB(1, .06, .04); u.tailMat.emissiveIntensity = .25; } } o.material = u.tailMat; }
-    else if (n === 'C_headlight') { o.material = o.material.clone(); u.headMat = o.material; } });
+    else if (n === 'C_headlight') { o.material = o.material.clone(); u.headMat = o.material; }
+    else if (n === 'C_blue' || n === 'C_red') { o.material = o.material.clone(); (u.siren = u.siren || []).push(o.material); } });
   u.wheels = ['FL', 'FR', 'RL', 'RR'].map(k => g.getObjectByName(kind + '_Wheel_' + k)); u.wipers = [];
+  if (kind === 'Car_gls') { const tm = buildExtCar.tire || (buildExtCar.tire = new THREE.MeshStandardMaterial({ color: 0x1a1a1b, roughness: .8, metalness: .35 })); for (const w of u.wheels) if (w) w.traverse(o => { if (o.isMesh && o.material.name === 'X_paint') o.material = tm; }); }
   if (kind === 'Car_humvee') humveeTurret(out, 1.98, -.35);
   return out;
 }

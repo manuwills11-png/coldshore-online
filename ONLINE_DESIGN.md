@@ -149,4 +149,4 @@ Each player earns XP and kills for their own profile. The crew earns supplies, c
 
 ## Asset credits
 
-Vehicle and weapon models are from BlendSwap and were reduced for the browser: M1 Humvee by panko10 (CC-BY), Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0), Dodge Challenger 1970 R/T (license not stated on the upload; check before release), Low Quality Weapon Pack (CC0).
+Models are from BlendSwap and were reduced for the browser: M1 Humvee by panko10 (CC-BY), Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0), Ford Crown Victoria Police Interceptor 2005 (CC-BY 3.0; the Highway Patrol livery isn't the uploader's), Mercedes-AMG GLS (CC0), BMW 3 Series Coupe by mikepan (CC-BY-SA 3.0), Trees & Bushes pack by Painkiller5555, Dodge Challenger 1970 R/T (license not stated on the upload; check before release), Low Quality Weapon Pack (CC0). Haven's structures are built in Blender by tools/haven_blend.py.
