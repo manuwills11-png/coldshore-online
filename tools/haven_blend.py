@@ -243,21 +243,23 @@ def gate(L):
         if L <= 2: cyl(.28, gt + 1.2, s * W, 0, (gt + 1.2) / 2, M['log'], 10); cyl(.28, .5, s * W, 0, gt + 1.45, M['plank2'], 10, r2=.03)
         elif L == 3: box(.9, .9, gt + .4, s * W, 0, (gt + .4) / 2, M['conc'], bev=.04)
         else: box(1.1, 1.3, gt + .8, s * W, 0, (gt + .8) / 2, M['conc'] if L == 5 else M['concD'], bev=.05); box(1.2, 1.4, .2, s * W, 0, gt + .9, M['steel'], bev=.02)
-        # an open leaf, swung in (toward -Y) so the road stays clear
-        lw = W - .5; hinge = (s * (W - .35), -.2); a = -s * 1.25
-        cx, cy = hinge[0] - s * math.cos(a) * lw / 2 * -1 * 0, hinge[1]
-        leaf_c = Vector((hinge[0] + -s * lw / 2 * math.cos(a) * 0, hinge[1], 0))
-        ux, uy = -s * math.cos(1.25), -math.sin(1.25)   # leaf direction from the hinge, swung inward
-        mx, my = hinge[0] + ux * lw / 2, hinge[1] + uy * lw / 2; rz = math.atan2(uy, ux)
-        hh = gt * .9
-        if L <= 2:
-            for k in range(9): t = (k + .5) / 9 * lw - lw / 2; box(.12, .28, hh, mx + math.cos(rz) * t, my + math.sin(rz) * t, hh / 2 + .1, M['plank'] if k % 2 else M['plank2'], rz, bev=0)
-            for z in (hh * .25, hh * .8): box(lw, .08, .16, mx, my, z, M['plankD'], rz, bev=0)
-            beam((hinge[0], hinge[1], hh * .25), (hinge[0] + ux * lw, hinge[1] + uy * lw, hh * .8), .1, M['plankD'])
-        else:
-            box(lw, .12, hh, mx, my, hh / 2 + .1, M['steel'] if L >= 4 else M['rust'], rz, bev=0)
-            for k in range(5): t = (k + .5) / 5 * lw - lw / 2; box(.1, .2, hh, mx + math.cos(rz) * t, my + math.sin(rz) * t, hh / 2 + .1, M['steelD'], rz, bev=0)
-            if L >= 4: box(lw, .14, .25, mx, my, hh * .5, M['yellow'], rz, bev=0)
+        # build 61: the leaves are built and animated by the game (they open as you come up to the gate)
+        continue
+        # # an open leaf, swung in (toward -Y) so the road stays clear
+        # lw = W - .5; hinge = (s * (W - .35), -.2); a = -s * 1.25
+        # cx, cy = hinge[0] - s * math.cos(a) * lw / 2 * -1 * 0, hinge[1]
+        # leaf_c = Vector((hinge[0] + -s * lw / 2 * math.cos(a) * 0, hinge[1], 0))
+        # ux, uy = -s * math.cos(1.25), -math.sin(1.25)   # leaf direction from the hinge, swung inward
+        # mx, my = hinge[0] + ux * lw / 2, hinge[1] + uy * lw / 2; rz = math.atan2(uy, ux)
+        # hh = gt * .9
+        # if L <= 2:
+        #     for k in range(9): t = (k + .5) / 9 * lw - lw / 2; box(.12, .28, hh, mx + math.cos(rz) * t, my + math.sin(rz) * t, hh / 2 + .1, M['plank'] if k % 2 else M['plank2'], rz, bev=0)
+        #     for z in (hh * .25, hh * .8): box(lw, .08, .16, mx, my, z, M['plankD'], rz, bev=0)
+        #     beam((hinge[0], hinge[1], hh * .25), (hinge[0] + ux * lw, hinge[1] + uy * lw, hh * .8), .1, M['plankD'])
+        # else:
+        #     box(lw, .12, hh, mx, my, hh / 2 + .1, M['steel'] if L >= 4 else M['rust'], rz, bev=0)
+        #     for k in range(5): t = (k + .5) / 5 * lw - lw / 2; box(.1, .2, hh, mx + math.cos(rz) * t, my + math.sin(rz) * t, hh / 2 + .1, M['steelD'], rz, bev=0)
+        #     if L >= 4: box(lw, .14, .25, mx, my, hh * .5, M['yellow'], rz, bev=0)
     # the sign beam (the game draws "HAVEN" on it at gt + .9)
     box(2 * W + .8, .3, .5, 0, 0, gt + .9, M['plankD'] if L <= 2 else M['steel'], bev=.03)
     if L >= 3: lamp(-W - .2, 1.2, 0, gt + 1.6, .9); lamp(W + .2, 1.2, 0, gt + 1.6, .9)

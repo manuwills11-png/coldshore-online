@@ -48,6 +48,300 @@ button small{color:#8aa09b;font-size:12px}
 
 <script>
 (() => {
+/* ======================= build 61: the interface =======================
+   One look for every screen: condensed headings, a single amber accent, square panels, button prompts along the bottom,
+   keyboard and mouse both. The title menu, the background and character screens (with a live 3D preview), settings,
+   controls, the pause menu, and a restyle of the online screens and the backpack. */
+var UISET = (() => { const d = { vol: .8, sens: 1, fov: 75, hints: 1 }; try { return Object.assign(d, JSON.parse(localStorage.getItem('cs_set61') || '{}')); } catch (e) { return d; } })();
+function uiSave() { try { localStorage.setItem('cs_set61', JSON.stringify(UISET)); } catch (e) {} if (window.UIVOL) UIVOL.gain.value = UISET.vol; }
+var UI61 = { sel: 0, bgSel: 0, lookSel: 0, prev: null, pSel: 0, playT: 0 };
+var UFH = "'Bahnschrift','DIN Alternate','Barlow Condensed','Roboto Condensed','Arial Narrow',sans-serif", UFB = "'Segoe UI','Inter',Roboto,Helvetica,Arial,sans-serif";
+var UICON = {
+  mechanic: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/>',
+  paramedic: '<path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/>',
+  cop: '<path d="M12 2l8 3v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V5z"/><path d="M12 8l1.2 2.5 2.8.3-2 1.9.5 2.8L12 14.2l-2.5 1.3.5-2.8-2-1.9 2.8-.3z"/>',
+  hunter: '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/>'
+};
+var USKN = [['firearms', 'Firearms'], ['hotwire', 'Hotwiring'], ['medic', 'Medicine'], ['forage', 'Scavenging']];
+var UDESC = { continue: 'Pick up the story where you left it.', levels: 'Replay any level you have already reached.', new: 'Choose who you were before the outbreak, then go into Calder County to find your sibling.',
+  online: 'Co-op for up to six. Twenty-four hand-built operations, a settlement to build up, and a car park that remembers.', controls: 'Every key, grouped by what it does.', settings: 'Graphics, sound, mouse and field of view.', credits: 'Who made what, and the models we borrowed.' };
+(function () {
+  const st = document.createElement('style'); st.id = 'ui61'; st.textContent = `
+:root{--ua:#f0a43a;--ua2:#ffcf7a;--ub:#e9e4d8;--um:#8e958f;--ul:rgba(233,228,216,.14);--up:rgba(9,11,13,.9);--ured:#e2523e;--ufh:${UFH};--ufb:${UFB}}
+html body #title .vg{background:linear-gradient(90deg,rgba(4,6,8,.92) 0%,rgba(4,6,8,.6) 38%,rgba(4,6,8,.05) 70%),linear-gradient(0deg,rgba(4,6,8,.85) 0%,rgba(4,6,8,0) 30%)}
+html body #title .logo{top:11vh;left:6vw}
+html body #title .logo h1{font:300 clamp(42px,6.6vw,104px)/1 var(--ufh);letter-spacing:.24em}
+html body #title .logo h1 span{color:#9fd6e6}
+html body #title .logo .tag{font:500 clamp(11px,.95vw,13px)/1.6 var(--ufh);letter-spacing:.34em;color:#a9a99f}
+html body #title .press{font:500 14px var(--ufh);letter-spacing:.6em;bottom:18vh}
+.u-menu{position:absolute;left:6vw;top:40vh;display:flex;flex-direction:column;pointer-events:auto;min-width:340px}
+.u-menu a{display:flex;align-items:baseline;gap:16px;padding:9px 18px 9px 16px;margin-left:-16px;border-left:3px solid transparent;color:#a8aaa2;text-decoration:none;cursor:pointer;transition:all .14s ease;font:600 clamp(18px,1.75vw,25px)/1.1 var(--ufh);letter-spacing:.14em;text-transform:uppercase}
+.u-menu a i{font:500 11px var(--ufh);color:#5f645f;letter-spacing:.1em;font-style:normal;width:22px}
+.u-menu a.sel{color:#fff;border-left-color:var(--ua);background:linear-gradient(90deg,rgba(240,164,58,.16),rgba(240,164,58,0) 85%);padding-left:24px}
+.u-menu a.sel i{color:var(--ua)}
+.u-menu a.dis{color:#4a4f4b;pointer-events:none}
+.u-desc{position:absolute;left:6vw;bottom:12vh;width:min(440px,60vw);color:#b9b8ae;font:400 14px/1.6 var(--ufb);border-top:1px solid var(--ul);padding-top:12px}
+.u-desc .k{font:600 11px var(--ufh);letter-spacing:.3em;color:var(--ua);margin-bottom:4px;text-transform:uppercase}
+.u-bar{position:absolute;left:0;right:0;bottom:0;height:46px;display:flex;align-items:center;gap:26px;padding:0 6vw;background:linear-gradient(0deg,rgba(0,0,0,.75),rgba(0,0,0,.35));border-top:1px solid var(--ul);font:600 12px var(--ufh);letter-spacing:.16em;color:#c9c6bb;text-transform:uppercase;pointer-events:auto}
+.u-bar span{display:flex;align-items:center;gap:7px;cursor:default}.u-bar span[data-m]{cursor:pointer}.u-bar span[data-m]:hover{color:#fff}
+.u-bar .r{margin-left:auto;color:#5f645f;font:500 11px ui-monospace,monospace;letter-spacing:.06em;text-transform:none}
+kbd.u-k{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:20px;padding:0 6px;border:1px solid rgba(233,228,216,.45);border-bottom-width:2px;border-radius:3px;font:700 10px var(--ufh);letter-spacing:.04em;color:#fff;background:rgba(255,255,255,.06)}
+.u-scr{position:absolute;left:6vw;right:6vw;top:clamp(108px,25vh,280px);bottom:54px;padding-bottom:12px;overflow:auto;pointer-events:auto;color:var(--ub);font:14px/1.55 var(--ufb);scrollbar-width:thin}
+@media (max-height:760px){.u-card{padding:12px 14px}.u-card .ic{width:30px;height:30px;margin-bottom:4px}.u-card .ds{min-height:0;margin:2px 0 8px;font-size:12px}.u-head{margin-bottom:10px}.u-head p{display:none}.u-opt{padding:7px 14px}.u-sr{margin:3px 0}.u-kit{margin-top:8px;padding-top:6px}.u-li{padding:8px 14px}}
+.u-head{margin-bottom:18px}.u-head .step{font:600 11px var(--ufh);letter-spacing:.3em;color:var(--ua)}
+.u-head h2{margin:4px 0 2px;font:600 clamp(24px,2.4vw,34px)/1.1 var(--ufh);letter-spacing:.12em;text-transform:uppercase;color:#fff}
+.u-head p{margin:0;color:#9e9d94;max-width:640px}
+.u-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;max-width:1180px}
+.u-card{position:relative;background:linear-gradient(180deg,rgba(18,21,24,.88),rgba(10,12,14,.92));border:1px solid var(--ul);padding:18px 18px 16px;cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%)}
+.u-card:hover{border-color:rgba(240,164,58,.5);transform:translateY(-3px)}
+.u-card.sel{border-color:var(--ua);box-shadow:inset 0 0 0 1px var(--ua),0 10px 30px rgba(0,0,0,.45);background:linear-gradient(180deg,rgba(40,30,16,.9),rgba(12,12,12,.94))}
+.u-card .ic{width:44px;height:44px;color:var(--ua);margin-bottom:10px}.u-card .ic svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
+.u-card .nm{font:700 20px var(--ufh);letter-spacing:.12em;text-transform:uppercase;color:#fff}
+.u-card .ds{color:#a4a39a;font-size:13px;min-height:42px;margin:4px 0 12px}
+.u-card .no{position:absolute;right:16px;top:14px;font:600 11px var(--ufh);color:#5f645f;letter-spacing:.1em}
+.u-card.sel .no{color:var(--ua)}
+.u-sr{display:grid;grid-template-columns:86px 1fr;align-items:center;gap:8px;font:600 10px var(--ufh);letter-spacing:.14em;color:#8e958f;text-transform:uppercase;margin:5px 0}
+.u-pips{display:flex;gap:3px}.u-pips b{flex:1;height:6px;background:rgba(255,255,255,.1)}.u-pips b.on{background:#dcd6c8}.u-pips b.hi{background:var(--ua)}
+.u-kit{margin-top:12px;padding-top:10px;border-top:1px solid var(--ul);font:600 10px var(--ufh);letter-spacing:.14em;color:#8e958f;text-transform:uppercase}
+.u-look{display:grid;grid-template-columns:minmax(260px,380px) 1fr;gap:28px;height:100%}
+.u-list{display:flex;flex-direction:column;gap:8px}
+.u-li{display:flex;flex-direction:column;padding:12px 16px;border:1px solid var(--ul);border-left:3px solid transparent;background:rgba(10,12,14,.78);cursor:pointer;transition:all .14s}
+.u-li b{font:700 17px var(--ufh);letter-spacing:.12em;text-transform:uppercase;color:#fff}.u-li small{color:#9e9d94;font-size:12px}
+.u-li:hover{border-color:rgba(240,164,58,.45)}.u-li.sel{border-left-color:var(--ua);background:linear-gradient(90deg,rgba(240,164,58,.16),rgba(10,12,14,.8))}
+.u-prev{position:relative;border:1px solid var(--ul);background:radial-gradient(ellipse at 50% 75%,rgba(240,164,58,.16),rgba(0,0,0,0) 55%),linear-gradient(180deg,rgba(14,16,18,.94),rgba(6,7,8,.96));min-height:240px;overflow:hidden;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%)}
+.u-scr.lk{display:flex;flex-direction:column;overflow:hidden}.u-scr.lk .u-look{flex:1;min-height:0;grid-template-rows:minmax(0,1fr)}.u-scr.lk .u-look>div:first-child{overflow:auto;min-height:0;padding-right:4px}
+.u-prev canvas{position:absolute;inset:0;width:100%;height:100%}
+.u-prev .pl{z-index:2;position:absolute;left:18px;bottom:16px;right:18px;display:flex;justify-content:space-between;align-items:flex-end}
+.u-prev .pl b{font:700 28px var(--ufh);letter-spacing:.14em;text-transform:uppercase;color:#fff}.u-prev .pl span{font:600 11px var(--ufh);letter-spacing:.2em;color:var(--ua);text-transform:uppercase}
+.u-prev .ld{z-index:2;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:600 12px var(--ufh);letter-spacing:.3em;color:#8e958f}
+.u-btn{display:inline-flex;align-items:center;gap:10px;padding:11px 22px;border:1px solid rgba(233,228,216,.35);background:rgba(10,12,14,.7);color:#fff;font:700 13px var(--ufh);letter-spacing:.2em;text-transform:uppercase;cursor:pointer;transition:all .14s}
+.u-btn:hover{border-color:#fff}.u-btn.pri{background:var(--ua);border-color:var(--ua);color:#14100a}.u-btn.pri:hover{background:var(--ua2)}
+.u-row2{display:flex;gap:12px;margin-top:16px;align-items:center}
+.u-tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--ul)}
+.u-tabs a{padding:10px 18px;font:700 13px var(--ufh);letter-spacing:.18em;text-transform:uppercase;color:#8e958f;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.u-tabs a.sel{color:#fff;border-bottom-color:var(--ua)}
+.u-set{max-width:760px}
+.u-opt{display:grid;grid-template-columns:1fr 260px;align-items:center;gap:20px;padding:12px 16px;border-bottom:1px solid rgba(233,228,216,.07);background:rgba(10,12,14,.55)}
+.u-opt:hover{background:rgba(240,164,58,.07)}
+.u-opt .l b{display:block;font:700 15px var(--ufh);letter-spacing:.12em;text-transform:uppercase;color:#fff}.u-opt .l small{color:#8e958f;font-size:12px}
+.u-sel{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--ul);height:34px;user-select:none}
+.u-sel a{width:34px;height:100%;display:flex;align-items:center;justify-content:center;color:var(--ua);cursor:pointer;font:700 16px var(--ufh)}.u-sel a:hover{background:rgba(240,164,58,.15)}
+.u-sel span{font:700 13px var(--ufh);letter-spacing:.18em;text-transform:uppercase;color:#fff}
+.u-slider{display:flex;align-items:center;gap:10px}.u-slider input{flex:1;accent-color:var(--ua)}.u-slider span{width:42px;text-align:right;font:700 13px var(--ufh);color:#fff}
+.u-ctl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 36px;max-width:1100px;max-height:calc(100% - 90px);overflow:auto;padding-right:8px}
+.u-ctl h4{grid-column:1/-1;margin:14px 0 4px;font:700 12px var(--ufh);letter-spacing:.26em;color:var(--ua);text-transform:uppercase}
+.u-ctl div{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:6px 0;border-bottom:1px solid rgba(233,228,216,.07);font-size:13px;color:#c9c6bb}
+.u-ctl div span:last-child{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.u-cred{max-width:760px;color:#b9b8ae}.u-cred h4{font:700 12px var(--ufh);letter-spacing:.26em;color:var(--ua);text-transform:uppercase;margin:18px 0 6px}
+/* pause */
+html body #pause{background:linear-gradient(90deg,rgba(4,6,8,.9) 0%,rgba(4,6,8,.7) 40%,rgba(4,6,8,.35) 100%);backdrop-filter:blur(6px)}
+html body #pause .in{left:6vw;top:14vh;right:6vw;bottom:64px;font:14px/1.6 var(--ufb)}
+html body #pause h2{font:600 clamp(30px,3.4vw,46px)/1 var(--ufh);letter-spacing:.2em;margin:0 0 6px;text-transform:uppercase}
+html body #pause .obj{display:inline-block;margin:10px 0 22px;padding:10px 14px;border-left:3px solid var(--ua);background:rgba(240,164,58,.08);color:#f1e6cf;max-width:520px}
+html body #pause .obj:before{content:'OBJECTIVE';display:block;font:700 10px var(--ufh);letter-spacing:.3em;color:var(--ua)}
+html body #pause .u-menu{position:static;min-width:300px}
+html body #pause .u-menu a{display:flex;padding:7px 18px 7px 16px;letter-spacing:.14em;color:#a8aaa2}html body #pause .u-menu a.sel{color:#fff;padding-left:24px}html body #pause .u-menu a:hover{padding-left:24px}
+html body #pause .u-menu a{font-size:clamp(16px,1.45vw,21px);padding-top:7px;padding-bottom:7px}
+html body #pause .sk{position:absolute;right:0;bottom:0;text-align:right;font:600 11px/1.9 var(--ufh);letter-spacing:.16em;color:#8e958f;text-transform:uppercase}
+html body #pause .sk b{color:#fff;font-weight:700}
+/* online */
+html body #netui{background:radial-gradient(ellipse at 30% 40%,rgba(10,12,14,.55),rgba(2,3,4,.88))}
+html body #netui .box{border-radius:0;border:1px solid var(--ul);background:linear-gradient(180deg,rgba(14,16,18,.96),rgba(8,9,10,.96));box-shadow:0 30px 80px rgba(0,0,0,.6);font-family:var(--ufb);clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,0 100%)}
+html body #netui h2{font:700 26px var(--ufh);letter-spacing:.2em;text-transform:uppercase}html body #netui h2 span{color:var(--ua)}
+html body #netui h3,html body #netui h4{font-family:var(--ufh);letter-spacing:.14em;text-transform:uppercase}
+html body #netui .tag{color:var(--ua);font-family:var(--ufh)}
+html body #netui .b{border-radius:0;font:700 12px var(--ufh);letter-spacing:.16em;text-transform:uppercase;padding:9px 16px;background:rgba(255,255,255,.04);border-color:rgba(233,228,216,.3)}
+html body #netui .b:hover{border-color:#fff;background:rgba(255,255,255,.08)}
+html body #netui .b.pri,html body #netui .b[data-a="deploy"],html body #netui .b[data-a="create"],html body #netui .b[data-a="connect"]{background:var(--ua);border-color:var(--ua);color:#14100a}
+html body #netui .b.back{border-color:rgba(233,228,216,.35);background:rgba(10,12,14,.9)}
+html body #netui .card{border-radius:0;border-color:var(--ul);background:rgba(255,255,255,.025);border-left:3px solid rgba(240,164,58,.5)}
+html body #netui input,html body #netui select{border-radius:0;background:rgba(0,0,0,.45);border-color:rgba(233,228,216,.22);font-family:var(--ufb)}
+html body #netui input:focus,html body #netui select:focus{outline:none;border-color:var(--ua)}
+/* backpack */
+html body #bagui{background:linear-gradient(180deg,rgba(4,6,8,.9),rgba(4,6,8,.96));backdrop-filter:blur(5px)}
+html body #bagui h2{font:700 30px var(--ufh);letter-spacing:.22em;text-transform:uppercase}html body #bagui h2 span{color:var(--ua)}
+html body #bagui .sec{font:700 11px var(--ufh);letter-spacing:.28em;color:var(--ua);border-bottom:1px solid var(--ul);padding-bottom:6px;margin-top:18px}
+html body #bagui .wc,html body #bagui .it{border-radius:0;background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015));border-color:var(--ul);font-family:var(--ufb)}
+html body #bagui .wc b,html body #bagui .it b{font-family:var(--ufh);letter-spacing:.08em;text-transform:uppercase}
+html body #bagui .wc:hover,html body #bagui .it:hover{background:rgba(240,164,58,.08);border-color:rgba(240,164,58,.45)}
+html body #bagui .wc.cur{box-shadow:inset 0 0 0 1px var(--ua)}
+html body #bagui .qs div{border-radius:0;border-style:solid;border-color:var(--ul);background:rgba(0,0,0,.35);font-family:var(--ufh);letter-spacing:.1em;text-transform:uppercase}
+html body #bagui .key{border-radius:3px;border-bottom-width:2px;font-family:var(--ufh)}
+html body #bagui .b{border-radius:0;font:700 12px var(--ufh);letter-spacing:.16em;text-transform:uppercase;background:rgba(255,255,255,.04)}
+html body #bagui .givebar{background:rgba(8,9,10,.97)}
+`; document.head.appendChild(st);
+})();
+function uiK(k) { return '<kbd class="u-k">' + k + '</kbd>'; }
+function uiBar(items) { return '<div class="u-bar">' + items.map(([k, t, m]) => '<span' + (m ? ' data-m="' + m + '"' : '') + '>' + k.map(uiK).join('') + ' ' + t + '</span>').join('') + '<span class="r">PROTOTYPE BUILD 61</span></div>'; }
+function uiMainItems() {
+  const ready = assetsReady.kit && assetsReady.trees && assetsReady.car && assetsReady.furn && assetsReady.people && assetsReady.wtex;
+  const SV = lvlLoad(), hasSv = SV.last !== null && SV.levels[SV.last];
+  return (hasSv ? [['continue', 'Continue', !ready, LEVELS[SV.last].n], ['levels', 'Levels']] : []).concat([['new', 'New Game', !ready], ['online', 'Online Co-op', !ready], ['controls', 'Controls'], ['settings', 'Settings'], ['credits', 'Credits']]);
+}
+function renderTitle() {
+  const ready = assetsReady.kit && assetsReady.trees && assetsReady.car && assetsReady.furn && assetsReady.people && assetsReady.wtex;
+  const nRdy = ['kit', 'trees', 'car', 'people'].filter(k => assetsReady[k]).length;
+  const small = titleMode !== 'press' && titleMode !== 'main';
+  let h = '<div class="vg"></div><div class="logo" style="' + (small ? 'top:5vh;transform:scale(.55);transform-origin:left top' : '') + '"><h1>COLD<span>SHORE</span></h1><div class="tag">Calder County is quarantined. Your sibling is still inside.</div></div>';
+  if (titleMode === 'press') h += '<div class="press">PRESS ANY KEY</div>';
+  else if (titleMode === 'main') {
+    const it = uiMainItems(); UI61.sel = clamp(UI61.sel, 0, it.length - 1); if (it[UI61.sel][2]) UI61.sel = it.findIndex(q => !q[2]); if (UI61.sel < 0) UI61.sel = it.length - 1;
+    h += '<nav class="u-menu">' + it.map((q, i) => '<a data-m="' + q[0] + '" data-i="' + i + '" class="' + (i === UI61.sel ? 'sel' : '') + (q[2] ? ' dis' : '') + '"><i>' + String(i + 1).padStart(2, '0') + '</i>' + q[1] + '</a>').join('') + '</nav>';
+    const cur = it[UI61.sel]; h += '<div class="u-desc"><div class="k">' + cur[1] + (cur[3] ? ' &middot; ' + esc(cur[3]) : '') + '</div><span>' + (ready ? UDESC[cur[0]] : 'Loading assets ' + nRdy + '/4&hellip;') + '</span></div>';
+    h += uiBar([[['&uarr;', '&darr;'], 'Navigate'], [['Enter'], 'Select']]);
+  } else if (titleMode === 'bg') {
+    UI61.bgSel = clamp(UI61.bgSel, 0, BGKEYS.length - 1); if (!UI61.pre) { UI61.pre = 1; LOOKS.forEach(L => loadLook(L.id)); }   // the next screen shows them in 3D: start loading now
+    h += '<div class="u-scr"><div class="u-head"><div class="step">NEW GAME &middot; STEP 01 / 02</div><h2>Who were you before?</h2><p>Your old job sets your starting skills, what you carry, and how some people talk to you.</p></div><div class="u-cards">' +
+      BGKEYS.map((k, i) => { const b = BGS[k]; return '<div class="u-card' + (i === UI61.bgSel ? ' sel' : '') + '" data-bg="' + i + '"><span class="no">0' + (i + 1) + '</span><div class="ic"><svg viewBox="0 0 24 24">' + (UICON[k] || '') + '</svg></div><div class="nm">' + b.name + '</div><div class="ds">' + b.desc + '</div>' +
+        USKN.map(([sk, nm]) => { const v = 1 + ((b.sk || {})[sk] || 0); return '<div class="u-sr"><span>' + nm + '</span><div class="u-pips">' + [0, 1, 2, 3, 4].map(j => '<b class="' + (j < v ? (v > 1 ? 'hi' : 'on') : '') + '"></b>').join('') + '</div></div>'; }).join('') +
+        '<div class="u-kit">Starts with ' + b.ammo + ' rounds' + (b.band ? ' &middot; ' + b.band + ' bandages' : '') + '</div></div>'; }).join('') + '</div>' +
+      '<div class="u-row2"><span class="u-btn pri" data-go="bg">Continue ' + uiK('Enter') + '</span><span class="u-btn" data-m="back">Back</span></div></div>';
+    h += uiBar([[['&larr;', '&rarr;'], 'Choose'], [['Enter'], 'Continue'], [['Esc'], 'Back', 'back']]);
+  } else if (titleMode === 'look') {
+    UI61.lookSel = clamp(UI61.lookSel, 0, LOOKS.length - 1); const L = LOOKS[UI61.lookSel], B = BGS[BGPICK || 'mechanic'];
+    h += '<div class="u-scr lk"><div class="u-head"><div class="step">NEW GAME &middot; STEP 02 / 02</div><h2>Your survivor</h2><p>' + B.name + '. Pick a face; your sibling&#39;s story is written to work for whoever you are.</p></div><div class="u-look"><div><div class="u-list">' +
+      LOOKS.map((q, i) => '<div class="u-li' + (i === UI61.lookSel ? ' sel' : '') + '" data-lk="' + i + '"><b>' + q.n + '</b><small>' + q.d + '</small></div>').join('') + '</div>' +
+      '<div class="u-row2"><span class="u-btn pri" data-go="look">' + (LVL.lookLoading ? 'Loading&hellip;' : 'Begin') + ' ' + uiK('Enter') + '</span><span class="u-btn" data-m="bgback">Back</span></div></div>' +
+      '<div class="u-prev" id="uPrev"><div class="ld" id="uPrevLd">LOADING</div><div class="pl"><b>' + L.n + '</b><span>' + B.name + '</span></div></div></div></div>';
+    h += uiBar([[['&uarr;', '&darr;'], 'Choose'], [['Enter'], 'Begin'], [['Esc'], 'Back', 'bgback']]);
+  } else if (titleMode === 'levels') {
+    h += '<div class="u-scr"><div class="u-head"><div class="step">CAMPAIGN</div><h2>Levels</h2></div>' + lvlMenuHTML().replace('class="lvls"', 'class="u-list" style="max-height:52vh;overflow:auto;max-width:720px"').replace(/class="lv( lock)?"/g, (m, l) => 'class="u-li"' + (l ? ' style="opacity:.35;cursor:default"' : '')).replace(/class="lvh( lock)?"/g, (m, l) => 'class="u-li"' + (l ? ' style="opacity:.35;cursor:default"' : '')) + '<div class="u-row2"><span class="u-btn" data-m="back">Back</span></div></div>';
+    h += uiBar([[['Esc'], 'Back', 'back']]);
+  } else if (titleMode === 'controls') {
+    h += '<div class="u-scr"><div class="u-head"><div class="step">HELP</div><h2>Controls</h2></div><div class="u-ctl">' + uiControlsHTML() + '</div></div>' + uiBar([[['Esc'], 'Back', 'back']]);
+  } else if (titleMode === 'settings') {
+    h += '<div class="u-scr"><div class="u-head"><div class="step">OPTIONS</div><h2>Settings</h2></div><div class="u-set">' + uiSettingsHTML() + '</div><div class="u-row2"><span class="u-btn" data-m="back">Back</span></div></div>' + uiBar([[['Esc'], 'Back', 'back']]);
+  } else if (titleMode === 'credits') {
+    h += '<div class="u-scr"><div class="u-head"><div class="step">ABOUT</div><h2>Credits</h2></div><div class="u-cred"><p>ColdShore prototype. Characters, zombies, vehicles, buildings, trees and animation built procedurally in Blender. Engine: three.js. Voices: your browser&#39;s speech engine.</p><h4>Models</h4><p style="font-size:13px">From BlendSwap, reduced for the browser: M1 Humvee by panko10 (CC-BY); Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0); Ford Crown Victoria Police Interceptor 2005 (CC-BY 3.0); Mercedes-AMG GLS (CC0); BMW 3 Series Coupe by mikepan (CC-BY-SA 3.0); Trees &amp; Bushes pack by Painkiller5555; Dodge Challenger 1970 R/T; Low Quality Weapon Pack (CC0); Warehouse by argonius (CC0).</p></div><div class="u-row2"><span class="u-btn" data-m="back">Back</span></div></div>' + uiBar([[['Esc'], 'Back', 'back']]);
+  }
+  if (titleMode === 'press') h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 61</div>';
+  titleEl.innerHTML = h; titleEl.classList.add('on');
+  titleEl.querySelectorAll('[data-m]').forEach(a => a.onclick = () => { const m = a.dataset.m; if (m === 'bgback') { titleMode = 'bg'; beep(520, .04, 'triangle', .03); renderTitle(); return; } titleAction(m); });
+  titleEl.querySelectorAll('.u-menu a[data-i]').forEach(a => a.onmouseenter = () => { if (UI61.sel === +a.dataset.i) return; UI61.sel = +a.dataset.i; beep(880, .015, 'sine', .012); renderTitle(); });
+  titleEl.querySelectorAll('[data-bg]').forEach(a => { a.onclick = () => { if (UI61.bgSel === +a.dataset.bg) { pickBg(BGKEYS[UI61.bgSel]); return; } UI61.bgSel = +a.dataset.bg; beep(880, .015, 'sine', .012); renderTitle(); }; });
+  titleEl.querySelectorAll('[data-lk]').forEach(a => { a.onclick = () => { if (UI61.lookSel === +a.dataset.lk) { pickLook(LOOKS[UI61.lookSel].id); return; } UI61.lookSel = +a.dataset.lk; beep(880, .015, 'sine', .012); renderTitle(); }; });
+  titleEl.querySelectorAll('[data-go]').forEach(a => a.onclick = () => { if (a.dataset.go === 'bg') pickBg(BGKEYS[UI61.bgSel]); else if (!LVL.lookLoading) pickLook(LOOKS[UI61.lookSel].id); });
+  titleEl.querySelectorAll('[data-lv]').forEach(a => a.onclick = () => lvlStart(+a.dataset.lv));
+  uiSettingsBind(titleEl, renderTitle);
+  if (titleMode === 'look') uiPreview(LOOKS[UI61.lookSel].id); else uiPreviewStop();
+}
+function uiControlsHTML() {
+  const G = [['Movement', [['W A S D', 'Move'], ['Shift', 'Sprint (louder)'], ['Space', 'Jump; sprint first to clear rails and fences'], ['Esc', 'Pause']]],
+    ['Combat', [['Mouse', 'Look and shoot'], ['RMB', 'Aim down the sights (scoped guns zoom)'], ['R', 'Reload'], ['V', 'Shove'], ['F', 'Flashlight'], ['1 - 6', 'Quick-select weapons (or the mouse wheel)']]],
+    ['Items', [['Tab', 'Backpack: weapons, items, ammo, crafting, perks'], ['H', 'Use a bandage'], ['G / K', 'Throw a pipe bomb / molotov'], ['B / N', 'Craft a bandage / ammo']]],
+    ['World', [['E', 'Interact; hold to hotwire, search or help a downed friend'], ['M', 'County map; click to pin a place'], ['J', 'Journal'], ['C', 'Squad orders: follow / hold / hold fire']]],
+    ['Vehicles', [['E', 'Get in or out (park inside Haven&#39;s car park to keep it)'], ['Space', 'Handbrake'], ['C', 'Chase / driver camera'], ['H L X R K', 'Horn, lights, wipers, radio, siren']]],
+    ['Online', [['P', 'Ping where you are looking'], ['E on a friend', 'Give from your backpack'], ['E on a Humvee', 'Man the roof gun']]]];
+  return G.map(([t, rows]) => '<h4>' + t + '</h4>' + rows.map(([k, d]) => '<div><span>' + d + '</span><span>' + k.split(' ').filter(Boolean).map(x => x === '/' || x === '-' ? '<span style="color:#5f645f">' + x + '</span>' : uiK(x)).join('') + '</span></div>').join('')).join('');
+}
+function uiSettingsHTML() {
+  const sel = (id, label, sub, val) => '<div class="u-opt"><div class="l"><b>' + label + '</b><small>' + sub + '</small></div><div class="u-sel"><a data-s="' + id + '" data-d="-1">&lsaquo;</a><span>' + val + '</span><a data-s="' + id + '" data-d="1">&rsaquo;</a></div></div>';
+  const sl = (id, label, sub, min, max, step, val, fmt) => '<div class="u-opt"><div class="l"><b>' + label + '</b><small>' + sub + '</small></div><div class="u-slider"><input type="range" data-r="' + id + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + val + '"><span>' + fmt(val) + '</span></div></div>';
+  return sel('q', 'Graphics quality', 'Shadows, draw distance and effects', ['Low', 'Medium', 'High'][quality]) +
+    sl('fov', 'Field of view', 'Wider sees more, narrower looks closer', 60, 100, 1, UISET.fov, v => Math.round(v) + '&deg;') +
+    sl('sens', 'Mouse sensitivity', 'How fast the camera turns', .3, 2.5, .05, UISET.sens, v => (+v).toFixed(2)) +
+    sl('vol', 'Master volume', 'Everything you hear', 0, 1, .05, UISET.vol, v => Math.round(v * 100) + '%') +
+    sel('v', 'Voices', voicesOn ? 'Spoken lines and subtitles' : 'Subtitles only', voicesOn ? 'On' : 'Off') +
+    sel('h', 'Control hints', 'Key reminders along the bottom of the screen', UISET.hints ? 'On' : 'Off');
+}
+function uiSettingsBind(root, rerender) {
+  root.querySelectorAll('[data-s]').forEach(a => a.onclick = ev => { ev.stopPropagation(); const s = a.dataset.s, d = +a.dataset.d; beep(700, .02, 'triangle', .02);
+    if (s === 'q') setQuality((quality + d + 3) % 3); if (s === 'v') { voicesOn = !voicesOn; if (!voicesOn && typeof stopSpeech === 'function') stopSpeech(); } if (s === 'h') UISET.hints = UISET.hints ? 0 : 1; uiSave(); rerender(); });
+  root.querySelectorAll('[data-r]').forEach(a => { a.oninput = () => { UISET[a.dataset.r] = +a.value; uiSave(); const sp = a.parentNode.querySelector('span'); const v = +a.value; sp.innerHTML = a.dataset.r === 'fov' ? Math.round(v) + '&deg;' : a.dataset.r === 'vol' ? Math.round(v * 100) + '%' : v.toFixed(2); }; a.onmousedown = a.onclick = ev => ev.stopPropagation(); });
+}
+// a live, slowly turning 3D preview of the survivor you are picking
+function uiPreview(id) {
+  const box = document.getElementById('uPrev'); if (!box) return; let P_ = UI61.prev;
+  if (!P_) { const r = new THREE.WebGLRenderer({ antialias: true, alpha: true }); r.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1)); r.outputEncoding = THREE.sRGBEncoding; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.15; r.setClearColor(0x0c0d0f, 1);
+    const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(30, 1, .1, 50); cam.position.set(0, 1.2, 5.2); cam.lookAt(0, .92, 0); sc.fog = new THREE.Fog(0x0c0d0f, 6, 14);
+    sc.add(new THREE.HemisphereLight(0xcfd8e0, 0x1a1410, .9)); const k = new THREE.DirectionalLight(0xffe2b8, 1.5); k.position.set(2.5, 3.5, 3); sc.add(k); const rim = new THREE.DirectionalLight(0x9fd6e6, 1.1); rim.position.set(-3, 2.5, -3); sc.add(rim);
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(1.15, 48), new THREE.MeshBasicMaterial({ color: 0x3a2610, transparent: true, opacity: .4 })); disc.rotation.x = -Math.PI / 2; disc.position.y = .005; sc.add(disc);
+    P_ = UI61.prev = { r, sc, cam, model: null, id: null, raf: 0, t: performance.now(), rot: .5, drag: null }; }
+  if (P_.r.domElement.parentNode !== box) { box.insertBefore(P_.r.domElement, box.firstChild); const c = P_.r.domElement;
+    c.onmousedown = e => { P_.drag = e.clientX; }; window.addEventListener('mouseup', () => { P_.drag = null; }); c.onmousemove = e => { if (P_.drag !== null) { P_.rot += (e.clientX - P_.drag) * .01; P_.drag = e.clientX; } }; }
+  const setModel = () => { if (P_.model) { P_.sc.remove(P_.model); P_.model = null; } if (!PG[id]) return; const m = buildPerson(id); m.userData.mixer.update(.01); P_.sc.add(m); P_.model = m; P_.id = id; const ld = document.getElementById('uPrevLd'); if (ld) ld.style.display = 'none'; };
+  if (P_.id !== id || !P_.model) { if (PG[id]) setModel(); else { P_.id = id; if (P_.model) { P_.sc.remove(P_.model); P_.model = null; } loadLook(id).then(() => { if (P_.id === id && titleMode === 'look') setModel(); }); } }
+  else { const ld = document.getElementById('uPrevLd'); if (ld) ld.style.display = 'none'; }
+  if (!P_.raf) { const loop = () => { if (titleMode !== 'look' || !titleEl.classList.contains('on')) { P_.raf = 0; return; } P_.raf = requestAnimationFrame(loop);
+      const b = document.getElementById('uPrev'); if (!b) return; const w = b.clientWidth, h = b.clientHeight; if (w < 2 || h < 2) return;
+      const cv = P_.r.domElement; if (cv.width !== Math.round(w * P_.r.getPixelRatio()) || cv.height !== Math.round(h * P_.r.getPixelRatio())) { P_.r.setSize(w, h, false); P_.cam.aspect = w / h; P_.cam.updateProjectionMatrix(); }
+      const now = performance.now(), dt = Math.min(.05, (now - P_.t) / 1000); P_.t = now; if (P_.drag === null) P_.rot += dt * .35;
+      if (P_.model) { P_.model.rotation.y = P_.rot; P_.model.userData.mixer.update(dt); } P_.r.render(P_.sc, P_.cam); };
+    P_.raf = requestAnimationFrame(loop); }
+}
+function uiPreviewStop() { const P_ = UI61.prev; if (P_ && P_.raf) { cancelAnimationFrame(P_.raf); P_.raf = 0; } }
+function titleKey(e) {
+  if (titleMode === 'press') { initAudio(); startMusic(); titleMode = 'main'; renderTitle(); return; }
+  const up = e.code === 'ArrowUp' || e.code === 'KeyW', dn = e.code === 'ArrowDown' || e.code === 'KeyS', lf = e.code === 'ArrowLeft' || e.code === 'KeyA', rt = e.code === 'ArrowRight' || e.code === 'KeyD', ok = e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space', back = e.code === 'Escape' || e.code === 'Backspace';
+  const tick = () => beep(880, .015, 'sine', .012);
+  if (titleMode === 'main') { const it = uiMainItems(); let i = UI61.sel;
+    if (up || dn) { do { i = (i + (up ? -1 : 1) + it.length) % it.length; } while (it[i][2] && i !== UI61.sel); UI61.sel = i; tick(); renderTitle(); return; }
+    const n = parseInt(e.key, 10); if (n >= 1 && n <= it.length && !it[n - 1][2]) { UI61.sel = n - 1; titleAction(it[n - 1][0]); return; }
+    if (ok && !it[UI61.sel][2]) titleAction(it[UI61.sel][0]); return; }
+  if (titleMode === 'bg') { if (lf || rt || up || dn) { UI61.bgSel = (UI61.bgSel + (lf || up ? -1 : 1) + BGKEYS.length) % BGKEYS.length; tick(); renderTitle(); return; }
+    const n = parseInt(e.key, 10); if (n >= 1 && n <= BGKEYS.length) { UI61.bgSel = n - 1; pickBg(BGKEYS[n - 1]); return; }
+    if (ok) pickBg(BGKEYS[UI61.bgSel]); if (back) titleAction('back'); return; }
+  if (titleMode === 'look') { if (lf || rt || up || dn) { UI61.lookSel = (UI61.lookSel + (lf || up ? -1 : 1) + LOOKS.length) % LOOKS.length; tick(); renderTitle(); return; }
+    const n = parseInt(e.key, 10); if (n >= 1 && n <= LOOKS.length) { UI61.lookSel = n - 1; renderTitle(); return; }
+    if (ok && !LVL.lookLoading) pickLook(LOOKS[UI61.lookSel].id); if (back) { titleMode = 'bg'; renderTitle(); } return; }
+  if (back) titleAction('back');
+}
+// the pause menu, in the same style as the title
+function renderPause() {
+  const o = objTarget(), it = [['resume', 'Resume']].concat(NET.on ? [['crew', 'Crew board'], ['abort', 'Abort mission']] : [], [['map', 'County map'], ['journal', 'Journal'], ['settings', 'Settings'], ['stuck', 'I am stuck'], ['quit', 'Quit to title']]);
+  UI61.pSel = clamp(UI61.pSel, 0, it.length - 1);
+  if (UI61.pMode === 'settings') { pauseEl.innerHTML = '<div class="in"><h2>Settings</h2><div class="u-set" style="margin-top:18px">' + uiSettingsHTML() + '</div><div class="u-row2"><span class="u-btn" data-p="back">Back</span></div></div>' + uiBar([[['Esc'], 'Resume']]);
+    uiSettingsBind(pauseEl, renderPause); pauseEl.querySelectorAll('[data-p]').forEach(a => a.onclick = ev => { ev.stopPropagation(); UI61.pMode = null; renderPause(); }); return; }
+  pauseEl.innerHTML = '<div class="in"><h2>Paused</h2>' + (o ? '<div class="obj">' + esc(o.text) + '</div>' : '<div style="height:22px"></div>') + '<nav class="u-menu">' + it.map((q, i) => '<a data-p="' + q[0] + '" data-i="' + i + '" class="' + (i === UI61.pSel ? 'sel' : '') + '"><i>' + String(i + 1).padStart(2, '0') + '</i>' + q[1] + '</a>').join('') + '</nav>' +
+    '<div class="sk">' + BG.name + ' &nbsp;&middot;&nbsp; Firearms <b>' + Math.floor(S.firearms) + '</b> &middot; Hotwire <b>' + Math.floor(S.hotwire) + '</b> &middot; Medic <b>' + Math.floor(S.medic) + '</b> &middot; Forage <b>' + Math.floor(S.forage) + '</b><br>Kills <b>' + kills + '</b> &middot; Level <b>' + (PR.lvl || 1) + '</b></div></div>' +
+    uiBar([[['&uarr;', '&darr;'], 'Navigate'], [['Enter'], 'Select'], [['Esc'], 'Resume']]);
+  pauseEl.querySelectorAll('.u-menu a').forEach(a => a.onmouseenter = () => { if (UI61.pSel !== +a.dataset.i) { UI61.pSel = +a.dataset.i; pauseEl.querySelectorAll('.u-menu a').forEach(b => b.classList.toggle('sel', b === a)); } });
+  pauseEl.querySelectorAll('[data-p]').forEach(a => a.onclick = ev => { ev.stopPropagation(); pauseDo(a.dataset.p); });
+}
+function pauseDo(p) {
+  beep(520, .04, 'triangle', .03);
+  if (p === 'resume') { pauseEl.classList.remove('on'); lock(); }
+  if (p === 'stuck') { pauseEl.classList.remove('on'); unstick(false); lock(); }
+  if (p === 'map') { pauseEl.classList.remove('on'); mapOpen = true; }
+  if (p === 'journal') { pauseEl.classList.remove('on'); openJournal(); }
+  if (p === 'settings') { UI61.pMode = 'settings'; renderPause(); }
+  if (p === 'crew') { pauseEl.classList.remove('on'); NET.screen = NET.mission ? 'crew' : NET.screen; netOpen(); return; }
+  if (p === 'abort') { netSend({ t: 'mission.abort' }); pauseEl.classList.remove('on'); return; }
+  if (p === 'quit') { stopSpeech(); if (NET.on) { if (NET.ws) NET.ws.close(); netEndLocal(); NET.worldReady = false; } showTitle(); }
+}
+addEventListener('keydown', e => { if (!pauseEl || !pauseEl.classList.contains('on') || UI61.pMode) return; const n = pauseEl.querySelectorAll('.u-menu a').length; if (!n) return;
+  if (e.code === 'ArrowUp' || e.code === 'ArrowDown') { UI61.pSel = (UI61.pSel + (e.code === 'ArrowUp' ? -1 : 1) + n) % n; renderPause(); e.preventDefault(); }
+  else if (e.code === 'Enter') { const a = pauseEl.querySelectorAll('.u-menu a')[UI61.pSel]; if (a) pauseDo(a.dataset.p); e.preventDefault(); } }, true);
+// ---- HUD pieces (canvas)
+var UIP = { heart: 'M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.2 5.3 3 1.7-1.8 3.2-3 5.3-3 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z', band: 'M3 9h18v6H3zM9 9v6M15 9v6', pipe: 'M7 6h10v12H7zM10 3h4v3h-4zM7 10h10M7 14h10', molo: 'M10 2h4v4l2 3v12H8V9l2-3zM12 0v2', bottle: 'M10 2h4v5l2 3v11H8V10l2-3z', ammo: 'M8 21V9l2-5 2 5v12zM14 21V9l2-5 2 5v12z' };
+function hudIcon(k, x, y, s, col, fill) { const p = UIP['_' + k] || (UIP['_' + k] = new Path2D(UIP[k])); ctx.save(); ctx.translate(x, y); ctx.scale(s / 24, s / 24); ctx.lineWidth = 2.2; ctx.lineJoin = 'round'; if (fill) { ctx.fillStyle = col; ctx.fill(p); } else { ctx.strokeStyle = col; ctx.stroke(p); } ctx.restore(); }
+function hudHealth61(hx, hy) {
+  const hp = Math.max(0, P.hp), low = hp <= 35, pulse = low ? .55 + .45 * Math.abs(Math.sin(performance.now() / 260)) : 1;
+  const w = 248; const g = ctx.createLinearGradient(hx - 8, 0, hx + w + 60, 0); g.addColorStop(0, 'rgba(0,0,0,.55)'); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(hx - 8, hy - 30, w + 60, 64);
+  ctx.globalAlpha = pulse; hudIcon('heart', hx, hy - 25, 20, low ? '#ff5a46' : '#f0a43a', true); ctx.globalAlpha = 1;
+  ctx.font = '700 22px ' + UFH; ctx.textAlign = 'left'; ctx.fillStyle = low ? '#ff6a56' : '#fff'; const hs = String(Math.ceil(hp)), nw = ctx.measureText(hs).width; ctx.fillText(hs, hx + 28, hy - 8);
+  ctx.font = '600 10px ' + UFH; ctx.fillStyle = '#8e958f'; ctx.fillText('HEALTH', hx + 34 + nw, hy - 9);
+  const n = 10, bw = (w - (n - 1) * 3) / n; for (let i = 0; i < n; i++) { const f = clamp(hp / 10 - i, 0, 1), x = hx + i * (bw + 3); ctx.fillStyle = 'rgba(255,255,255,.1)'; ctx.fillRect(x, hy, bw, 7); if (f > 0) { ctx.fillStyle = low ? '#ff4b3e' : '#ebe6da'; ctx.fillRect(x, hy, bw * f, 7); } }
+  const items = [['band', inv.band, 'H'], ['pipe', inv.pipe || 0, 'G'], ['molo', inv.molo || 0, 'K'], ['bottle', inv.bottle || 0, '']]; let x = hx;
+  for (const [k, v, key] of items) { ctx.globalAlpha = v ? 1 : .35; hudIcon(k, x, hy + 14, 16, v ? '#e9e4d8' : '#8e958f'); ctx.font = '700 13px ' + UFH; ctx.fillStyle = '#fff'; ctx.fillText(String(v), x + 20, hy + 27); if (key) { const kx = x + 20 + ctx.measureText(String(v)).width + 5; ctx.strokeStyle = 'rgba(233,228,216,.4)'; ctx.lineWidth = 1; ctx.strokeRect(kx, hy + 17, 13, 12); ctx.font = '700 8px ' + UFH; ctx.fillStyle = '#c9c6bb'; ctx.textAlign = 'center'; ctx.fillText(key, kx + 6.5, hy + 26); ctx.textAlign = 'left'; } ctx.globalAlpha = 1; x += 62; }
+  UI61.playT += 1 / 60; if (UISET.hints && (UI61.playT < 75 || keys.F1)) { ctx.globalAlpha = UI61.playT < 75 ? clamp((75 - UI61.playT) / 6, 0, 1) : 1; ctx.font = '600 10px ' + UFH; ctx.fillStyle = '#8e958f';
+    ctx.fillText('TAB BACKPACK  ·  1-6 WEAPONS  ·  M MAP  ·  P PING' + (NET.on ? '  ·  E ON A FRIEND: GIVE' : '') + '  ·  F1 HINTS', hx, hy + 46); ctx.globalAlpha = 1; }
+}
+function hudAmmo61(ax, ay) {
+  const W = W_(), id = curW, rar = (typeof RAR_OF !== 'undefined' && RAR_OF[id]) || 'common', rc = { common: '#cfcac0', uncommon: '#7fd07a', rare: '#5fb0ff', epic: '#c07aff', legendary: '#ffb03a' }[rar] || '#cfcac0';
+  const g = ctx.createLinearGradient(ax - 290, 0, ax + 20, 0); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.55)'); ctx.fillStyle = g; ctx.fillRect(ax - 290, ay - 78, 314, 96);
+  ctx.textAlign = 'right'; ctx.font = '700 13px ' + UFH; ctx.fillStyle = rc; ctx.fillText((P.rl > 0 ? 'RELOADING' : P.mag === 0 && P.ammo === 0 && !W.melee ? 'NO AMMO · MELEE' : W.name).toUpperCase(), ax, ay - 50);
+  ctx.font = '600 46px ' + UFH; ctx.fillStyle = W.melee ? '#e9e4d8' : P.mag ? '#fff' : '#ff5c4a'; const mg = W.melee ? '—' : String(P.mag); ctx.fillText(mg, ax - 70, ay);
+  if (!W.melee) { ctx.font = '600 20px ' + UFH; ctx.fillStyle = '#8e958f'; ctx.fillText('/ ' + P.ammo, ax - 12, ay); if (P.cap) { const n = Math.min(P.cap, 30), bw = Math.min(5, 150 / n); for (let i = 0; i < n; i++) { ctx.fillStyle = i < (P.mag * n / P.cap) ? 'rgba(235,230,218,.85)' : 'rgba(255,255,255,.12)'; ctx.fillRect(ax - 12 - (i + 1) * (bw + 1.5), ay + 8, bw, 5); } } }
+  { const qs = qsSlots(); ctx.font = '600 10px ' + UFH; let x = ax; for (let i = 5; i >= 0; i--) { const k = qs[i]; if (!k) continue; const lbl = (WLBL[k] || wName(k)).toUpperCase(), w = ctx.measureText(lbl).width + 26; const on = k === curW;
+      ctx.fillStyle = on ? 'rgba(240,164,58,.22)' : 'rgba(0,0,0,.35)'; ctx.fillRect(x - w, ay - 86, w, 18); if (on) { ctx.fillStyle = '#f0a43a'; ctx.fillRect(x - w, ay - 70, w, 2); }
+      ctx.fillStyle = on ? '#f0a43a' : '#6f746f'; ctx.textAlign = 'left'; ctx.fillText(String(i + 1), x - w + 6, ay - 73); ctx.fillStyle = on ? '#fff' : '#a8aaa2'; ctx.fillText(lbl, x - w + 17, ay - 73); ctx.textAlign = 'right'; x -= w + 4; } }
+}
+function hudToasts61() {
+  toasts.forEach((t, i) => { const a = clamp(t.life, 0, 1), sl = (1 - clamp((4 - t.life) * 5, 0, 1)) * -24; ctx.globalAlpha = a; ctx.font = '500 13px ' + UFB; ctx.textAlign = 'left'; const w = ctx.measureText(t.t).width + 30, y = 92 + i * 28;
+    const g = ctx.createLinearGradient(22, 0, 22 + w + 40, 0); g.addColorStop(0, 'rgba(8,10,12,.78)'); g.addColorStop(1, 'rgba(8,10,12,0)'); ctx.fillStyle = g; ctx.fillRect(22 + sl, y, w + 40, 22); ctx.fillStyle = '#f0a43a'; ctx.fillRect(22 + sl, y, 2, 22);
+    ctx.fillStyle = '#ece8de'; ctx.fillText(t.t, 34 + sl, y + 15); ctx.globalAlpha = 1; });
+}
 'use strict';
 const W = 40000, H = 30000, HL = 2880, BAYX = 5000;      // game units (1 unit = 0.05 m); HL = shoreline
 const S3 = 0.05, EYE = 1.7;
@@ -493,7 +787,7 @@ const VEH = {
   Car_ambulance: { hl: 52, hw: 21, kg: 2600, wr: .38, eye: .1, acc: 330, top: 560, wb: 66, name: 'Ambulance', col: 0xe8e6e0, siren: true },
   Car_truck: { hl: 74, hw: 25, kg: 5200, wr: .48, eye: .3, acc: 250, top: 480, wb: 92, name: 'Box truck', cam: 1.72 },
   Car_bus: { hl: 112, hw: 26, kg: 9000, wr: .52, eye: .25, acc: 200, top: 430, wb: 142, name: 'School bus', col: 0xd89a10, cam: 4.47 },
-  Car_moto: { hl: 22, hw: 7, kg: 260, wr: .31, eye: .5, acc: 640, top: 760, wb: 29, name: 'Motorcycle', cam: -.15, lat: 0, moto: true }
+  Car_moto: { hl: 22, hw: 7, kg: 260, wr: .31, eye: .5, acc: 640, top: 760, wb: 29, name: 'Motorcycle', cam: -.15, lat: 0, moto: true, seatY: .4 }
 };
 const SPECIAL_KINDS = ['Car_police', 'Car_ambulance', 'Car_truck', 'Car_bus', 'Car_moto'];
 function vehOf(c) { return VEH[c.kind] || VEH.Car; }
@@ -505,11 +799,19 @@ function mkCar(x, y, a, fuel, col, kind) {
 
 /* ---------- Furniture ---------- */
 const DIM = {
+  toilet: [.45, .72], tub: [1.72, .8], vanity: [.94, .54],
   bed: [2.0, 1.6], couch: [2.0, 0.9], coffee: [1.1, 0.6], dining: [1.9, 1.7], shelf: [1.2, 0.35], wardrobe: [1.2, 0.6], counter: [2.4, 0.65],
   fridge: [0.8, 0.8], tv: [1.4, 0.4], lamp: [0.4, 0.4], nightstand: [0.5, 0.4], rack: [1.6, 0.5], bench: [2.0, 0.8], barrel: [0.65, 0.65],
   tires: [0.8, 0.8], boxes: [0.9, 0.7], plant: [0.55, 0.55], trash: [0.45, 0.45], desk: [1.4, 0.7]
 };
 const FUR = {
+  // build 61: bathroom fixtures
+  toilet(g) { g.add(msh(cyl(.15, .19, .38, 14), M.white, 0, .19, .06)); g.add(msh(cyl(.21, .17, .12, 16), M.white, 0, .44, .08)); mb(g, .38, .03, .44, M.white, 0, .51, .08); mb(g, .42, .36, .17, M.white, 0, .66, -.24); mb(g, .45, .04, .2, M.white, 0, .86, -.24); mb(g, .07, .02, .03, M.metal, .14, .8, -.15); },
+  tub(g) { mb(g, 1.7, .55, .07, M.white, 0, .275, -.355); mb(g, 1.7, .55, .07, M.white, 0, .275, .355); mb(g, .07, .55, .78, M.white, -.815, .275, 0); mb(g, .07, .55, .78, M.white, .815, .275, 0); mb(g, 1.56, .1, .64, M.white, 0, .05, 0);
+    mb(g, 1.56, .02, .64, (M.water_ || (M.water_ = LM({ color: 0x8fb4c2, roughness: .1, transparent: true, opacity: .55 }))), 0, .32, 0); g.add(msh(cyl(.02, .02, .22, 8), M.metal, -.74, .62, -.3)); mb(g, .04, .04, .16, M.metal, -.74, .72, -.24);
+    mb(g, 1.72, .025, .025, M.metal, 0, 1.95, .37); mb(g, .7, 1.45, .015, M.curtain, -.5, 1.22, .37); g.add(msh(cyl(.05, .05, .02, 10), M.metal, -.78, 1.9, -.3)); },
+  vanity(g) { mb(g, .9, .8, .5, M.wood, 0, .4, 0); mb(g, .94, .05, .54, M.white, 0, .825, 0); mb(g, .46, .03, .32, M.metal, 0, .852, .04); g.add(msh(cyl(.016, .016, .14, 8), M.metal, 0, .92, -.17)); mb(g, .03, .03, .1, M.metal, 0, .98, -.12);
+    mb(g, .76, .86, .015, M.darkwood, 0, 1.58, -.252); mb(g, .7, .8, .012, (M.mirror_ || (M.mirror_ = LM({ color: 0xbfd3da, roughness: .05, metalness: .6 }))), 0, 1.58, -.243); for (const sx of [-.22, .22]) mb(g, .4, .6, .02, M.darkwood, sx, .42, .255); mb(g, .12, .03, .06, M.white, .3, .87, .1); },
   bed(g) { const f = pick(FAB); mb(g, 2.0, .3, 1.6, M.wood, 0, .15, 0); mb(g, 1.9, .2, 1.5, M.sheet, 0, .4, 0); mb(g, 1.15, .07, 1.52, f, .35, .52, 0); mb(g, .45, .13, .6, M.pillow, -.75, .56, .38); mb(g, .45, .13, .6, M.pillow, -.75, .56, -.38); mb(g, .08, 1.0, 1.6, M.darkwood, -.98, .65, 0); mb(g, .08, .5, 1.6, M.darkwood, .98, .4, 0); },
   couch(g) { const f = pick(FAB); mb(g, 2.0, .4, .9, f, 0, .2, 0); mb(g, 2.0, .5, .2, f, 0, .65, -.35); mb(g, .2, .5, .9, f, -.9, .45, 0); mb(g, .2, .5, .9, f, .9, .45, 0); for (let i = -1; i <= 1; i++) mb(g, .58, .14, .62, f, i * .6, .47, .08).scale.y = .14; mb(g, .8, .05, .5, M.sheet, .3, .56, .2).rotation.y = .3; },
   coffee(g) { mb(g, 1.1, .06, .6, M.wood, 0, .4, 0); for (const sx of [-.5, .5]) for (const sz of [-.25, .25]) mb(g, .06, .4, .06, M.darkwood, sx, .2, sz); mb(g, .3, .02, .22, M.sheet, -.2, .44, .05).rotation.y = .4; g.add(msh(cyl(.04, .035, .09, 8), M.white, .25, .47, -.1)); },
@@ -580,10 +882,10 @@ let BLR = null; function bName(hi) { if (!BLR || BLR.n !== Object.keys(BL).lengt
 const LANDMARK = new Set(['church', 'gas', 'clinic', 'fire', 'diner', 'warehouse', 'office', 'lab', 'annex', 'dorm', 'gate']);
 const FLATROOF = new Set(['gas', 'clinic', 'fire', 'diner', 'warehouse', 'office', 'lab', 'annex', 'dorm', 'gate']);
 function bKind(hi) { const n0 = bName(hi), n = n0 === 'hq' ? 'office' : n0.split('#')[0]; return LANDMARK.has(n) ? n : 'house'; }
-const RES_THEMES = ['family', 'elderly', 'kids', 'bachelor', 'hoarder', 'barricaded', 'student', 'family', 'elderly', 'kids'];
+const RES_THEMES = ['family', 'elderly', 'kids', 'bachelor', 'hoarder', 'barricaded', 'student', 'family', 'elderly', 'kids', 'couple', 'single', 'couple'];
 const THEME_ROOMS = { family: ['living', 'kitchen'], elderly: ['parlor', 'bedroomE'], kids: ['kidsroom', 'living'], bachelor: ['den', 'bedroom'], hoarder: ['hoard', 'kitchen'],
-  barricaded: ['bunker', 'bedroom'], student: ['study', 'bedroom'] };
-const THEME_SOLO = { family: 'studio', elderly: 'parlor', kids: 'studio', bachelor: 'garage', hoarder: 'hoard', barricaded: 'bunker', student: 'study' };
+  barricaded: ['bunker', 'bedroom'], student: ['study', 'bedroom'], couple: ['living', 'bedroom'], single: ['kitchen', 'bedroom'] };
+const THEME_SOLO = { family: 'studio', elderly: 'parlor', kids: 'studio', bachelor: 'garage', hoarder: 'hoard', barricaded: 'bunker', student: 'study', couple: 'studio', single: 'studio' };
 
 const DETM = {};
 function detMats() {
@@ -655,6 +957,7 @@ function furnishHouse(H, hi) {
   H.px = px; H.rooms = rooms; H.rtypes = types; H.barricade = theme === 'barricaded';
   let PLV = 0, lane = null;
   H.two = !!(RES && px && H.w >= 210 && H.h >= 150 && hashI(hi * 31) % 5 < 2 && rooms[1].x1 - rooms[1].x0 >= 104);
+  if (H.two) H.rtypes = types.map((t, i) => /^bedroom|^kidsroom/.test(t) ? (types.includes('kitchen') ? 'living' : 'kitchen') : t);   // build 61: bedrooms are upstairs
   if (H.two) {
     const R1 = rooms[1], L = Math.min(96, R1.x1 - R1.x0 - 46), b0 = H.door === 'n' ? R1.y1 - 40 : R1.y0, a0 = R1.x0 + 40;
     lane = { x0: a0, x1: a0 + L, y0: b0, y1: b0 + 40 }; H.lane = lane;
@@ -710,8 +1013,49 @@ function furnishHouse(H, hi) {
   const rug = (R, w, d, rot) => { const rg = new THREE.Mesh(new THREE.PlaneGeometry(w || 2.2, d || 1.5), M.rug); rg.rotation.set(-Math.PI / 2, 0, rot !== undefined ? rot : (Math.random() < .5 ? 0 : Math.PI / 2)); rg.position.set(((R.x0 + R.x1) / 2) * S3 + rnd(-.3, .3), 0.04, ((R.y0 + R.y1) / 2) * S3 + rnd(-.3, .3)); sg.add(rg); };
   const FLOOR = { kitchen: M.tileFloor, garage: M.concFloor, clinic: M.tileFloor, diner: M.tileFloor, gas: M.tileFloor, fire: M.concFloor, warehouse: M.concFloor, lab: M.tileFloor, annex: M.tileFloor, gate: M.concFloor, bunker: M.concFloor };
 
+  // build 61: a real bathroom in a corner of the house (ground floor of a bungalow, upstairs in a two-storey): two inner walls, a doorway with a door left open, tiles, a tub, a toilet and a vanity
+  const bathAt = (lv, Y) => {
+    if (!RES || !px || H.barricade) return false; const BW = 50, BD = 66, GAP = 28, TW = 6, cands = [];
+    for (const R of rooms) { if (R.x1 - R.x0 < BW + 32 || R.y1 - R.y0 < BD + 40) continue; for (const sx of [R.x0, R.x1]) { if (Math.abs(sx - px) < 20) continue; for (const sy of [R.y0, R.y1]) for (const dv of ['v', 'h']) cands.push({ R, sx, sy, dv }); } }
+    const dp = { n: [cx, H.y], s: [cx, H.y + H.h], w: [H.x, cy], e: [H.x + H.w, cy] }[H.door];
+    cands.sort((a, b) => Math.hypot(b.sx - dp[0], b.sy - dp[1]) - Math.hypot(a.sx - dp[0], a.sy - dp[1]));
+    for (const c of cands) {
+      const L = c.sx === c.R.x0, T = c.sy === c.R.y0, x0 = L ? c.R.x0 : c.R.x1 - BW, y0 = T ? c.R.y0 : c.R.y1 - BD, rect = { x: x0, y: y0, w: BW, h: BD };
+      if (blk.some(b => ovl(rect, b, 4))) continue;
+      const wx = L ? x0 + BW : x0, hy = T ? y0 + BD : y0, V = c.dv === 'v';
+      // the doorway: in the inner side wall (V) or the inner end wall, toward the corner where they meet
+      const g0 = V ? (T ? y0 + BD - GAP - 8 : y0 + 8) : (L ? x0 + BW - GAP - 8 : x0 + 8), g1 = g0 + GAP;
+      const outside = V ? { x: L ? wx : wx - 28, y: g0 - 4, w: 28, h: GAP + 8 } : { x: g0 - 4, y: T ? hy : hy - 28, w: GAP + 8, h: 28 };
+      if (blk.some(b => ovl(outside, b, 0))) continue;
+      // collision
+      if (V) walls.push({ x: wx - TW / 2, y: y0, w: TW, h: g0 - y0, lv }, { x: wx - TW / 2, y: g1, w: TW, h: y0 + BD - g1, lv }, { x: x0, y: hy - TW / 2, w: BW, h: TW, lv });
+      else walls.push({ x: x0, y: hy - TW / 2, w: g0 - x0, h: TW, lv }, { x: g1, y: hy - TW / 2, w: x0 + BW - g1, h: TW, lv }, { x: wx - TW / 2, y: y0, w: TW, h: BD, lv });
+      // walls (papered both sides), lintel, trim, skirting and tiles
+      const vw = (ya, yb) => { if (yb - ya < 1) return; sg.add(tbox(.16, 2.92, (yb - ya) * S3, M.paper, wx * S3, Y + 1.46, (ya + yb) / 2 * S3, 2)); sg.add(box(.2, .12, (yb - ya) * S3, M.trim, wx * S3, Y + .06, (ya + yb) / 2 * S3)); };
+      const hw = (xa, xb) => { if (xb - xa < 1) return; sg.add(tbox((xb - xa) * S3, 2.92, .16, M.paper, (xa + xb) / 2 * S3, Y + 1.46, hy * S3, 2)); sg.add(box((xb - xa) * S3, .12, .2, M.trim, (xa + xb) / 2 * S3, Y + .06, hy * S3)); };
+      if (V) { vw(y0, g0); vw(g1, y0 + BD); hw(x0, x0 + BW + (L ? 3 : -3) * 0); sg.add(tbox(.16, .62, GAP * S3, M.paper, wx * S3, Y + 2.61, (g0 + g1) / 2 * S3, 2)); for (const g of [g0, g1]) sg.add(box(.22, 2.3, .07, M.trim, wx * S3, Y + 1.15, g * S3)); sg.add(box(.22, .07, GAP * S3 + .07, M.trim, wx * S3, Y + 2.3, (g0 + g1) / 2 * S3)); }
+      else { hw(x0, g0); hw(g1, x0 + BW); vw(y0, y0 + BD); sg.add(tbox(GAP * S3, .62, .16, M.paper, (g0 + g1) / 2 * S3, Y + 2.61, hy * S3, 2)); for (const g of [g0, g1]) sg.add(box(.07, 2.3, .22, M.trim, g * S3, Y + 1.15, hy * S3)); sg.add(box(GAP * S3 + .07, .07, .22, M.trim, (g0 + g1) / 2 * S3, Y + 2.3, hy * S3)); }
+      const tf = tplane(BW * S3, BD * S3, M.tileFloor, 2); tf.rotation.x = -Math.PI / 2; tf.position.set((x0 + BW / 2) * S3, Y + .045, (y0 + BD / 2) * S3); sg.add(tf);
+      { const outW = L ? x0 : x0 + BW; for (const [ax, az, w, rot] of [[outW, y0 + BD / 2, BD, 1], [x0 + BW / 2, T ? y0 : y0 + BD, BW, 0]]) { const pl = tplane(w * S3, 1.2, M.tileFloor, 2); pl.position.set(ax * S3 + (rot ? (L ? -.17 : .17) : 0), Y + .65, az * S3 + (rot ? 0 : (T ? -.17 : .17))); pl.rotation.y = rot ? (L ? Math.PI / 2 : -Math.PI / 2) : (T ? 0 : Math.PI); sg.add(pl); } }   // tiled wainscot
+      // the door, left open into the room (hinged at the end of the gap away from the corner)
+      { const DL = GAP * S3 - .1, dg = new THREE.Group(); dg.add(box(.045, 2.1, DL, M.door, 0, 1.05, DL / 2)); dg.add(box(.07, .05, .05, M.metal, 0, 1.0, DL - .12));
+        if (V) { const h0 = T ? g1 : g0; dg.position.set(wx * S3 + (L ? .1 : -.1), Y, h0 * S3); dg.rotation.y = (T ? Math.PI : 0) + (L ? 1 : -1) * (T ? -1 : 1) * 1.75; }
+        else { const h0 = L ? g1 : g0; dg.position.set(h0 * S3, Y, hy * S3 + (T ? .1 : -.1)); dg.rotation.y = (L ? -Math.PI / 2 : Math.PI / 2) + (T ? 1 : -1) * (L ? 1 : -1) * 1.75; }
+        sg.add(dg); }
+      // fixtures: tub on the end wall, vanity and toilet on the outside wall
+      blk.push(V ? { x: L ? wx - 24 : wx, y: g0, w: 24, h: GAP } : { x: g0, y: T ? hy - 24 : hy, w: GAP, h: 24 });
+      const Rb = { x0: x0 + 3, x1: x0 + BW - 3, y0: y0 + 3, y1: y0 + BD - 3 };
+      place('tub', along(Rb, 'tub', [T ? 'n' : 's'], [.5, .45, .55]), true, Y);
+      place('vanity', along(Rb, 'vanity', [L ? 'w' : 'e'], T ? [.75, .82, .68] : [.25, .18, .32]), true, Y) || place('vanity', along(Rb, 'vanity', [L ? 'e' : 'w'], [.5, .4, .6]), true, Y);
+      place('toilet', along(Rb, 'toilet', [L ? 'w' : 'e'], T ? [.48, .55, .4, .9] : [.52, .45, .6, .1]), true, Y);
+      { const rg = new THREE.Mesh(new THREE.PlaneGeometry(.9, .55), M.rug); rg.rotation.set(-Math.PI / 2, 0, 0); rg.position.set((x0 + BW / 2) * S3, Y + .05, ((T ? y0 : y0 + BD) + (T ? 1 : -1) * 36) * S3); sg.add(rg); }
+      blk.push(rect, outside); (H.baths || (H.baths = [])).push({ x0, y0, x1: x0 + BW, y1: y0 + BD, lv, dv: c.dv, dx: V ? wx : (g0 + g1) / 2, dy: V ? (g0 + g1) / 2 : hy, ox: V ? (L ? 1 : -1) : 0, oy: V ? 0 : (T ? 1 : -1) }); return true;
+    }
+    return false; };
+
+  if (!H.two) bathAt(0, 0);
   rooms.forEach((R, ri) => {
-    const type = types[ri];
+    const type = H.rtypes[ri];
     const fm = FLOOR[type] || M.woodFloor;
     const fw = (R.x1 - R.x0 + 14) * S3, fd = (R.y1 - R.y0 + 14) * S3;
     const fl = tplane(fw, fd, fm, 2); fl.rotation.x = -Math.PI / 2; fl.position.set(((R.x0 + R.x1) / 2) * S3, 0.03, ((R.y0 + R.y1) / 2) * S3); sg.add(fl);
@@ -801,8 +1145,8 @@ function furnishHouse(H, hi) {
     slab(ix0_, iy0_, ix1_, lane.y0); slab(ix0_, lane.y1, ix1_, iy1_); slab(ix0_, lane.y0, lane.x0, lane.y1); slab(lane.x1, lane.y0, ix1_, lane.y1);
     blk.length = 0; blk.push({ x: lane.x0 - 24, y: lane.y0 - 6, w: lane.x1 - lane.x0 + 48, h: 52 }, { x: px - 32, y: cy - 42, w: 64, h: 84 }, { x: px - 10, y: iy0, w: 20, h: iy1 - iy0 });
     { const ly = H.door === 'n' ? lane.y0 - 54 : lane.y1; blk.push({ x: lane.x1 - 46, y: ly, w: 52, h: 54 }); }
-    PLV = 1; const sets = [['bed', 'nightstand', 'wardrobe', 'dresser', 'lamp'], ['kidbed', 'toys', 'desk', 'shelf', 'lamp'], ['bed', 'dresser', 'shelf', 'armchair', 'plant']];
-    rooms.forEach((R, ri) => { for (const nm of sets[(hashI(hi + ri) % 3)]) place(nm, along(R, nm, shuf(SIDES), FR), true, Y); const cl = new THREE.Group(); cl.position.set((R.x0 + R.x1) / 2 * S3, Y, (R.y0 + R.y1) / 2 * S3); cl.add(msh(sph(.07, 8, 6), M.lamp, 0, 2.6, 0)); sg.add(cl); iaAdd(R.x0 + 7, (R.y0 + R.y1) / 2 + 24, 'switch', { room: { cx: (R.x0 + R.x1) / 2, cy: (R.y0 + R.y1) / 2 }, lv: 1 }); });
+    PLV = 1; bathAt(1, Y); const sets = [['bed', 'nightstand', 'wardrobe', 'dresser', 'lamp'], ['kidbed', 'toys', 'desk', 'shelf', 'lamp'], ['bed', 'dresser', 'shelf', 'armchair', 'plant'], ['desk', 'shelf', 'shelf', 'armchair', 'lamp', 'boxes'], ['bed', 'nightstand', 'nightstand', 'wardrobe', 'tv', 'plant']];
+    rooms.forEach((R, ri) => { for (const nm of sets[(hashI(hi * 3 + ri) % sets.length)]) place(nm, along(R, nm, shuf(SIDES), FR), true, Y); const cl = new THREE.Group(); cl.position.set((R.x0 + R.x1) / 2 * S3, Y, (R.y0 + R.y1) / 2 * S3); cl.add(msh(sph(.07, 8, 6), M.lamp, 0, 2.6, 0)); sg.add(cl); iaAdd(R.x0 + 7, (R.y0 + R.y1) / 2 + 24, 'switch', { room: { cx: (R.x0 + R.x1) / 2, cy: (R.y0 + R.y1) / 2 }, lv: 1 }); });
     H.upZ = hashI(hi * 7) % 3 === 0 ? 1 + hashI(hi) % 2 : 0;
     PLV = 0;
   }
@@ -1632,12 +1976,19 @@ function buildWorld3D() {
   for (const d of doors) {
     const hor = d.o === 'h', cxd = d.cx * S3, czd = d.cy * S3, gap = 32 * S3, dox = hor ? 0 : d.out, doz = hor ? d.out : 0;
     const pos = (a, b) => hor ? [cxd + a, czd + b] : [cxd + b, czd + a];
-    let p = pos(0, 0); sg.add(hor ? tbox(gap + .2, .7, .3, M.wall, p[0], 2.65, p[1]) : tbox(.3, .7, gap + .2, M.wall, p[0], 2.65, p[1]));
-    for (const s of [-1, 1]) { p = pos(s * (gap / 2 + .02), 0); sg.add(hor ? box(.1, 2.35, .36, M.trim, p[0], 1.18, p[1]) : box(.36, 2.35, .1, M.trim, p[0], 1.18, p[1])); }
+    const hm_ = hmat(d.hi), Hd = houses[d.hi], two_ = !!(Hd && Hd.two);
+    let p = pos(0, 0); sg.add(hor ? tbox(gap + .2, .7, .3, hm_.wall, p[0], 2.65, p[1], hm_.ts) : tbox(.3, .7, gap + .2, hm_.wall, p[0], 2.65, p[1], hm_.ts));
+    // build 61: a two-storey house used to have a hole from the door all the way up to the eaves; close it and put a window over the door
+    if (two_) { sg.add(hor ? tbox(gap + .2, 3.2, .3, hm_.wall, p[0], 4.6, p[1], hm_.ts) : tbox(.3, 3.2, gap + .2, hm_.wall, p[0], 4.6, p[1], hm_.ts));
+      const ip = tplane(gap + .2, 3.7, M.paper, 2); const o_ = .16; if (hor) { ip.position.set(p[0], 4.35, p[1] - d.out * o_); ip.rotation.y = d.out > 0 ? Math.PI : 0; } else { ip.position.set(p[0] - d.out * o_, 4.35, p[1]); ip.rotation.y = d.out > 0 ? -Math.PI / 2 : Math.PI / 2; } sg.add(ip);
+      if (KIT) { const off = .215; kitPut('Win_A', cxd + dox * off, czd + doz * off, dox, doz, 3.2); kitPut('Win_A', cxd - dox * off, czd - doz * off, -dox, -doz, 3.2); } }
+    // build 61: the leaf is 1.3 m and the opening 1.6 m, which left daylight down both sides; jambs close the opening to the leaf
+    const JB = .15; for (const s of [-1, 1]) { p = pos(s * (gap / 2 - JB / 2), 0); sg.add(hor ? tbox(JB, 2.3, .3, hm_.wall, p[0], 1.15, p[1], hm_.ts) : tbox(.3, 2.3, JB, hm_.wall, p[0], 1.15, p[1], hm_.ts)); p = pos(s * (gap / 2 - JB + .03), 0); sg.add(hor ? box(.08, 2.32, .36, M.trim, p[0], 1.16, p[1]) : box(.36, 2.32, .08, M.trim, p[0], 1.16, p[1])); }
+    { p = pos(0, 0); sg.add(hor ? box(gap - 2 * JB + .14, .08, .36, M.trim, p[0], 2.3, p[1]) : box(.36, .08, gap - 2 * JB + .14, M.trim, p[0], 2.3, p[1])); }
     const lg = new THREE.Group();
-    if (KIT && KIT.DoorLeaf) { const lf = doorLeafMesh(d.hi); lf.position.x = 0.12; lg.add(lf); kitPut('DoorFrame', cxd + dox * .16, czd + doz * .16, dox, doz); }
-    else { const leaf = box(gap * .92, 2.2, .06, M.door, 0, 0, 0); leaf.position.set(gap * .46, 1.1, 0); lg.add(leaf); lg.add(box(.05, .05, .12, M.metal, gap * .8, 1.05, 0)); }
-    p = pos(-gap / 2, 0); lg.position.set(p[0], 0, p[1]); doorG.add(lg); cullList.push({ o: lg, c: new THREE.Vector3(p[0], 0, p[1]), r: 2 });
+    if (KIT && KIT.DoorLeaf) { const lf = doorLeafMesh(d.hi); lf.position.x = .005; lg.add(lf); }
+    else { const leaf = box(gap - 2 * JB - .02, 2.2, .06, M.door, 0, 0, 0); leaf.position.set((gap - 2 * JB) / 2, 1.1, 0); lg.add(leaf); lg.add(box(.05, .05, .12, M.metal, gap - 2 * JB - .15, 1.05, 0)); }
+    p = pos(-gap / 2 + JB, 0); lg.position.set(p[0], 0, p[1]); doorG.add(lg); cullList.push({ o: lg, c: new THREE.Vector3(p[0], 0, p[1]), r: 2 });
     { const nm = bName(d.hi); d.leaf = lg; d.amt = d.tgt = (STORY_OPEN.has(nm) || Math.random() < .22) ? 1.5 : 0; d.vel = 0; d.bash = 0; d.shake = 0; doorPose(d);
       d.col = colB(d.cx, d.cy, hor ? 0 : Math.PI / 2, 17, 3, { door: d }); d.col.dead = d.amt > .3; }
     const special = d.hi >= 10 && !/^hb|^h[nsb]|^t\d/.test(Object.keys(BL).find(k => BL[k] === d.hi) || '');
@@ -1701,7 +2052,7 @@ function buildWorld3D() {
   buildRoads3D(free); buildTowers3D();
   const rockM = []; for (let i = 0; i < 2400; i++) { const x = rnd(60, W - 60), y = rnd(60, H - 60); if (!free(x, y, 30)) continue; const sc = rnd(.25, .7); if (sc > .45) colC(x, y, sc * 18); rockM.push(new THREE.Matrix4().compose(new THREE.Vector3(x * S3, .18, y * S3), new THREE.Quaternion().setFromEuler(new THREE.Euler(rnd(0, 3), rnd(0, 3), rnd(0, 3))), new THREE.Vector3(sc, sc * .6, sc))); }
   instChunked(new THREE.DodecahedronGeometry(1, 0), M.stone, rockM, true);
-  for (let i = 0; i < 1800; i++) { const x = rnd(60, W - 60), y = rnd(60, H - 60); if (!free(x, y, 25)) continue; bushPos.push([x, y]); if (TREEG) continue; const b = new THREE.Group(); for (let k = 0; k < 3; k++) b.add(msh(sph(rnd(.35, .6), 7, 5), M.bush, rnd(-.4, .4), .35, rnd(-.4, .4))); b.position.set(x * S3, 0, y * S3); treeFB.add(b); }
+  for (let i = 0; i < 1800; i++) { const x = rnd(60, W - 60), y = rnd(60, H - 60); if (!free(x, y, 25) || (x > 5150 && x < 7650 && y > 2860 && y < 4360) || houses.some(h => x > h.x - 70 && x < h.x + h.w + 70 && y > h.y - 70 && y < h.y + h.h + 70)) continue; bushPos.push([x, y]); if (TREEG) continue; const b = new THREE.Group(); for (let k = 0; k < 3; k++) b.add(msh(sph(rnd(.35, .6), 7, 5), M.bush, rnd(-.4, .4), .35, rnd(-.4, .4))); b.position.set(x * S3, 0, y * S3); treeFB.add(b); }
   const grassM = []; for (let i = 0; i < 14000; i++) { const x = rnd(20, W - 20), y = rnd(20, H - 20); if (!free(x, y, 12)) continue; const hgt = rnd(.5, 1.1); grassM.push(new THREE.Matrix4().compose(new THREE.Vector3(x * S3, .12 * hgt, y * S3), new THREE.Quaternion().setFromEuler(new THREE.Euler(rnd(-.3, .3), rnd(0, 6), rnd(-.3, .3))), new THREE.Vector3(1, hgt, 1))); }
   instChunked(new THREE.ConeGeometry(.05, .4, 4), M.grass, grassM, false);
   roads.filter(r => r.w > r.h && !r.lot).forEach(r => { for (let lx = 150, i = 0; lx < r.x + r.w - 100; lx += 330, i++) { if (lx < r.x + 60) continue; for (const side of [-1, 1]) { if (side > 0 && i % 2) continue; const ly = side < 0 ? r.y - 18 : r.y + r.h + 18, gx = lx * S3, gz = ly * S3; if (doors.some(d => Math.abs(d.cx - lx) < 70 && Math.abs(d.cy - ly) < 160)) continue; if (roads.some(o => o !== r && !o.lot && lx > o.x - 14 && lx < o.x + o.w + 14 && ly > o.y - 14 && ly < o.y + o.h + 14)) continue;   /* build 40: not in the middle of a crossing street */ const lp_ = i % 3 === 0 ? null : { x: gx + side * -1.0, z: gz }; if (lp_) lampPos.push(lp_); const pr = colC(lx, ly, 4.5, { lamp: { side, dark: i % 3 === 0, gx, gz, lp: lp_ } }); LAMPS.push(pr); iaAdd(lx, ly, 'lamppost', { r: 12 }); } } });
@@ -1861,7 +2212,8 @@ function newGame0(key, attract) {
   let tries = 0;
   const OCW = Math.ceil(W / 25), occ = new Uint8Array(OCW * Math.ceil(H / 25));
   const mark = (x0, y0, x1, y1) => { for (let gy = Math.max(0, Math.floor(y0 / 25)); gy <= Math.min(H / 25 - 1, Math.floor(y1 / 25)); gy++) occ.fill(1, gy * OCW + Math.max(0, Math.floor(x0 / 25)), gy * OCW + Math.min(OCW, Math.floor(x1 / 25) + 1)); };
-  for (const h of houses) mark(h.x - 45, h.y - 45, h.x + h.w + 45, h.y + h.h + 45);
+  for (const h of houses) mark(h.x - 95, h.y - 95, h.x + h.w + 95, h.y + h.h + 95);   // build 61: canopies are ~4 m across; 45 let leaves grow through walls and into rooms
+  mark(5150, 2860, 7650, 4360);   // Haven's yard
   for (const r of roads) mark(r.x - 30, r.y - 30, r.x + r.w + 30, r.y + r.h + 30);
   const forest = (x, y) => 0.5 + 0.5 * Math.sin(x * 0.0011 + Math.sin(y * 0.0007) * 2.3) * Math.cos(y * 0.0013 + x * 0.0004);
   while (trees.length < 7200 && tries++ < 90000) {
@@ -2181,7 +2533,7 @@ function enterCar(c) { if (typeof carLocked === 'function' && carLocked(c)) { to
 }
 function exitCar() {
   carLightsOff();
-  const c = driving; driving = null;
+  const c = driving; driving = null; try { parkOnExit(c); } catch (e) { console.warn('park', e); }
   for (const side of [-1, 1, 0]) { const ang = c.a + (side ? side * Math.PI / 2 : Math.PI), d = side ? 34 : 64; P.x = c.x + Math.cos(ang) * d; P.y = c.y + Math.sin(ang) * d; collide(P); if (!circBox(P.x, P.y, P.r, c) && side !== 0) break; }
   yaw = c.a + lookOff; unboardCar(c);
 }
@@ -2288,7 +2640,7 @@ addEventListener('mousemove', e => {
   let dx = 0, dy = 0;
   if (locked) { dx = e.movementX; dy = e.movementY; } else if (mouse.drag) { dx = e.movementX; dy = e.movementY; } else return;
   swayIn.x += dx; swayIn.y += dy;
-  const sens = 0.0022 * (1 - adsK * .45);
+  const sens = 0.0022 * (UISET.sens || 1) * (1 - adsK * .45);
   if (driving) { lookOff = clamp(lookOff + dx * sens, -2.6, 2.6); lookOffT = 1.2; } else yaw += dx * sens;
   pitch = clamp(pitch - dy * sens, -1.3, 1.3);
 });
@@ -2468,6 +2820,7 @@ const IAK = {
   shelf: cont('Browse shelf', [['book', 4], ['scrap', 1], ['nothing', 2]], ['Dust.']), coffee: cont('Check the coffee table', [['paper', 2], ['scrap', 1], ['nothing', 3]], ['Coasters. A remote with no batteries.']),
   desk: cont('Search desk', [['paper', 4], ['scrap', 2], ['ammo', 1], ['nothing', 2]], ['Paperclips and an old sandwich.']), filing: cont('Search filing cabinet', [['paper', 5], ['scrap', 1], ['nothing', 2]], ['Empty folders.']), cubicle: cont('Search cubicle', [['paper', 4], ['food', 1], ['scrap', 1], ['nothing', 2]], ['A stress ball and a cold coffee.']),
   lockers: cont('Search lockers', [['ammo', 3], ['band', 1.5], ['scrap', 2], ['cloth', 2], ['nothing', 1.5]], ['Someone cleaned these out in a hurry.'], .9, { snd: 'clang' }),
+  vanity: cont('Search the bathroom cabinet', [['band', 4], ['cloth', 1], ['nothing', 2]], ['Toothpaste and an empty pill bottle.']),
   medcab: cont('Search medicine cabinet', [['band', 5], ['nothing', 2]], ['Empty blister packs.']), iv: cont('Take IV supplies', [['band', 3], ['nothing', 1]], ['Empty bag.'], .6), hbed: cont('Strip the bed linens', [['cloth', 5], ['nothing', 1]], ['Nothing but stains.'], .7),
   rack: cont('Search shelving', JUNK, ['Empty shelves.']), pallet: cont('Search pallet racks', JUNK, ['Shrink-wrapped nothing.']), boxes: cont('Open boxes', JUNK, ['Packing peanuts.']), gear: cont('Check the turnout gear', [['cloth', 4], ['scrap', 1], ['nothing', 2]], ['Soaked through. Useless.']), hoses: cont('Check the hose rack', [['scrap', 3], ['nothing', 1]], ['Dry hose, coiled tight.']),
   cooler: cont('Search the cooler', FOODS, ['Everything in here has turned.']), gondola: cont('Search the aisle', FOODS, ['Picked clean.']), dcounter: cont('Search behind the counter', FOODS, ['A cold pot of coffee.']), checkout: cont('Check the till', [['scrap', 3], ['food', 2], ['band', 1], ['nothing', 2]], ['The drawer is empty. Everyone took cash.']), reception: cont('Search reception', [['paper', 3], ['scrap', 1], ['band', 1], ['nothing', 2]], ['A sign-in sheet. Nobody signed out.']),
@@ -3730,7 +4083,7 @@ function syncScene(dt) {
   const cpi = driving && chaseCam ? -0.16 + pitch * .3 : pitch, cp = Math.cos(cpi);
   camera.lookAt(camera.position.x + Math.cos(cyaw) * cp, camera.position.y + Math.sin(cpi), camera.position.z + Math.sin(cyaw) * cp);
   if (driving && !chaseCam && driving.rollS !== undefined) { camera.rotateX(driving.pitchS || 0); camera.rotateZ(-(driving.rollS || 0)); }
-  const zoomW = !driving && W_().zoom ? W_().zoom : 0, fov = zoomW ? 75 - adsK * (75 - 75 / zoomW) : 75 + (driving ? Math.min(16, Math.abs(driving.v) / 340 * 10) : (keys.ShiftLeft && P.moving ? 4 : 0)) - adsK * 18;
+  const zoomW = !driving && W_().zoom ? W_().zoom : 0, FB_ = UISET.fov || 75, fov = zoomW ? FB_ - adsK * (FB_ - FB_ / zoomW) : FB_ + (driving ? Math.min(16, Math.abs(driving.v) / 340 * 10) : (keys.ShiftLeft && P.moving ? 4 : 0)) - adsK * 18;
   if (VM && VM.root) VM.root.visible = !(zoomW && adsK > .85) && VM.id === curW;
   if (Math.abs(camera.fov - fov) > 0.05) { camera.fov += (fov - camera.fov) * Math.min(1, dt * 6); camera.updateProjectionMatrix(); }
   updateWorldBits(dt);
@@ -3785,6 +4138,9 @@ function drawHUD() {
   }
 
   if (!driving && W_().zoom && adsK > .85) { const r = Math.min(VW, VH) * .42; ctx.save(); ctx.fillStyle = '#000'; ctx.beginPath(); ctx.rect(0, 0, VW, VH); ctx.arc(VW / 2, VH / 2, r, 0, Math.PI * 2, true); ctx.fill('evenodd'); ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(VW / 2 - r, VH / 2); ctx.lineTo(VW / 2 + r, VH / 2); ctx.moveTo(VW / 2, VH / 2 - r); ctx.lineTo(VW / 2, VH / 2 + r); ctx.stroke(); ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(VW / 2 - r, VH / 2); ctx.lineTo(VW / 2 - r * .12, VH / 2); ctx.moveTo(VW / 2 + r * .12, VH / 2); ctx.lineTo(VW / 2 + r, VH / 2); ctx.moveTo(VW / 2, VH / 2 + r * .12); ctx.lineTo(VW / 2, VH / 2 + r); ctx.stroke(); const vg = ctx.createRadialGradient(VW / 2, VH / 2, r * .7, VW / 2, VH / 2, r); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.7)'); ctx.fillStyle = vg; ctx.beginPath(); ctx.arc(VW / 2, VH / 2, r, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+  if (!driving && W_().ret === 'xbow' && adsK > .85) { const r = Math.min(VW, VH) * .42; ctx.save(); ctx.strokeStyle = 'rgba(10,10,10,.9)'; ctx.fillStyle = 'rgba(10,10,10,.9)'; ctx.lineWidth = 1.5; ctx.font = '10px monospace'; ctx.textAlign = 'left';
+    [[.08, '20'], [.17, '30'], [.27, '40'], [.38, '50']].forEach(([f, t], i) => { const y = VH / 2 + r * f, w = r * (.16 - i * .025); ctx.beginPath(); ctx.moveTo(VW / 2 - w, y); ctx.lineTo(VW / 2 + w, y); ctx.stroke(); ctx.fillText(t, VW / 2 + w + 5, y + 3); });
+    ctx.fillStyle = 'rgba(220,40,30,.9)'; ctx.beginPath(); ctx.arc(VW / 2, VH / 2, 2.2, 0, 6.283); ctx.fill(); ctx.restore(); }
   drawHUD2(); roadHUD(); netHUD(); arsenalHUD(); wptHUD(); humveeHUD(); seatHUD(); pingHUD(); giveHUD();
   if (driving) {
     text('FUEL', VW / 2 - 80, VH - 64, '#b9c8c4', 11); bar(VW / 2 - 50, VH - 72, 130, 7, driving.fuel / 100, driving.fuel > 20 ? '#e0a030' : '#e04030');
@@ -3806,7 +4162,7 @@ function drawHUD() {
   if (msg) keycap(msg, VH / 2 + 74);
   if (prog > 0.01) bar(VW / 2 - 70, VH / 2 + 82, 140, 8, prog, '#6fd3b0');
 
-  toasts.forEach((t, i) => { ctx.globalAlpha = clamp(t.life, 0, 1); font(13, 500); ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(22, 92 + i * 24, ctx.measureText(t.t).width + 20, 20); ctx.fillStyle = '#e8ece9'; ctx.fillText(t.t, 32, 106 + i * 24); ctx.globalAlpha = 1; });
+  hudToasts61();
 
   // minimap (north up)
   // local minimap: 300 m window centred on you
@@ -4702,7 +5058,7 @@ function updateCasings(dt) {
 let master = null, verb = null, verbSend = null;
 function audioBus() {
   if (master || !actx) return;
-  master = actx.createDynamicsCompressor(); master.threshold.value = -16; master.ratio.value = 5; master.connect(actx.destination);
+  master = actx.createDynamicsCompressor(); master.threshold.value = -16; master.ratio.value = 5; window.UIVOL = actx.createGain(); UIVOL.gain.value = UISET.vol; master.connect(UIVOL); UIVOL.connect(actx.destination);
   verb = actx.createConvolver(); const len = Math.floor(actx.sampleRate * 2.4), ir = actx.createBuffer(2, len, actx.sampleRate);
   for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.5) * (i < 200 ? i / 200 : 1); }
   verb.buffer = ir; verbSend = actx.createGain(); verbSend.gain.value = 0.3; verbSend.connect(verb); verb.connect(master);
@@ -5494,7 +5850,7 @@ function syncNPCs(dt) {
     let an = 'Idle', ts = 1;
     if (n.mode === 'car' && n.car) {
       const c = n.car, s = n.seat === 'D' ? driverSeat(c) : (allSeats(c)[n.seat] || SEATS[0]), f = { x: Math.cos(c.a), y: Math.sin(c.a) }, r = { x: -Math.sin(c.a), y: Math.cos(c.a) };
-      n.m.position.set(c.x * S3 + f.x * s[0] + r.x * s[1], -0.02 + vehOf(c).eye, c.y * S3 + f.y * s[0] + r.y * s[1]); n.m.rotation.y = -c.a; an = 'Sit';
+      n.m.position.set(c.x * S3 + f.x * s[0] + r.x * s[1], -0.02 + (vehOf(c).seatY || vehOf(c).eye), c.y * S3 + f.y * s[0] + r.y * s[1]); n.m.rotation.y = -c.a; an = 'Sit';
       n.x = c.x; n.y = c.y;
     } else {
       if (n.lift > 0 && (n.mode === 'car' || n.party) && !n.kiss) n.lift = 0;
@@ -5524,12 +5880,13 @@ let streamT = 0;
 function interiorStream(cx, cz, all) {
   streamT -= 1 / 60; if (streamT > 0 && !all) return; streamT = .2; if (!houses || !world3) return;
   const px = cx / S3, pz = cz / S3; let budget = all ? 1e9 : 2;
-  for (const h of houses) {
-    if (!h.fg) continue; const d = Math.hypot(h.x + h.w / 2 - px, h.y + h.h / 2 - pz);
-    if (d < 3000 && !h.fgOn && budget > 0) {
-      if (!h.fgM) { h.fgM = mergeStatic(h.fg); h.fgM.matrixAutoUpdate = false; h.fgM.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.matrixAutoUpdate = false; } }); budget--; }
-      world3.add(h.fgM); h.fgOn = true;
-    } else if (d > 4200 && h.fgOn) { world3.remove(h.fgM); h.fgOn = false; }
+  // build 61: nearest houses first, and the one you are at right now regardless of budget (you could walk into a bare shell with grass for a floor)
+  const want = []; for (const h of houses) { if (!h.fg) continue; const d = Math.hypot(h.x + h.w / 2 - px, h.y + h.h / 2 - pz); h._sd = d; if (d < 3000 && !h.fgOn) want.push(h); else if (d > 4200 && h.fgOn) { world3.remove(h.fgM); h.fgOn = false; } }
+  want.sort((a, b) => a._sd - b._sd);
+  for (const h of want) { if (budget <= 0 && h._sd > 700) break;
+    if (!h.fgM) { h.fgM = mergeStatic(h.fg); h.fgM.matrixAutoUpdate = false; h.fgM.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.matrixAutoUpdate = false; } }); budget--; }
+    world3.add(h.fgM); h.fgOn = true; }
+  for (const h of houses) { if (!h.fg) continue; const d = h._sd;
     if (h.fgOn) { if (!h._dl) h._dl = doors.filter(dr => houses[dr.hi] === h);   // furniture: up close, or through an open door you are facing
       h.fgM.visible = d < 600 || (d < 1400 && h._dl.some(dr => dr.amt > .3 && (dr.o === 'h' ? (pz - dr.cy) * dr.out > 0 : (px - dr.cx) * dr.out > 0))); }
   }
@@ -6711,37 +7068,6 @@ function buildAttract() {
   attractBuilt = true; newGame('mechanic', true);
 }
 function refreshTitle() { if (state === 'boot' || state === 'title') renderTitle(); }
-function renderTitle() {
-  const ready = assetsReady.kit && assetsReady.trees && assetsReady.car && assetsReady.furn && assetsReady.people && assetsReady.wtex;
-  const nRdy = ['kit', 'trees', 'car', 'people'].filter(k => assetsReady[k]).length;
-  let h = '<div class="vg"></div><div class="logo"><h1>COLD<span>SHORE</span></h1><div class="tag">Calder County is quarantined. Your sibling is still inside.</div></div>';
-  if (titleMode === 'press') h += '<div class="press">PRESS ANY KEY</div>';
-  else if (titleMode === 'main') {
-    const SV = lvlLoad(), hasSv = SV.last !== null && SV.levels[SV.last];
-    h += '<div class="menu">' + (hasSv ? [['continue', 'Continue: ' + LEVELS[SV.last].n, !ready], ['levels', 'Levels']] : []).concat([['new', 'New Game', !ready], ['online', 'Online Co-op', !ready], ['controls', 'Controls'], ['settings', 'Settings'], ['credits', 'Credits']]).map(([k, t, dis]) => '<a data-m="' + k + '" class="' + (dis ? 'dis' : '') + '">' + t + '</a>').join('') + '</div>';
-    if (!ready) h += '<div class="foot">Loading assets ' + nRdy + '/4&hellip;</div>';
-  } else if (titleMode === 'bg') {
-    h += '<div class="panel"><h3>Who were you before?</h3><div class="bgs">' + BGKEYS.map((k, i) => { const b = BGS[k]; return '<div class="bgc" data-k="' + k + '"><b>' + (i + 1) + '. ' + b.name + '</b><small>' + b.desc + '</small><div class="st">' + ({ mechanic: 'HOTWIRE ++  FUEL USE -20%', paramedic: 'HEALING ++  BANDAGES +', cop: 'FIREARMS ++  AMMO +', hunter: 'STEALTH ++  FORAGE +' }[k] || '') + '</div></div>'; }).join('') + '</div><div class="btns"><span class="btn" data-m="back">Back</span></div></div>';
-  } else if (titleMode === 'look') {
-    h += '<div class="panel"><h3>What do you look like?</h3><div class="bgs">' + LOOKS.map((L, i) => '<div class="bgc" data-look="' + L.id + '"><b>' + (i + 1) + '. ' + L.n + '</b><small>' + L.d + '</small></div>').join('') + '</div><div class="btns"><span class="btn" data-m="new">Back</span></div>' + (LVL.lookLoading ? '<div class="foot">Loading your character&hellip;</div>' : '') + '</div>';
-  } else if (titleMode === 'levels') {
-    h += lvlMenuHTML().replace('class="lvls"', 'class="bgs" style="max-height:60vh;overflow:auto"').replace(/class="lv( lock)?"/g, (m, l) => 'class="bgc"' + (l ? ' style="opacity:.35;cursor:default"' : '')).replace(/class="lvh( lock)?"/g, (m, l) => 'class="lvh" style="grid-column:1/-1;margin:14px 0 2px;font:700 12px Segoe UI,Arial;letter-spacing:.24em;text-transform:uppercase;color:' + (l ? '#55625f' : '#9fd6e6') + '"');
-  } else if (titleMode === 'controls') {
-    h += '<div class="panel"><h3>Controls</h3><table>' + [['WASD', 'Move'], ['Shift', 'Sprint (louder)'], ['Space', 'Jump (sprint first to clear rails and fences)'], ['E on a companion', 'Talk, give ammo, start their job'], ['C', 'Squad orders: follow / hold position / hold fire'], ['TAB', 'Pick a perk when you level up'], ['Mouse', 'Look  /  click to shoot'], ['Right mouse', 'Aim down the sights'], ['R', 'Reload'], ['E', 'Interact, hotwire (hold), enter or exit car, help a downed friend (hold)'], ['V', 'Shove'], ['F', 'Flashlight'], ['1 - 6', 'Pistol / shotgun / rifle / SMG / hunting rifle / machete (or mouse wheel)'], ['In a vehicle', 'H horn, L headlights, X wipers, R radio, C chase camera, K siren (police, ambulance)'], ['Right mouse (hunting rifle)', 'Look through the 3.4x scope'], ['B / N', 'Craft bandage / ammo'], ['H', 'Use bandage'], ['M', 'County map'], ['J', 'Journal'], ['Space', 'Handbrake'], ['Enter', 'Skip cutscene'], ['Esc', 'Pause']].map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('') + '</table><div class="btns"><span class="btn" data-m="back">Back</span></div></div>';
-  } else if (titleMode === 'settings') {
-    h += '<div class="panel"><h3>Settings</h3><table><tr><td>Graphics</td><td>' + ['Low', 'Medium', 'High'].map((q, i) => '<span class="btn" data-q="' + i + '" style="padding:4px 12px;margin-right:6px;' + (quality === i ? 'border-color:#9fd6e6' : '') + '">' + q + '</span>').join('') + '</td></tr><tr><td>Voices</td><td><span class="btn" data-v="1" style="padding:4px 12px">' + (voicesOn ? 'On' : 'Off') + '</span> ' + (ttsOk ? '' : '<small>(no speech voices on this device: subtitles only)</small>') + '</td></tr></table><div class="btns"><span class="btn" data-m="back">Back</span></div></div>';
-  } else if (titleMode === 'credits') {
-    h += '<div class="panel"><h3>Credits</h3><p>ColdShore prototype. Characters, zombies, vehicles, buildings, trees and animation built procedurally in Blender. Engine: three.js. Voices: your browser&#39;s speech engine.</p><p style="font-size:12px;opacity:.8">Models from BlendSwap, reduced for the browser: M1 Humvee by panko10 (CC-BY); Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0); Ford Crown Victoria Police Interceptor 2005 (CC-BY 3.0); Mercedes-AMG GLS (CC0); BMW 3 Series Coupe by mikepan (CC-BY-SA 3.0); Trees &amp; Bushes pack by Painkiller5555; Dodge Challenger 1970 R/T; Low Quality Weapon Pack (CC0).</p><div class="btns"><span class="btn" data-m="back">Back</span></div></div>';
-  }
-  h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 60</div>';
-  titleEl.innerHTML = h; titleEl.classList.add('on');
-  titleEl.querySelectorAll('[data-m]').forEach(a => a.onclick = () => titleAction(a.dataset.m));
-  titleEl.querySelectorAll('[data-k]').forEach(a => a.onclick = () => pickBg(a.dataset.k));
-  titleEl.querySelectorAll('[data-look]').forEach(a => a.onclick = () => pickLook(a.dataset.look));
-  titleEl.querySelectorAll('[data-lv]').forEach(a => a.onclick = () => lvlStart(+a.dataset.lv));
-  titleEl.querySelectorAll('[data-q]').forEach(a => a.onclick = () => { setQuality(+a.dataset.q); renderTitle(); });
-  titleEl.querySelectorAll('[data-v]').forEach(a => a.onclick = () => { voicesOn = !voicesOn; renderTitle(); });
-}
 function pickBg(k) { BGPICK = k; titleMode = 'look'; beep(520, .04, 'triangle', .03); renderTitle(); }
 async function pickLook(id) { if (LVL.lookLoading) return; LOOK = id; LVL.lookLoading = true; renderTitle(); await loadLook(id); LVL.lookLoading = false; startGame(BGPICK || 'mechanic'); }
 function titleAction(m) { beep(520, .04, 'triangle', .03); if (m === 'online') { NET.screen = NET.crew ? 'crew' : NET.ws ? 'crews' : 'connect'; netOpen(); return; } if (m === 'continue') { const D = lvlLoad(); if (D.last !== null) lvlStart(D.last); return; } if (m === 'new') titleMode = 'bg'; else if (m === 'back') titleMode = 'main'; else titleMode = m; renderTitle(); }
@@ -6761,39 +7087,14 @@ async function startGame(k) {
   runIntro();
 }
 setInterval(() => { if (state === 'boot' || state === 'title') { buildAttract(); if (titleMode === 'main') { const ready = assetsReady.kit && assetsReady.trees && assetsReady.car && assetsReady.furn && assetsReady.people; const btn = titleEl.querySelector('[data-m=new]'); if (btn && ready === btn.classList.contains('dis')) renderTitle(); } } }, 600);
-function titleKey(e) {
-  if (titleMode === 'press') { initAudio(); startMusic(); titleMode = 'main'; renderTitle(); return; }
-  if (titleMode === 'look') { const i = parseInt(e.key, 10); if (i >= 1 && i <= LOOKS.length) pickLook(LOOKS[i - 1].id); if (e.code === 'Escape' || e.code === 'Backspace') { titleMode = 'bg'; renderTitle(); } return; }
-  if (titleMode === 'bg') { const i = parseInt(e.key, 10); if (i >= 1 && i <= BGKEYS.length) pickBg(BGKEYS[i - 1]); if (e.code === 'Escape' || e.code === 'Backspace') titleAction('back'); return; }
-  if (titleMode !== 'main' && (e.code === 'Escape' || e.code === 'Backspace')) titleAction('back');
-  if (titleMode === 'main' && e.code === 'Enter') titleAction('new');
-}
 addEventListener('mousedown', () => { if ((state === 'boot' || state === 'title') && titleMode === 'press') { initAudio(); startMusic(); titleMode = 'main'; renderTitle(); } });
 
 /* ---------- pause & map ---------- */
 let mapOpen = false;
-function renderPause() {
-  const o = objTarget();
-  pauseEl.innerHTML = '<div class="in"><h2>PAUSED</h2>' + (o ? '<div class="obj">' + esc(o.text) + '</div>' : '') +
-    '<a data-p="resume">Resume</a>' + (NET.on ? '<a data-p="crew">Crew board</a><a data-p="abort">Abort mission</a>' : '') + '<a data-p="stuck">I am stuck</a><a data-p="map">County map</a><a data-p="journal">Journal</a><a data-p="q">Graphics: ' + ['Low', 'Medium', 'High'][quality] + '</a><a data-p="v">Voices: ' + (voicesOn ? 'On' : 'Off') + '</a><a data-p="quit">Quit to title</a>' +
-    '<div class="sk">' + BG.name.toUpperCase() + ' &nbsp; Firearms ' + Math.floor(S.firearms) + ' &middot; Hotwire ' + Math.floor(S.hotwire) + ' &middot; Medic ' + Math.floor(S.medic) + ' &middot; Forage ' + Math.floor(S.forage) + '<br>Kills ' + kills + ' &middot; Notes ' + readIds.size + '/' + notes.length + ' &middot; Party: ' + (story.party.map(c => CAST[c].name).join(', ') || 'none') + '</div></div>';
-  pauseEl.querySelectorAll('[data-p]').forEach(a => a.onclick = ev => {
-    ev.stopPropagation(); const p = a.dataset.p;
-    if (p === 'resume') { pauseEl.classList.remove('on'); lock(); }
-    if (p === 'stuck') { pauseEl.classList.remove('on'); unstick(false); lock(); }
-    if (p === 'map') { pauseEl.classList.remove('on'); mapOpen = true; }
-    if (p === 'journal') { pauseEl.classList.remove('on'); openJournal(); }
-    if (p === 'q') { setQuality((quality + 1) % 3); renderPause(); }
-    if (p === 'v') { voicesOn = !voicesOn; if (!voicesOn) stopSpeech(); renderPause(); }
-    if (p === 'crew') { pauseEl.classList.remove('on'); NET.screen = NET.mission ? 'crew' : NET.screen; netOpen(); return; }
-    if (p === 'abort') { netSend({ t: 'mission.abort' }); pauseEl.classList.remove('on'); return; }
-    if (p === 'quit') { stopSpeech(); if (NET.on) { if (NET.ws) NET.ws.close(); netEndLocal(); NET.worldReady = false; } showTitle(); }
-  });
-}
 function pauseTick() {
   const want = state === 'play' && wasLocked && !locked && !lockFailed && !reading && !mapOpen && !HV.mode && !PR.menu && !BAG.open && !(NET.ui && NET.ui.classList.contains('on'));
   if (want && !pauseEl.classList.contains('on')) { renderPause(); pauseEl.classList.add('on'); }
-  if (!want && pauseEl.classList.contains('on')) pauseEl.classList.remove('on');
+  if (!want && pauseEl.classList.contains('on')) { pauseEl.classList.remove('on'); UI61.pMode = null; }
 }
 const MAPZ = { on: 1 };
 function drawBigMap() {
@@ -6862,13 +7163,8 @@ function drawHUD2() {
     if (n.mode === 'down') { font(11, 700); ctx.textAlign = 'center'; ctx.fillStyle = '#ff6a5a'; ctx.fillText('DOWN', sx, sy - 6); if (d < 55) { ctx.fillStyle = '#fff'; ctx.fillText('Hold E: help ' + CAST[n.ch].name, sx, sy + 10); bar(sx - 40, sy + 16, 80, 5, n.revive, '#6fd3b0'); } }
     else if (d < 700 && d > 60) { font(10, 600); ctx.textAlign = 'center'; ctx.fillStyle = CAST[n.ch].col; ctx.globalAlpha = .75; ctx.fillText(CAST[n.ch].name.toUpperCase(), sx, sy); ctx.globalAlpha = 1; }
   }
-  // health block
-  const hx = 22, hy = VH - 64;
-  font(10, 700); ctx.textAlign = 'left'; ctx.fillStyle = '#cfd6d3'; ctx.fillText('HEALTH', hx, hy - 6);
-  for (let i = 0; i < 10; i++) { const f = clamp(P.hp / 10 - i, 0, 1); ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(hx + i * 23, hy, 20, 8); ctx.fillStyle = P.hp > 35 ? '#e8ece9' : '#ff4b3e'; ctx.fillRect(hx + i * 23, hy, 20 * f, 8); }
-  font(11, 400); ctx.fillStyle = '#a9b4b0';
-  ctx.fillText('Bandages ' + inv.band + '    Cloth ' + inv.cloth + '    Scrap ' + inv.scrap + '    Fuel ' + inv.fuel + '    Pipe bombs ' + (inv.pipe || 0) + '    Molotovs ' + (inv.molo || 0) + '    Bottles ' + (inv.bottle || 0), hx, hy + 26);
-  font(10, 400); ctx.fillStyle = '#6f7c78'; ctx.fillText('[TAB] backpack  [1-6] quick select  [H] bandage  [G]/[K] throw  [M] map + pins  [P] ping' + (NET.on ? '  [E] next to a friend: give' : ''), hx, hy + 42);
+  // health block (build 61)
+  const hx = 22, hy = VH - 64; hudHealth61(hx, hy);
   // party
   let py = hy - 30;
   if (npcs.some(q => q.party)) { font(9, 700); ctx.textAlign = 'left'; ctx.fillStyle = ORDER === 'follow' ? '#8b9a96' : '#ffd166'; ctx.fillText('SQUAD: ' + ORDER.toUpperCase() + '   [C]', hx, py - 30 * npcs.filter(q => q.party).length - 4); }
@@ -6882,14 +7178,8 @@ function drawHUD2() {
     if (n.ammo !== undefined && n.armed) { ctx.textAlign = 'left'; ctx.fillStyle = n.ammo === 0 ? '#ff6a5a' : n.ammo < n.ammoMax * .3 ? '#e9c46a' : '#8b9a96'; ctx.fillText(n.ammo + ' rds', hx + 60, py + 21); ctx.textAlign = 'right'; }
     ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(255,255,255,.15)'; ctx.fillRect(hx + 100, py + 15, 64, 3); ctx.fillStyle = n.hp > 35 ? C.col : '#ff4b3e'; ctx.fillRect(hx + 100, py + 15, 64 * n.hp / 100, 3);
   }
-  // ammo block
-  if (!driving) {
-    const ax = VW - 24, ay = VH - 34; ctx.textAlign = 'right';
-    font(40, 300); ctx.fillStyle = P.mag || W_().melee ? '#f1f1ec' : '#ff5c4a'; ctx.fillText(W_().melee ? '—' : String(P.mag), ax - 64, ay);
-    font(18, 300); ctx.fillStyle = '#a9b4b0'; ctx.fillText(W_().melee ? '' : '/ ' + P.ammo, ax, ay);
-    font(10, 700); ctx.fillStyle = '#8b9a96'; ctx.fillText(P.rl > 0 ? 'RELOADING' : P.mag === 0 && P.ammo === 0 && !W_().melee ? 'NO AMMO  -  MELEE' : W_().name, ax, ay - 42);
-    { const qs = qsSlots(); font(10, 600); let x = ax; for (let i = 5; i >= 0; i--) { const k = qs[i]; if (!k) continue; const lbl = (i + 1) + ' ' + (WLBL[k] || wName(k)); ctx.fillStyle = k === curW ? '#e9c46a' : '#6f7c78'; ctx.fillText(lbl, x, ay - 58); x -= ctx.measureText(lbl).width + 14; } }
-  }
+  // ammo block (build 61)
+  if (!driving) hudAmmo61(VW - 24, VH - 30);
   if (noise > 0.3 && !driving) { font(10, 700); ctx.textAlign = 'center'; ctx.fillStyle = '#ff7b6b'; ctx.fillText('YOU ARE LOUD', VW / 2, VH / 2 + 46); }
 }
 function keycap(msg, y) {
@@ -8364,7 +8654,7 @@ function netMsg(m) {
   switch (m.t) {
     case 'welcome': NET.pid = m.pid; try { localStorage.setItem('cs_net_pid', m.pid); } catch (e) {} NET.profile = m.profile; NET.myCrews = m.crews; NET.screen = 'crews'; netUI(); break;
     case 'joined': NET.code = m.code; NET.crew = m.crew; NET.armory = m.armory || []; NET.screen = 'crew'; try { localStorage.setItem('cs_net_crew', m.code); } catch (e) {} netUI(); break;
-    case 'crew': NET.crew = m.crew; if (NET.screen === 'crew') netUI(); havenNet(); if (HV.mode) havenUIDraw(); break;
+    case 'crew': NET.crew = m.crew; if (NET.screen === 'crew') netUI(); havenNet(); if (HV.mode) havenUIDraw(); try { parkSync(); } catch (e) { console.warn('park', e); } break;
     case 'built': havenBuilt(m); break;
     case 'armory': NET.armory = m.ids || []; break;
     case 'err': netLog('⚠ ' + m.m); if (NET.screen === 'game') toast(m.m); break;
@@ -8496,7 +8786,7 @@ async function netLoadMission(M) {
 function netResetWorld(M) {
   // a clean slate: no story, no companions, no leftovers from the last mission
   for (const z of zombies) if (z.m) world3.remove(z.m); zombies.length = 0; NET.byNid.clear(); NET.deadSet.clear();
-  for (const n of npcs) if (n.m) world3.remove(n.m); npcs.length = 0;
+  for (const n of npcs) if (n.m && !n.isMe) world3.remove(n.m); npcs.length = 0; if (ME && ME.m) { if (!ME.m.parent) world3.add(ME.m); ME.mode = 'me'; ME.car = null; npcs.push(ME); }
   for (const it of NET.caches || []) it.gone = true; NET.caches = [];
   if (NET.marker) { world3.remove(NET.marker); NET.marker = null; }
   story.online = true; story.L = Math.max(1, Math.round((M.threat - 1) * 9) + 1); story.m = null; story.i = 999; story.party = []; story.timer = null;
@@ -9201,7 +9491,7 @@ const ARSENAL = {
   sawnoff: { base: 'shotgun', file: 'vm_shotgun.json', rar: 'uncommon', ammoK: 'shells', blurb: 'Two barrels, no stock, no regrets. Devastating up close.', stats: { name: 'SAWN-OFF 12GA', cap: 2, rate: .28, auto: false, dmg: 1.15, head: 1.2, spread: .1, pellets: 10, recoil: [.08, .1], range: 300, snd: 'shotgun', rlT: 2.1, ads: -.3 } },
   ak: { base: 'rifle', file: 'vm_rifle.json', rar: 'epic', ammoK: 'rifleammo', blurb: 'Hard-hitting full auto. Kicks like a mule, never jams.', stats: { name: 'AK 7.62', cap: 30, rate: .1, auto: true, dmg: 2.2, head: 3.8, spread: .02, pellets: 1, recoil: [.013, .021], range: 1000, snd: 'ak', rlT: 2.3, ads: -.17 } },
   lmg: { base: 'rifle', file: 'vm_rifle.json', rar: 'legendary', ammoK: 'rifleammo', blurb: 'A hundred-round belt. Hold the line by yourself.', stats: { name: 'M249 SAW', cap: 100, rate: .078, auto: true, dmg: 1.8, head: 3, spread: .028, pellets: 1, recoil: [.009, .015], range: 950, snd: 'ak', rlT: 4.4, ads: -.17 } },
-  crossbow: { base: 'rifle', file: 'vm_rifle.json', rar: 'rare', ammoK: 'bolts', blurb: 'Silent. Bolts go through one and into the next.', stats: { name: 'CROSSBOW', cap: 1, rate: .35, auto: false, dmg: 7, head: 12, spread: .004, pellets: 1, recoil: [.025, .035], range: 1500, snd: 'xbow', rlT: 1.5, ads: -.17, pierce: 2, silent: true } },
+  crossbow: { base: 'rifle', file: 'vm_rifle.json', rar: 'rare', ammoK: 'bolts', blurb: 'Silent. Bolts go through one and into the next.', stats: { name: 'CROSSBOW', cap: 1, rate: .35, auto: false, dmg: 7, head: 12, spread: .004, pellets: 1, recoil: [.025, .035], range: 1500, snd: 'xbow', rlT: 1.5, ads: -.17, pierce: 2, silent: true, zoom: 2.2, ret: 'xbow' } },
   katana: { base: 'machete', file: 'vm_machete.json', rar: 'rare', blurb: 'Folded steel. Quick, and a good swing catches two.', stats: { name: 'KATANA', melee: true, cap: 0, rate: .45, dmg: 3.3, head: 4.4, reach: 52, cleave: 2 } },
   axe: { base: 'machete', file: 'vm_machete.json', rar: 'uncommon', blurb: 'A firefighter\'s axe. Slow, and it knocks them flat.', stats: { name: 'FIRE AXE', melee: true, cap: 0, rate: .9, dmg: 3.6, head: 5.5, reach: 50, knock: .35 } },
   bat: { base: 'machete', file: 'vm_machete.json', rar: 'common', blurb: 'Ash, nails and barbed wire. Staggers anything.', stats: { name: 'NAIL BAT', melee: true, cap: 0, rate: .6, dmg: 2.8, head: 3.4, reach: 50, stagger: 1 } },
@@ -9437,7 +9727,7 @@ function havenDrop() {
   const ws = new Set(R.walls); walls = walls.filter(w => !ws.has(w));
   for (let gx = Math.floor((HVR.x0 - 300) / 200); gx <= Math.floor((HVR.x1 + 300) / 200); gx++) for (let gy = Math.floor((HVR.y0 - 300) / 200); gy <= Math.floor((HVR.y1 + 300) / 200); gy++) { const a = colGrid.get(gx * 10000 + gy); if (a) a.w = a.w.filter(w => !ws.has(w)); }
   for (const it of R.ia) { it.gone = true; const k = Math.floor(it.x / 200) * 10000 + Math.floor(it.y / 200), a = IAG.get(k); if (a) { const i = a.indexOf(it); if (i >= 0) a.splice(i, 1); } const j = IA.indexOf(it); if (j >= 0) IA.splice(j, 1); }
-  HV.rec = null; HV.parts = {}; HV.beams = []; HV.pools = []; HV.beasts = []; HV.spin = []; HV.blink = []; HV.smoke = []; HV.glow = [];
+  HV.rec = null; HV.gate = null; HV.parts = {}; HV.beams = []; HV.pools = []; HV.beasts = []; HV.spin = []; HV.blink = []; HV.smoke = []; HV.glow = [];
 }
 /* build 52: Haven's structures are modelled in Blender (haven.json): towers, wall modules and gates for every level, the garage,
    radio mast and generator yard at each level, tents, coop, greenhouse, command table, mission board and fire pit.
@@ -9489,8 +9779,9 @@ function havenBuild(B, grow) {
         if (wt >= 4) { const coil = new THREE.Mesh(new THREE.TorusGeometry(.28, .025, 4, 10), H.wire), cn = Math.floor(hx(L) / .45), ci = new THREE.InstancedMesh(coil.geometry, H.wire, cn), m4 = new THREE.Matrix4(), q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, hor ? 0 : Math.PI / 2, 0));
           for (let i = 0; i < cn; i++) { const t = (i + .5) / cn * L; m4.compose(V3(hx(hor ? S[0] + t : S[0] + 15), hgt + .28, hz(hor ? S[1] + 15 : S[1] + t)), q, V3(1, 1, 1)); ci.setMatrixAt(i, m4); } P_.add(ci); } } }
     // the gate: two leaves, a sign
-    const gt = wt ? hgt : 1.2; if (tiled && hvClone('HV_gate_' + wt, P_, gx, R.y0 + 15)) havenSign(P_, 'HAVEN', hx(gx), gt + .9, hz(R.y0 + 15) - .17, .34); else for (const s of [-1, 1]) { hvBox(P_, wt >= 3 ? H.steel : H.plank, .5, gt + .6, .5, hx(gx + s * (GATE / 2 + 4)), (gt + .6) / 2, hz(R.y0 + 15)); hvBox(P_, wt >= 3 ? H.rust : H.plankD, hx(GATE / 2 - 12), gt * .9, .14, hx(gx + s * (GATE / 4 + 6)), gt * .45, hz(R.y0 - 8 - s * 18), s * .9); }
-    if (!tiled) { hvBox(P_, H.plank, hx(GATE + 30), .7, .12, hx(gx), gt + .9, hz(R.y0 + 15)); havenSign(P_, 'HAVEN', hx(gx), gt + .9, hz(R.y0 + 15) - .08); } }
+    const gt = wt ? hgt : 1.2; if (tiled && hvClone('HV_gate_' + wt, P_, gx, R.y0 + 15)) havenSign(P_, 'HAVEN', hx(gx), gt + .9, hz(R.y0 + 15) - .17, .34); else for (const s of [-1, 1]) { hvBox(P_, wt >= 3 ? H.steel : H.plank, .5, gt + .6, .5, hx(gx + s * (GATE / 2 + 4)), (gt + .6) / 2, hz(R.y0 + 15)); }
+    if (!tiled) { hvBox(P_, H.plank, hx(GATE + 30), .7, .12, hx(gx), gt + .9, hz(R.y0 + 15)); havenSign(P_, 'HAVEN', hx(gx), gt + .9, hz(R.y0 + 15) - .08); }
+    havenGate(P_, wt, gt, gx, R, GATE); }
   // ---- towers (corners first, then over the gate)
   { const P_ = havenPart('tower'), spots = [[R.x0 + 40, R.y0 + 40], [R.x1 - 40, R.y0 + 40], [R.x0 + 40, R.y1 - 40], [R.x1 - 40, R.y1 - 40], [gx + GATE / 2 + 70, R.y0 + 60]];
     spots.slice(0, Math.min(5, B.tower)).forEach(([x, y], i) => { const hh = 6 + (B.tower >= 4 ? 1.2 : 0), mat = B.tower >= 3 ? H.steel : H.log, built = !!hvClone('HV_tower_' + Math.max(1, B.tower), P_, x, y);
@@ -9589,7 +9880,7 @@ function havenBuild(B, grow) {
 }
 function havenMerge(root) {   // bake every static mesh of each part into one mesh per material: a few dozen draw calls instead of thousands
   const skip = new Set(), mark = o => o && o.traverse(c => skip.add(c));
-  for (const a of HV.beasts) mark(a.o); for (const s of HV.spin) mark(s.o); for (const b of HV.blink) mark(b.o); for (const b of HV.glow) mark(b); for (const o of (HV.beams || []).concat(HV.pools || [])) mark(o); mark(HV.fire);
+  for (const a of HV.beasts) mark(a.o); if (HV.gate) for (const L of HV.gate.leaves) mark(L.piv); for (const s of HV.spin) mark(s.o); for (const b of HV.blink) mark(b.o); for (const b of HV.glow) mark(b); for (const o of (HV.beams || []).concat(HV.pools || [])) mark(o); mark(HV.fire);
   const groups = [root, ...Object.values(HV.parts)];
   for (const G of groups) { G.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(G.matrixWorld).invert(), byMat = new Map(), dead = [];
     G.traverse(o => { if (!o.isMesh || o.isInstancedMesh || skip.has(o) || Array.isArray(o.material)) return; if (G === root && o.parent !== root) return;   // root: only its own children
@@ -9640,8 +9931,54 @@ function havenBeastTick(dt) {
 }
 const HVSMK = [];
 function havenPuff(x, y, z, dust) { if (HVSMK.length > 60) return; const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: SMOKETEX, transparent: true, depthWrite: false, color: dust ? 0xb8a888 : 0x777777, opacity: .5 })); m.position.set(x, y, z); world3.add(m); HVSMK.push({ m, t: 0, life: dust ? 1.4 : 2.6, vy: dust ? rnd(.4, 1.2) : rnd(.6, 1), vx: rnd(-.3, .3), s0: dust ? 1 : .4, s1: dust ? 2.5 : 2, op: dust ? .55 : .35 }); }
+/* build 61: Haven's gate swings open as anyone comes up to it (on foot or driving) and shuts behind them. Shut, it holds the dead out */
+function havenGate(P_, wt, gt, gx, R, GATE) {
+  const H = HM(), W = 6.7, lw = W - .5, hh = gt * .9, z = hz(R.y0 + 15) + .2, tw = { open: false }, G = { tw, k: 0, leaves: [], snd: 0 };
+  for (const s of [-1, 1]) { const piv = new THREE.Group(); piv.position.set(hx(gx) + s * (W - .35), 0, z); P_.add(piv); const lf = new THREE.Group(); piv.add(lf);   // the leaf runs from the hinge toward the middle (-s along x)
+    const at = t => -s * t;   // distance from the hinge along the leaf
+    if (wt <= 2) { const n = 9, bw = lw / n; for (let k = 0; k < n; k++) hvBox(lf, k % 2 ? H.plank : H.plankD, bw - .03, hh, .1, at((k + .5) * bw), hh / 2 + .1, 0);
+      for (const y of [hh * .22, hh * .82]) hvBox(lf, H.plankD, lw, .18, .08, at(lw / 2), y, .09);
+      const br = hvBox(lf, H.plankD, Math.hypot(lw, hh * .6), .16, .07, at(lw / 2), hh * .52, .09); br.rotation.z = s * Math.atan2(hh * .6, lw); }
+    else { hvBox(lf, wt >= 4 ? H.steel : H.rust, lw, hh, .12, at(lw / 2), hh / 2 + .1, 0); for (let k = 0; k < 5; k++) hvBox(lf, H.steel, .1, hh, .2, at((k + .5) / 5 * lw), hh / 2 + .1, .05);
+      if (wt >= 4) hvBox(lf, H.red, lw, .25, .14, at(lw / 2), hh * .5, .08); }
+    hvBox(lf, H.steel, .1, .1, .3, at(lw - .2), hh * .5, .1);   // the drop bar
+    G.leaves.push({ piv, s }); }
+  // shut, the gap is a wall; open, it isn't (wallOn skips it)
+  intColAdd({ x: gx - GATE / 2, y: R.y0, w: GATE, h: 30, tw }, HV.rec); HV.gate = G; havenGatePose(G); }
+function havenGatePose(G) { const a = G.k * 1.45; for (const L of G.leaves) L.piv.rotation.y = L.s * a; }
+function havenGateTick(dt) {
+  const G = HV.gate; if (!G) return; const gx = HVGATE.x, gy = HVGATE.y, near = (x, y, r) => Math.abs(x - gx) < r && Math.abs(y - gy) < r;
+  let want = !!(NET.on && NET.mission) || near(P.x, P.y, 640);
+  if (!want && NET.on) for (const r of NET.RP.values()) if (r.s && near(r.x, r.y, 640)) { want = true; break; }
+  if (!want) for (const c of cars) if (Math.abs(c.v || 0) > 20 && near(c.x, c.y, 700)) { want = true; break; }
+  const k0 = G.k; G.k = clamp(G.k + (want ? 1 : -1) * dt / 2.6, 0, 1); if (G.k !== k0) { havenGatePose(G); const e = G.k < .5 ? 2 * G.k * G.k : 1 - Math.pow(-2 * G.k + 2, 2) / 2; for (const L of G.leaves) L.piv.rotation.y = L.s * e * 1.45; }
+  if ((G.k > 0) !== (k0 > 0) || (G.k < 1) !== (k0 < 1)) { G.snd -= 1; if (Math.hypot(P.x - gx, P.y - gy) < 1200 && typeof sfx === 'function') sfx('clang'); }
+  G.tw.open = G.k > .55;
+  // shutting on someone: push them clear (inside or outside, whichever is nearer)
+  if (!G.tw.open && Math.abs(P.x - gx) < 135 && Math.abs(P.y - (gy + 15)) < 26) P.y = P.y < gy + 15 ? gy - 12 : gy + 42; }
+/* build 61: the car park. Leave a vehicle inside the lot (the garage and its apron) and it stays there for the whole crew, between sessions */
+const HVPARK = { x0: 5900, y0: 3650, x1: 6300, y1: 4100 }, inPark = (x, y) => x > HVPARK.x0 && x < HVPARK.x1 && y > HVPARK.y0 && y < HVPARK.y1;
+function parkOnExit(c) {
+  if (!NET.on || !c || c.hp <= 0 || c.gone || !inPark(c.x, c.y)) return;
+  netSend({ t: 'park', id: c.pk || null, kind: c.kind || 'Car', x: Math.round(c.x), y: Math.round(c.y), a: +c.a.toFixed(3), col: c.col | 0, fuel: Math.round(c.fuel || 50), hp: Math.round(c.hp || 100) });
+  if (!c.pk) toast('Parked at Haven. It stays here for the crew.'); }
+function parkDrivenOut(c) { if (!NET.on || !c || !c.pk || inPark(c.x, c.y) || (Math.abs(c.x - (HVPARK.x0 + HVPARK.x1) / 2) < 400 && Math.abs(c.y - (HVPARK.y0 + HVPARK.y1) / 2) < 400)) return; netSend({ t: 'unpark', id: c.pk }); c.pk = null; }
+function parkSync() {
+  if (!NET.on || !NET.crew || !world3 || !NET.worldReady) return; const list = NET.crew.parked || [], ids = new Set(list.map(e => e.id));
+  for (const c of cars) if (c.pk && !ids.has(c.pk)) c.pk = null;
+  const busy = c => c === driving || (typeof remoteDriverOf === 'function' && remoteDriverOf(c)) || (typeof SEAT !== 'undefined' && SEAT.car === c);
+  for (const e of list) {
+    let c = cars.find(o => !o.gone && o.nid === e.id);
+    if (!c) {   // the car somebody just parked is a world car we already have here: swap it for the crew's copy so everyone shares one id
+      const old = cars.find(o => !o.gone && !o.pk && o.kind === e.kind && Math.hypot(o.x - e.x, o.y - e.y) < 90 && !busy(o));
+      if (old) { old.gone = true; old.hp = 0; old.v = 0; if (old.m) { world3.remove(old.m); } old.x = old.y = -60000; }
+      c = mkCar(e.x, e.y, e.a, e.fuel || 60, e.col, e.kind); c.fuel = e.fuel || c.fuel; c.hp = e.hp || 100; c.nid = e.id; c.state = 'ready'; c.free = true; if (e.kind === 'Car_humvee') c.armorK = .35;
+      c.m = buildCarMesh(c.col, false, c.kind); c.m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); c.m.position.set(c.x * S3, 0, c.y * S3); c.m.rotation.y = -c.a; world3.add(c.m); cars.push(c); }
+    c.pk = e.id;
+    if (!busy(c) && Math.hypot(c.x - e.x, c.y - e.y) > 40 && Math.abs(c.v || 0) < 5) { c.x = e.x; c.y = e.y; c.a = e.a; } }
+}
 function havenTick(dt) {
-  if (!HV.rec) return; HV.t += dt;
+  if (!HV.rec) return; HV.t += dt; havenGateTick(dt); HV.pkT = (HV.pkT || 0) - dt; if (HV.pkT <= 0) { HV.pkT = 1.5; try { parkSync(); if (driving) parkDrivenOut(driving); } catch (e) { console.warn('park', e); } }
   const near = Math.abs(P.x - 6400) < 4200 && Math.abs(P.y - 3600) < 3200; if (near || HV.mode) havenBeastTick(dt);
   for (const s of HV.spin) { if (s.axis) s.o.rotation[s.axis] += dt * s.rate; else if (s.sweep) { s.sweep.a += dt * .4; const w = s.sweep; s.o.position.set(w.cx + Math.cos(w.a) * 45, 0, w.cz + Math.sin(w.a) * 45); } }
   for (const b of HV.blink) b.o.visible = b.weld ? Math.random() < .4 : (HV.t * b.rate) % 1 < .5;
@@ -9780,7 +10117,7 @@ async function netEnterHaven() {   // walk around Haven between operations
   NET.screen = 'game'; if (NET.ui) NET.ui.innerHTML = '<div class="box"><h2>HAVEN</h2><div class="sub">Heading home…</div></div>';
   await loadLook(LOOK || 'PM1'); await new Promise(r => { fadeTo(1, .5); setTimeout(r, 550); });
   titleEl.classList.remove('on'); cine = null; initAudio(); stopMusic(); NET.on = true; newGame(BGPICK || 'cop', false); NET.worldReady = true;
-  story.online = true; story.L = 2; story.m = null; story.i = 999; story.party = []; story.timer = null; for (const n of npcs) if (n.m) world3.remove(n.m); npcs.length = 0;
+  story.online = true; story.L = 2; story.m = null; story.i = 999; story.party = []; story.timer = null; for (const n of npcs) if (n.m && !n.isMe) world3.remove(n.m); npcs.length = 0; if (ME && ME.m) { if (!ME.m.parent) world3.add(ME.m); ME.mode = 'me'; ME.car = null; npcs.push(ME); }
   havenBuild(NET.crew ? NET.crew.b : {}); netToHaven(); netLoadout(); if (TOD) TOD.h = 15; state = 'play'; netClose(); fadeTo(0, .8); lock(); toast('Haven. The command table plans upgrades, the board takes contracts.'); }
 function netLoadout() {   // the workshop issues guns; anything you have found yourself is in your armory for good
   const B = (NET.crew && NET.crew.b) || {}, W = B.workshop || 0, give = (id, mag, am) => { if (P.wp[id] && !P.wp[id].has) giveWeapon(id, mag, am); };
@@ -10379,6 +10716,13 @@ function netRemoteTick(dt) {
     let want = s.yaw, back = false; if (r.sp > 12) { const mv = Math.atan2(vy, vx); let d0 = mv - s.yaw; d0 = Math.atan2(Math.sin(d0), Math.cos(d0)); back = Math.abs(d0) > 1.95; if (!back && !(r.fireT > 0) && !s.aim) want = mv; }
     if (r.head === undefined) r.head = want; let dh = want - r.head; dh = Math.atan2(Math.sin(dh), Math.cos(dh)); r.head += dh * Math.min(1, dt * 10);
     r.m.visible = NET.worldReady && now_ - (r.lastT || 0) < 4000 && !seatDrv(s.drv) && !seatDrv(s.seat) && Math.abs(r.x - P.x) < 2500 && Math.abs(r.y - P.y) < 2500;
+    // build 61: a teammate in a vehicle is drawn in their seat (a rider on a motorcycle used to vanish)
+    { const sc = seatDrv(s.drv) ? carByNid(s.drv) : (seatDrv(s.seat) && s.sk === 'ride') ? carByNid(s.seat) : null;
+      if (sc) { const u = r.m.userData; r.m.visible = NET.worldReady && now_ - (r.lastT || 0) < 4000 && Math.abs(sc.x - P.x) < 2500 && Math.abs(sc.y - P.y) < 2500;
+        let st; if (seatDrv(s.drv)) st = driverSeat(sc); else { let i = 0; for (const o of NET.RP.values()) { if (o === r) break; if (o.s && o.s.sk === 'ride' && o.s.seat === s.seat) i++; } const all = allSeats(sc); st = all[Math.min(i, all.length - 1)] || driverSeat(sc); }
+        const f = { x: Math.cos(sc.a), y: Math.sin(sc.a) }, rt = { x: -Math.sin(sc.a), y: Math.cos(sc.a) };
+        r.m.position.set(sc.x * S3 + f.x * st[0] + rt.x * st[1], -0.02 + (vehOf(sc).seatY || vehOf(sc).eye), sc.y * S3 + f.y * st[0] + rt.y * st[1]); r.m.rotation.set(0, -sc.a, 0);
+        if (u.acts.Sit) setAnim(u, 'Sit', 1, .2); u.mixer.update(dt); r.head = sc.a; continue; } }
     const lv = q.lv !== undefined ? q.lv : (s.lv | 0); r.m.position.set(r.x * S3, lv * 3.1, r.y * S3); r.m.rotation.y = -r.head;
     const u = r.m.userData; let an = 'Idle', ts = 1;
     if (s.down) an = 'Down'; else if (r.fireT > 0) an = 'Fire';
@@ -10811,6 +11155,14 @@ function hpClone(name, P_, x, y, ry, y0) { const src = hpSrc(name); if (!src) re
 function havenDress(B) {
   if (!HPG || !HV.rec) return; const R = HVR, gx = HVGATE.x, P_ = havenPart('dress'), rec = HV.rec, placed = HV.dressed = [];
   const paths = [{ x: gx - 95, y: R.y0 - 400, w: 190, h: 1550 }, { x: R.x0 + 75, y: 3475, w: R.x1 - R.x0 - 150, h: 150 }];
+  // build 61: the car park on the garage apron: gravel, painted bays, wheel stops and a sign
+  paths.push({ x: HVPARK.x0, y: HVPARK.y0, w: HVPARK.x1 - HVPARK.x0, h: 3905 - HVPARK.y0 });
+  { const H = HM(), PK = HVPARK, y1 = 3895, lot = new THREE.Mesh(new THREE.PlaneGeometry(hx(PK.x1 - PK.x0), hz(y1 - PK.y0)), H.asph || (H.asph = new THREE.MeshStandardMaterial({ color: 0x3a3936, roughness: .95 }))); lot.rotation.x = -Math.PI / 2; lot.position.set(hx((PK.x0 + PK.x1) / 2), .022, hz((PK.y0 + y1) / 2)); lot.receiveShadow = true; P_.add(lot);
+    const paint = H.paint || (H.paint = new THREE.MeshStandardMaterial({ color: 0xe8e4d4, roughness: .7, emissive: 0x202020 })), n = 5, bw = (PK.x1 - PK.x0 - 20) / n;
+    for (let k = 0; k <= n; k++) hvBox(P_, paint, .1, .01, hz(150), hx(PK.x0 + 10 + k * bw), .03, hz(y1 - 85), 0, false);
+    hvBox(P_, paint, hx(PK.x1 - PK.x0 - 20), .01, .1, hx((PK.x0 + PK.x1) / 2), .03, hz(y1 - 10), 0, false);
+    for (let k = 0; k < n; k++) hvBox(P_, H.concrete, hx(bw * .55), .14, .22, hx(PK.x0 + 10 + (k + .5) * bw), .07, hz(y1 - 22));
+    hvBox(P_, H.steel, .1, 2.4, .1, hx(PK.x0 + 14), 1.2, hz(PK.y0 + 12)); havenSign(P_, 'PARKING', hx(PK.x0 + 14), 2.35, hz(PK.y0 + 12) - .08); }
   // roofs and canopies (anything big hanging above head height) mark ground a prop must not sit on: building interiors, under trees
   const over = []; { const bb = new THREE.Box3(); for (const k in HV.parts) if (k !== 'dress') HV.parts[k].traverse(o => { if (!o.isMesh || o.isInstancedMesh) return; bb.setFromObject(o); if (bb.min.y > 1.6 && (bb.max.x - bb.min.x) * (bb.max.z - bb.min.z) > 3) over.push({ x: bb.min.x / S3, y: bb.min.z / S3, w: (bb.max.x - bb.min.x) / S3, h: (bb.max.z - bb.min.z) / S3 }); }); }
   const hit = (x0, y0, x1, y1) => over.some(w => x0 < w.x + w.w && x1 > w.x && y0 < w.y + w.h && y1 > w.y) || rec.walls.some(w => x0 < w.x + w.w && x1 > w.x && y0 < w.y + w.h && y1 > w.y) || placed.some(w => x0 < w.x1 && x1 > w.x0 && y0 < w.y1 && y1 > w.y0) || paths.some(w => x0 < w.x + w.w && x1 > w.x && y0 < w.y + w.h && y1 > w.y);

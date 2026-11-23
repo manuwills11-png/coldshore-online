@@ -263,6 +263,7 @@ const now = () => Date.now();
 const rid = n => crypto.randomBytes(n).toString('hex');
 const code6 = () => { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s; do { s = ''; for (let i = 0; i < 6; i++) s += A[crypto.randomInt(A.length)]; } while (DB.crews[s]); return s; };
 const clampN = (v, a, b) => Math.max(a, Math.min(b, v));
+const PARK = { x0: 5900, y0: 3650, x1: 6300, y1: 4100 };   // build 61: Haven's car park (the garage and its apron), game units
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 function newCrew(name) {
   return { code: code6(), name: String(name || 'Unnamed Crew').slice(0, 24), created: now(), members: {}, done: 0, fails: 0, storyDone: [], log: [],
@@ -302,7 +303,7 @@ function crewView(c, room) {
   return { code: c.code, name: c.name, res: c.res, b: c.b, done: c.done, fails: c.fails, ch: chapterOf(c), storyDone: c.storyDone, settlers: settlersOf(c),
     board: (c.board || makeBoard(c)).map(m => busy.has(m.mid) ? Object.assign({}, m, { taken: true }) : m),
     costs: Object.fromEntries(Object.keys(BUILDINGS).map(b => [b, c.b[b] >= 5 ? null : upCost(b, c.b[b])])), needs: Object.fromEntries(Object.keys(BUILDINGS).map(b => [b, c.b[b] >= 5 ? null : upNeed(b, c.b[b])])), log: c.log.slice(-8),
-    ops: room ? [...room.ops.values()].map(opView) : [], maxOps: MAX_OPS,
+    ops: room ? [...room.ops.values()].map(opView) : [], maxOps: MAX_OPS, parked: c.parked || [], parkMax: 6 + 2 * (c.b.garage | 0),
     online: room ? [...room.players.values()].map(p => ({ pid: p.pid, name: p.name, look: p.look, ready: p.ready, op: p.op || null, slot: p.slot | 0, wpt: p.wpt || null })) : [] };
 }
 
@@ -712,6 +713,15 @@ function handle(p, m) {
     case 'car': if (M) bop(room, M, { t: 'car', pid: p.pid, c: m.c }, p); else bhaven(room, { t: 'car', pid: p.pid, c: m.c }, p); return;
     case 'ping': { if (!isFinite(m.x) || !isFinite(m.y)) return; const o = { t: 'ping', pid: p.pid, name: p.name, x: Math.round(m.x), y: Math.round(m.y) }; if (M) bop(room, M, o, p); else bhaven(room, o, p); return; }
     case 'wpt': { if (m.clear || !isFinite(m.x) || !isFinite(m.y)) p.wpt = null; else p.wpt = { x: Math.round(m.x), y: Math.round(m.y), label: m.label ? String(m.label).slice(0, 40) : null }; crewUpdate(room); return; }
+    // build 61: Haven's car park. A vehicle left inside the lot stays there for the whole crew, across sessions
+    case 'park': { const c = DB.crews[room.code]; if (!c) return; const x = +m.x, y = +m.y, kind = String(m.kind || '');
+      if (!isFinite(x) || !isFinite(y) || x < PARK.x0 || x > PARK.x1 || y < PARK.y0 || y > PARK.y1 || !/^Car_[a-z0-9]+$/.test(kind)) return;
+      c.parked = c.parked || []; let e = m.id ? c.parked.find(q => q.id === m.id) : null;
+      if (!e) { const max = 6 + 2 * (c.b.garage | 0); if (c.parked.length >= max) { send(p, { t: 'chat', name: '', m: 'The car park is full (' + max + ' spaces). A bigger garage makes room for more.' }); return; }
+        c.parkN = (c.parkN | 0) + 1; e = { id: 'pk' + c.parkN }; c.parked.push(e); }
+      Object.assign(e, { kind, x: Math.round(x), y: Math.round(y), a: Math.round((+m.a || 0) * 1000) / 1000, col: Math.max(0, Math.min(0xffffff, +m.col | 0)), fuel: Math.round(clampN(+m.fuel || 50, 0, 100)), hp: Math.round(clampN(+m.hp || 100, 1, 100)), by: p.name });
+      save(); crewUpdate(room); return; }
+    case 'unpark': { const c = DB.crews[room.code]; if (!c || !c.parked) return; const i = c.parked.findIndex(q => q.id === m.id); if (i < 0) return; c.parked.splice(i, 1); save(); crewUpdate(room); return; }
     case 'give': { const id = m.id | 0, no = why => send(p, { t: 'gave', id, ok: 0, why }); const q = room.players.get(m.to);
       if (!q || q === p) return no('They are not online.'); if ((q.op || null) !== (p.op || null)) return no('They are not with you.'); if (!p.st || !q.st || dist(p.st, q.st) > 160) return no('Stand closer to them.');
       const k = m.pack || {}, pack = {};

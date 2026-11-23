@@ -114,6 +114,10 @@ Everything you see comes from the building levels saved on the server, so it cha
 - **Power:** a generator with an exhaust plume, solar arrays, a wind turbine from level 3, floodlights and string lights over the plaza.
 - **Workshop, Infirmary, Garage and Radio mast:** each grows a size with its level.
 
+**The gate (build 61).** Haven's gate opens as anyone walks or drives up to it and swings shut behind them. Shut, it is a wall the dead can't get through; it stays open while a squad is out on an operation.
+
+**The car park (build 61).** The garage and its painted apron are the crew's car park. Get out of a vehicle inside it and the server keeps it there for the whole crew, between sessions (colour, fuel and damage included). Drive it out and the space frees up. There are 6 spaces plus 2 per garage level.
+
 **Upgrading is done in person at the command table** in the plaza. It lifts the camera over Haven and flies it to whichever building you pick. Each building has a card showing its level pips, what it does now and after the upgrade, the cost (red where you are short), and any lock. Hold Space, or the button, to build. A scaffold goes up, dust rises, the new level grows out of the ground and a banner announces it to the whole crew.
 
 Supplies: **scrap, food, fuel, meds, ammo**. Missions pay them out. The farm makes food over time, housing makes scrap, and power burns fuel.
