@@ -172,7 +172,7 @@ html body #bagui .givebar{background:rgba(8,9,10,.97)}
 `; document.head.appendChild(st);
 })();
 function uiK(k) { return '<kbd class="u-k">' + k + '</kbd>'; }
-function uiBar(items) { return '<div class="u-bar">' + items.map(([k, t, m]) => '<span' + (m ? ' data-m="' + m + '"' : '') + '>' + k.map(uiK).join('') + ' ' + t + '</span>').join('') + '<span class="r">PROTOTYPE BUILD 61</span></div>'; }
+function uiBar(items) { return '<div class="u-bar">' + items.map(([k, t, m]) => '<span' + (m ? ' data-m="' + m + '"' : '') + '>' + k.map(uiK).join('') + ' ' + t + '</span>').join('') + '<span class="r">PROTOTYPE BUILD 62</span></div>'; }
 function uiMainItems() {
   const ready = assetsReady.kit && assetsReady.trees && assetsReady.car && assetsReady.furn && assetsReady.people && assetsReady.wtex;
   const SV = lvlLoad(), hasSv = SV.last !== null && SV.levels[SV.last];
@@ -214,7 +214,7 @@ function renderTitle() {
   } else if (titleMode === 'credits') {
     h += '<div class="u-scr"><div class="u-head"><div class="step">ABOUT</div><h2>Credits</h2></div><div class="u-cred"><p>ColdShore prototype. Characters, zombies, vehicles, buildings, trees and animation built procedurally in Blender. Engine: three.js. Voices: your browser&#39;s speech engine.</p><h4>Models</h4><p style="font-size:13px">From BlendSwap, reduced for the browser: M1 Humvee by panko10 (CC-BY); Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0); Ford Crown Victoria Police Interceptor 2005 (CC-BY 3.0); Mercedes-AMG GLS (CC0); BMW 3 Series Coupe by mikepan (CC-BY-SA 3.0); Trees &amp; Bushes pack by Painkiller5555; Dodge Challenger 1970 R/T; Low Quality Weapon Pack (CC0); Warehouse by argonius (CC0).</p></div><div class="u-row2"><span class="u-btn" data-m="back">Back</span></div></div>' + uiBar([[['Esc'], 'Back', 'back']]);
   }
-  if (titleMode === 'press') h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 61</div>';
+  if (titleMode === 'press') h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 62</div>';
   titleEl.innerHTML = h; titleEl.classList.add('on');
   titleEl.querySelectorAll('[data-m]').forEach(a => a.onclick = () => { const m = a.dataset.m; if (m === 'bgback') { titleMode = 'bg'; beep(520, .04, 'triangle', .03); renderTitle(); return; } titleAction(m); });
   titleEl.querySelectorAll('.u-menu a[data-i]').forEach(a => a.onmouseenter = () => { if (UI61.sel === +a.dataset.i) return; UI61.sel = +a.dataset.i; beep(880, .015, 'sine', .012); renderTitle(); });
@@ -2771,6 +2771,7 @@ function iaLightTick(dt) {
 function iaTick(dt) {
   if (!P) return;
   P.sitK = (P.sitK || 0) + ((P.sit ? 1 : 0) - (P.sitK || 0)) * Math.min(1, dt * 6);
+  if (P.fed > 0) { P.fed -= dt; if (P.hp > 0 && typeof hpCap === 'function') P.hp = Math.min(hpCap(), P.hp + dt * .5); }
   if (P.sit) { if (P.hp < 75) P.hp = Math.min(75, P.hp + dt * 1.4); if (iaHunted(380)) { iaStand(); toast('Something is coming!'); } }
   if (P.sleepT > 0) { P.sleepT -= dt; P.hp = Math.min(100, P.hp + dt * 15); iaFadeEl.style.opacity = 1; if (P.sleepT <= 0) { P.sleepT = 0; iaFadeEl.style.opacity = 0; toast('You slept. Rested.'); } }
   iaLightTick(dt);
@@ -2780,9 +2781,9 @@ function iaNear() {
   let best = null, bs = 1e9;
   const cx = Math.floor(P.x / 200), cy = Math.floor(P.y / 200);
   const consider = it => {
-    if (it.gone || (it.lv | 0) !== (P.lv | 0)) return; const dx = it.x - P.x, dy = it.y - P.y, d = Math.hypot(dx, dy), reach = it.r + 38; if (d > reach) return;
-    let a = Math.atan2(dy, dx) - yaw; a = Math.abs(Math.atan2(Math.sin(a), Math.cos(a))); if (d > it.r * .7 && a > .75) return;
-    const sc = d - it.r * .5 + a * 50; if (sc >= bs) return; if (d > 30 && segBlocked(P.x, P.y, it.x, it.y)) return;
+    if (it.gone || (it.lv | 0) !== (P.lv | 0)) return; const R_ = it.rect, tx = R_ ? clamp(P.x, R_.x0, R_.x1) : it.x, ty = R_ ? clamp(P.y, R_.y0, R_.y1) : it.y, dx = tx - P.x, dy = ty - P.y, d = Math.hypot(dx, dy), reach = it.r + 38; if (d > reach) return;
+    let a = Math.atan2(dy, dx) - yaw; a = Math.abs(Math.atan2(Math.sin(a), Math.cos(a))); if (d > it.r * .7 && a > (R_ ? 1.1 : .75)) return;
+    const sc = d - it.r * .5 + a * 50; if (sc >= bs) return; if (d > 30 && segBlocked(P.x, P.y, R_ ? tx - dx / d * 10 : tx, R_ ? ty - dy / d * 10 : ty)) return;
     bs = sc; best = it; it._d = Math.max(0, d - it.r * .5);
   };
   for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) { const a = IAG.get((cx + i) * 10000 + cy + j); if (a) for (const it of a) consider(it); }
@@ -3877,7 +3878,8 @@ function update(dt) {
   if (!driving) {
     const f = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0), r = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0);
     if (P.sit && (f || r)) iaStand();
-    if ((f || r) && !P.sit && !(P.sleepT > 0)) {
+    if (P.watch && (f || r)) { P.watch = null; sfx('creak'); }
+    if ((f || r) && !P.sit && !P.watch && !(P.sleepT > 0)) {
       const l = Math.hypot(f, r); sprinting = staminaTick(dt, sprint && f > 0 && !NET.carrying, true); moving = true;
       if (sprinting && STL.crouch) setCrouch(false); const sp = (sprinting ? 110 : 70 * (1 - adsK * .45) * (STL.crouch ? .5 : 1)) * netCarryMul();
       const fx = Math.cos(yaw), fy = Math.sin(yaw), rx = -Math.sin(yaw), ry = Math.cos(yaw);
@@ -3914,7 +3916,7 @@ function update(dt) {
     else if (car && car.state === 'ready') target = { type: 'enter', ref: car };
     const dr = gnd ? nearDoor() : null, ddr = dr ? Math.hypot(dr.cx - P.x, dr.cy - P.y) : 1e9;
     if (dr && (!target || (target.type !== 'note' && ddr < Math.min(dc, dk)))) target = { type: 'door', ref: dr };
-    const ia = iaNear();
+    const ia = P.watch ? null : iaNear();
     if (ia) { const dT = !target ? 1e9 : target.type === 'note' ? -1 : target.type === 'door' ? ddr : target.type === 'crate' ? dc : dk; if (ia._d < dT) target = { type: 'ia', ref: ia }; }
   }
   updateDoors(dt);
@@ -4078,13 +4080,14 @@ function syncScene(dt) {
     if (P.moving) cy += Math.sin(bobT) * 0.045;
   }
   if (SEAT.car) { const sc = seatCam(); if (sc) { cx = sc[0]; cy = sc[1]; cz = sc[2]; } }
+  if (P.watch && !driving) { cx = P.watch.x * S3; cz = P.watch.y * S3; cy = P.watch.h; }
   const sh = camShake * 0.25;
   camera.position.set(cx + rnd(-sh, sh), cy + rnd(-sh, sh), cz + rnd(-sh, sh));
   const cpi = driving && chaseCam ? -0.16 + pitch * .3 : pitch, cp = Math.cos(cpi);
   camera.lookAt(camera.position.x + Math.cos(cyaw) * cp, camera.position.y + Math.sin(cpi), camera.position.z + Math.sin(cyaw) * cp);
   if (driving && !chaseCam && driving.rollS !== undefined) { camera.rotateX(driving.pitchS || 0); camera.rotateZ(-(driving.rollS || 0)); }
-  const zoomW = !driving && W_().zoom ? W_().zoom : 0, FB_ = UISET.fov || 75, fov = zoomW ? FB_ - adsK * (FB_ - FB_ / zoomW) : FB_ + (driving ? Math.min(16, Math.abs(driving.v) / 340 * 10) : (keys.ShiftLeft && P.moving ? 4 : 0)) - adsK * 18;
-  if (VM && VM.root) VM.root.visible = !(zoomW && adsK > .85) && VM.id === curW;
+  const zoomW = !driving && W_().zoom ? W_().zoom : 0, FB_ = (UISET.fov || 75) * (P.watch ? (mouse.ads ? .32 : .85) : 1), fov = zoomW ? FB_ - adsK * (FB_ - FB_ / zoomW) : FB_ + (driving ? Math.min(16, Math.abs(driving.v) / 340 * 10) : (keys.ShiftLeft && P.moving ? 4 : 0)) - adsK * 18;
+  if (VM && VM.root) VM.root.visible = !(zoomW && adsK > .85) && VM.id === curW && !(P.watch && mouse.ads);
   if (Math.abs(camera.fov - fov) > 0.05) { camera.fov += (fov - camera.fov) * Math.min(1, dt * 6); camera.updateProjectionMatrix(); }
   updateWorldBits(dt);
   if (skyG) skyG.position.set(cx, 0, cz);
@@ -4138,6 +4141,10 @@ function drawHUD() {
   }
 
   if (!driving && W_().zoom && adsK > .85) { const r = Math.min(VW, VH) * .42; ctx.save(); ctx.fillStyle = '#000'; ctx.beginPath(); ctx.rect(0, 0, VW, VH); ctx.arc(VW / 2, VH / 2, r, 0, Math.PI * 2, true); ctx.fill('evenodd'); ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(VW / 2 - r, VH / 2); ctx.lineTo(VW / 2 + r, VH / 2); ctx.moveTo(VW / 2, VH / 2 - r); ctx.lineTo(VW / 2, VH / 2 + r); ctx.stroke(); ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(VW / 2 - r, VH / 2); ctx.lineTo(VW / 2 - r * .12, VH / 2); ctx.moveTo(VW / 2 + r * .12, VH / 2); ctx.lineTo(VW / 2 + r, VH / 2); ctx.moveTo(VW / 2, VH / 2 + r * .12); ctx.lineTo(VW / 2, VH / 2 + r); ctx.stroke(); const vg = ctx.createRadialGradient(VW / 2, VH / 2, r * .7, VW / 2, VH / 2, r); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.7)'); ctx.fillStyle = vg; ctx.beginPath(); ctx.arc(VW / 2, VH / 2, r, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+  if (P.watch && mouse.ads) { let B = UI61.bino; if (!B || B.width !== VW || B.height !== VH) { B = UI61.bino = document.createElement('canvas'); B.width = VW; B.height = VH; const c = B.getContext('2d'), r = Math.min(VW, VH) * .36;
+      c.fillStyle = '#000'; c.fillRect(0, 0, VW, VH); c.globalCompositeOperation = 'destination-out'; for (const s_ of [-1, 1]) { const g = c.createRadialGradient(VW / 2 + s_ * r * .62, VH / 2, r * .8, VW / 2 + s_ * r * .62, VH / 2, r); g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.beginPath(); c.arc(VW / 2 + s_ * r * .62, VH / 2, r, 0, 6.283); c.fill(); } }
+    ctx.drawImage(B, 0, 0); }
+  if (P.watch) { ctx.save(); ctx.font = '700 11px ' + UFH; ctx.textAlign = 'center'; ctx.fillStyle = '#f0a43a'; ctx.fillText('ON WATCH  ·  RMB BINOCULARS  ·  MOVE TO CLIMB DOWN', VW / 2, VH - 92); ctx.restore(); }
   if (!driving && W_().ret === 'xbow' && adsK > .85) { const r = Math.min(VW, VH) * .42; ctx.save(); ctx.strokeStyle = 'rgba(10,10,10,.9)'; ctx.fillStyle = 'rgba(10,10,10,.9)'; ctx.lineWidth = 1.5; ctx.font = '10px monospace'; ctx.textAlign = 'left';
     [[.08, '20'], [.17, '30'], [.27, '40'], [.38, '50']].forEach(([f, t], i) => { const y = VH / 2 + r * f, w = r * (.16 - i * .025); ctx.beginPath(); ctx.moveTo(VW / 2 - w, y); ctx.lineTo(VW / 2 + w, y); ctx.stroke(); ctx.fillText(t, VW / 2 + w + 5, y + 3); });
     ctx.fillStyle = 'rgba(220,40,30,.9)'; ctx.beginPath(); ctx.arc(VW / 2, VH / 2, 2.2, 0, 6.283); ctx.fill(); ctx.restore(); }
@@ -7314,7 +7321,8 @@ function oBuilding(rec, g, R) {
   if (R.kind === 'house' || R.kind === 'cabin') oHouseDress(rec, g, R, HGT, longX, span, len, rise);
   // inside: a few pieces of furniture and things to search
   const ix = R.x + R.w / 2, iy = R.y + R.h / 2;
-  if (R.kind === 'house' || R.kind === 'cabin') {
+  if (R.bare) { /* build 62: the caller furnishes it */ }
+  else if (R.kind === 'house' || R.kind === 'cabin') {
     const back = R.door === 'n' ? R.y + R.h - 34 : R.door === 's' ? R.y + 34 : null;
     if (back !== null) { oFurn(rec, g, 'bed', R.x + 50, back, R.door === 'n' ? Math.PI : 0, 42, 34, 'dresser'); oFurn(rec, g, 'counter', R.x + R.w - 50, back, R.door === 'n' ? Math.PI : 0, 40, 14, 'counter'); oFurn(rec, g, 'fridge', R.x + R.w - 22, iy, Math.PI / 2, 16, 16, 'fridge'); oFurn(rec, g, 'couch', R.x + 40, iy, Math.PI / 2, 40, 18, null); }
     else { const bx = R.door === 'w' ? R.x + R.w - 34 : R.x + 34; oFurn(rec, g, 'bed', bx, R.y + 44, R.door === 'w' ? -Math.PI / 2 : Math.PI / 2, 42, 34, 'dresser'); oFurn(rec, g, 'counter', bx, R.y + R.h - 44, R.door === 'w' ? -Math.PI / 2 : Math.PI / 2, 40, 14, 'counter'); oFurn(rec, g, 'fridge', ix, R.y + 22, 0, 16, 16, 'fridge'); }
@@ -8654,6 +8662,7 @@ function netMsg(m) {
   switch (m.t) {
     case 'welcome': NET.pid = m.pid; try { localStorage.setItem('cs_net_pid', m.pid); } catch (e) {} NET.profile = m.profile; NET.myCrews = m.crews; NET.screen = 'crews'; netUI(); break;
     case 'joined': NET.code = m.code; NET.crew = m.crew; NET.armory = m.armory || []; NET.screen = 'crew'; try { localStorage.setItem('cs_net_crew', m.code); } catch (e) {} netUI(); break;
+    case 'hused': huReply(m); break;
     case 'crew': NET.crew = m.crew; if (NET.screen === 'crew') netUI(); havenNet(); if (HV.mode) havenUIDraw(); try { parkSync(); } catch (e) { console.warn('park', e); } break;
     case 'built': havenBuilt(m); break;
     case 'armory': NET.armory = m.ids || []; break;
@@ -9855,14 +9864,14 @@ function havenBuild(B, grow) {
   { const P_ = havenPart('workshop'), L = B.workshop, x = gx + 280, y = R.y0 + 140;
     if (!L && hvClone('HV_bench', P_, x + 120, y + 60)) hvWall(P_, x + 70, y + 20, 100, 60, null, 1.2);
     else if (!L) { const tb = hvBox(P_, H.plank, 2.2, .1, 1, hx(x + 120), .9, hz(y + 60)); for (const s of [-1, 1]) hvBox(P_, H.plankD, .1, .9, .9, hx(x + 120) + s * 1, .45, hz(y + 60)); hvBox(P_, H.rust, .5, .4, .3, hx(x + 110), 1.15, hz(y + 60)); }
-    else { oBuilding(HV.rec, P_, { x, y, w: 240 + 40 * Math.min(2, L - 1), h: 180, door: 's', kind: L >= 3 ? 'store' : 'cabin', col: 5, roof: 2 });
+    else { oBuilding(HV.rec, P_, { x, y, w: 240 + 40 * Math.min(2, L - 1), h: 180, door: 's', kind: L >= 3 ? 'store' : 'cabin', col: 5, roof: 2, bare: true }); hvFit(P_, 'workshop', x, y, 240 + 40 * Math.min(2, L - 1), 180, L);
       if (hvClone('HV_wsyard_' + Math.min(5, L), P_, x + 130, y + 235)) {} else { hvBox(P_, H.steel, 1.4, 1, .8, hx(x + 60), .5, hz(y + 230)); hvBox(P_, H.rust, .8, .9, .8, hx(x + 200), .45, hz(y + 230)); } if (L >= 2 && !HVG) { hvCyl(P_, H.red, .3, .3, 1.2, hx(x + 260), .6, hz(y + 240)); hvCyl(P_, H.steel, .3, .3, 1.2, hx(x + 280), .6, hz(y + 215)); }
       if (L >= 4) { HV.blink.push({ o: hvBox(P_, new THREE.MeshBasicMaterial({ color: 0x9fd6ff }), .2, .2, .2, hx(x + 60), 1.15, hz(y + 230), 0, false), weld: 1 }); } } }
   // ---- infirmary
   { const P_ = havenPart('infirmary'), L = B.infirmary, x = gx - 520, y = R.y0 + 140;
     if (L < 3 && hvClone('HV_medtent_' + Math.max(1, L), P_, x + 130, y + 80)) hvWall(P_, x + 130 - (L >= 2 ? 80 : 60), y + 80 - (L >= 2 ? 50 : 45), L >= 2 ? 160 : 120, L >= 2 ? 100 : 90, null, 2.6);
     else if (L < 3) { havenTent(P_, x + 120, y + 80, 0, H.white, 1.4 + .2 * L); const cr = hvBox(P_, H.red, .15, .9, .25, hx(x + 120), 2.5, hz(y + 80) - 2.3, 0, false); hvBox(P_, H.red, .15, .25, .9, hx(x + 120), 2.5, hz(y + 80) - 2.3, 0, false); for (let k = 0; k < L + 1; k++) hvBox(P_, H.white, .8, .5, 2, hx(x + 60 + k * 50), .25, hz(y + 160)); }
-    else { oBuilding(HV.rec, P_, { x, y, w: 300, h: 200, door: 's', kind: 'store', col: 4, roof: 1 }); hvClone('HV_medyard', P_, x + 150, y + 270); hvBox(P_, H.red, .1, 1.2, .35, hx(x + 150), 3.2, hz(y + 200) + .1, 0, false); hvBox(P_, H.red, .1, .35, 1.2, hx(x + 150), 3.2, hz(y + 200) + .1, Math.PI / 2, false); } }
+    else { oBuilding(HV.rec, P_, { x, y, w: 300, h: 200, door: 's', kind: 'store', col: 4, roof: 1, bare: true }); hvFit(P_, 'infirmary', x, y, 300, 200, L); hvClone('HV_medyard', P_, x + 150, y + 270); hvBox(P_, H.red, .1, 1.2, .35, hx(x + 150), 3.2, hz(y + 200) + .1, 0, false); hvBox(P_, H.red, .1, .35, 1.2, hx(x + 150), 3.2, hz(y + 200) + .1, Math.PI / 2, false); } }
   // ---- garage
   { const P_ = havenPart('garage'), L = B.garage, x = R.x0 + 650, y = R.y1 - 360;
     if (L && hvClone('HV_garage_' + Math.min(5, L), P_, x + (260 + 60 * Math.min(2, L)) / 2, y + 100)) { const w = 260 + 60 * Math.min(2, L); hvWall(P_, x, y + 192, w, 8, null, 3.6); hvWall(P_, x, y, 8, L >= 2 ? 200 : 8, null, 3.6); hvWall(P_, x + w - 8, y, 8, L >= 2 ? 200 : 8, null, 3.6); }
@@ -9875,6 +9884,7 @@ function havenBuild(B, grow) {
     if (L && !rad) { const dish = new THREE.Mesh(new THREE.SphereGeometry(.7, 12, 6, 0, 6.283, 0, 1.1), H.frame); dish.rotation.x = -1.2; dish.position.set(hx(x) + .4, hh * .7, hz(y)); P_.add(dish); }
     const tip = hvBox(P_, H.redL, .18, .18, .18, hx(x), hh + (rad && L ? 2.5 : .2), hz(y), 0, false); HV.blink.push({ o: tip, rate: 1.2 }); if (!rad) hvBox(P_, H.steel, 1, .9, .7, hx(x) + 1, .45, hz(y) + .6); hvWall(P_, x - 20, y - 20, 40, 40, null, hh); }
   try { havenDress(B); } catch (e) { console.warn('haven dress', e); }
+  try { havenIA(B); } catch (e) { console.warn('haven ia', e); }
   try { havenMerge(g); } catch (e) { console.warn('haven merge', e); }
   if (typeof havenBuildFx === 'function' && grow && HV.parts[grow]) havenBuildFx(grow);
 }
@@ -10016,6 +10026,107 @@ function havenFxTick(dt) {
 
 /* ---------- the command table: build mode ---------- */
 IAK.havenTable = D_('Command table: plan and build', 'tap', () => havenOpen());
+/* build 62: Haven's workshop and infirmary are fitted out for what they are (they used to get a cabin's bed and kitchen) */
+function hvFurn(P_, name, x, y, rot, solid) { let g = FKN[name] ? furnClone(FKN[name]) : null; if (!g && FUR[name]) { g = new THREE.Group(); FUR[name](g); } if (!g) return null;
+  g.position.set(hx(x), 0, hz(y)); g.rotation.y = rot || 0; P_.add(g); const dm = DIM[name]; if (dm && solid !== false) { const sw = Math.abs(Math.sin(rot || 0)) > .5, w = (sw ? dm[1] : dm[0]) / S3, h = (sw ? dm[0] : dm[1]) / S3; hvWall(P_, x - w / 2, y - h / 2, w, h, null, 1.2, true); } return g; }
+function hvFit(P_, kind, x, y, w, h, L) {
+  const ix0 = x + 16, ix1 = x + w - 16, iy0 = y + 16, iy1 = y + h - 16, back = d => iy0 + d / S3 / 2 + 2, W_ = (n, d) => ix0 + (DIM[n] ? DIM[n][1] : .5) / S3 / 2 + 2, E_ = n => ix1 - (DIM[n] ? DIM[n][1] : .5) / S3 / 2 - 2;
+  if (kind === 'workshop') {
+    hvFurn(P_, 'bench', x + w / 2 - 20, back(DIM.bench[1]), 0); hvFurn(P_, 'bench', x + w / 2 + 40, back(DIM.bench[1]), 0);
+    hvFurn(P_, 'rack', W_('rack'), y + h * .45, Math.PI / 2); hvFurn(P_, 'rack', E_('rack'), y + h * .45, -Math.PI / 2);
+    hvFurn(P_, 'tires', ix0 + 22, iy1 - 30, 0); hvFurn(P_, 'barrel', ix1 - 18, iy1 - 22, 0); hvFurn(P_, 'barrel', ix1 - 40, iy1 - 22, 0); hvFurn(P_, 'boxes', ix0 + 26, iy0 + 22, .3);
+    const H = HM(); hvBox(P_, H.plankD, hx(70), 1.1, .05, hx(x + w / 2 + 10), 1.7, hz(iy0) + .03, 0, false);   // pegboard over the benches, with tools
+    for (let k = 0; k < 7; k++) hvBox(P_, k % 2 ? H.steel : H.rust, .05, .25 + (k % 3) * .08, .03, hx(x + w / 2 - 18 + k * 9), 1.7, hz(iy0) + .07, 0, false);
+    const lamp = hvBox(P_, HM().bulb || H.white, .5, .05, .15, hx(x + w / 2 + 10), 2.6, hz(iy0 + 30), 0, false); HV.glow.push(lamp);
+  } else if (kind === 'infirmary') {
+    for (const f of [.2, .5, .8]) hvFurn(P_, 'hbed', ix0 + (ix1 - ix0) * f, back(DIM.hbed[1]), 0);
+    for (const f of [.35, .65]) hvFurn(P_, 'iv', ix0 + (ix1 - ix0) * f, iy0 + 18, 0, false);
+    hvFurn(P_, 'medcab', W_('medcab'), y + h * .55, Math.PI / 2); hvFurn(P_, 'medcab', E_('medcab'), y + h * .55, -Math.PI / 2);
+    hvFurn(P_, 'reception', x + w * .28, iy1 - 34, Math.PI); hvFurn(P_, 'plant', ix1 - 14, iy1 - 14, 0, false);
+  }
+}
+/* build 62: everything in Haven does something. Things that spend or earn crew supplies ask the server (it keeps the
+   stores and the cooldowns, so it works the same for everyone); the rest is yours alone: water, a fire, a seat, a nap, a lookout. */
+const HU = { cd: {}, seq: 0, pend: {} };
+const huLeft = k => Math.max(0, Math.ceil(((HU.cd[k] || 0) - performance.now()) / 1000));
+const huLbl = (base, k) => () => { const s = huLeft(k); return s ? base + '  · ready in ' + (s > 59 ? Math.ceil(s / 60) + ' min' : s + 's') : base; };
+const huWait = k => { const s = huLeft(k); if (s) { toast('Not yet. ' + (s > 59 ? Math.ceil(s / 60) + ' min' : s + ' s') + '.'); return true; } return false; };
+const hpCap = () => 100 + 10 * ((NET.on && NET.crew && NET.crew.b && NET.crew.b.infirmary) || 0);
+const HUSE_C = { meal: 180, patch: 240, stores: 120, medkit: 120, fuelcan: 150, chop: 75, sort: 90, stack: 90, harvest: 120, eggs: 150, milk: 180, repair: 20, scrapout: 120 };
+function huAsk(k, i, then) {
+  if (!NET.on) { toast('Only in Haven.'); return; } const ck = k === 'harvest' ? k + ':' + (i | 0) : k; if (huWait(ck)) return;
+  const id = ++HU.seq; HU.pend[id] = { k, ck, then }; netSend({ t: 'huse', k, i: i | 0, id });
+}
+function huReply(m) {   // { id, ok, why, cd }
+  const p = HU.pend[m.id]; delete HU.pend[m.id]; if (!p) return;
+  if (m.cd) HU.cd[p.ck] = performance.now() + m.cd * 1000;
+  if (!m.ok) { toast(m.why || 'Not now.'); return; } try { p.then && p.then(); } catch (e) { console.warn('huse', e); }
+}
+const huLocal = (k, secs) => { if (huWait(k)) return false; HU.cd[k] = performance.now() + secs * 1000; return true; };
+const huHeal = (n, msg) => { const c = hpCap(); if (P.hp >= c) { toast('You feel fine already.'); return false; } P.hp = Math.min(c, P.hp + n); if (msg) toast(msg); return true; };
+function huWatch(it) { P.watch = { x: it.wx, y: it.wy, h: it.wh }; toast('On watch. Right mouse to look closer, any move key to climb down.'); sfx('creak', it.x, it.y); }
+const RADIO_L = [['QUILL', 'Haven radio, nothing on the county band but the gulls. Keep the kettle on.'], ['QUILL', 'Fuel convoy rumours out of Ashford. I would not bet a can on it.'],
+  ['QUILL', 'If you are hearing this, you are home. Stay inside the wire after dark.'], ['QUILL', 'Somebody keeps keying a mic near the lighthouse. Three clicks, then nothing.'],
+  ['QUILL', 'Weather: fog off the bay by evening. The dead do not mind fog. We should.'], ['QUILL', 'Reminder: the generator is not a heater. Stop sitting on it.']];
+const SIGN_L = () => (typeof TOWNS !== 'undefined' ? TOWNS : []).slice(0, 6).map(T => { const d = Math.round(Math.hypot(T.x - HVGATE.x, T.y - HVGATE.y) * S3 / 100) / 10, a = Math.atan2(T.y - HVGATE.y, T.x - HVGATE.x), dir = ['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE'][((Math.round(a / (Math.PI / 4)) % 8) + 8) % 8]; return T.n + ' ' + d + ' km ' + dir; });
+Object.assign(IAK, {
+  hvMeal: D_(huLbl('Mess hall: eat a hot meal (3 food)', 'meal'), 'tap', it => huAsk('meal', 0, () => { P.hp = hpCap(); P.fed = 300; sfx('drawer', it.x, it.y); toast('Stew, bread and something like coffee. Full health, and you heal slowly for a while.'); gainXP(4, 'MEAL'); })),
+  hvWater: D_(huLbl('Water tower: drink from the tap', 'water'), 'tap', it => { if (!huLocal('water', 45)) return; huHeal(15, 'Cold, clean water. +15 health.'); sfx('water', it.x, it.y); }),
+  hvFire: D_(huLbl('Warm your hands at the fire', 'fire'), 'tap', it => { if (!huLocal('fire', 30)) return; huHeal(8, 'The heat gets into your fingers. +8 health.') || toast('You stand by the fire a while.'); }),
+  hvNap: D_(huLbl('Take a nap', 'nap'), 'tap', it => { if (huWait('nap')) return; if (P.hp >= hpCap() - 5) { toast('You are not tired.'); return; } HU.cd.nap = performance.now() + 300000; P.sleepT = 2.6; P.iframe = 3.2; iaFadeEl.style.opacity = 1; sfx('creak', it.x, it.y); setTimeout(() => { P.hp = hpCap(); }, 2400); }),
+  hvSit: sit('Sit down', 'Sitting. Any move key to stand.'),
+  hvWatch: D_('Climb up and keep watch', 'tap', it => huWatch(it)),
+  hvChop: D_(huLbl('Split firewood for the crew (+2 scrap)', 'chop'), 'hold', it => huAsk('chop', 0, () => { sfx('clang', it.x, it.y); toast('A neat stack of split logs. Crew scrap +2.'); gainXP(3, 'CHORES'); }), { time: 3.5 }),
+  hvSort: D_(huLbl('Sort the scrap pile (+3 scrap for you)', 'sort'), 'hold', it => huAsk('sort', 0, () => { inv.scrap += 3; toast('Hinges, wire, a good bolt. +3 scrap in your backpack.'); }), { time: 4 }),
+  hvStack: D_(huLbl('Stack the pallets (+2 scrap for the crew)', 'stack'), 'hold', it => huAsk('stack', 0, () => { toast('Pallets stacked, the yard is tidier. Crew scrap +2.'); }), { time: 4 }),
+  hvStores: D_(huLbl('Container stores: draw ammo (20 crew ammo)', 'stores'), 'tap', it => huAsk('stores', 0, () => { const id = W_().melee ? 'pistol' : curW, n = Math.max(6, (WPN[id] && WPN[id].cap ? WPN[id].cap : 12) * 2); addAmmo(id, n) || addAmmo('pistol', 24); sfx('clang', it.x, it.y); toast('Two magazines\' worth for the ' + (WPN[id] ? WPN[id].name : 'pistol') + '.'); })),
+  hvMedkit: D_(huLbl('Supply boxes: take a bandage (2 crew meds)', 'medkit'), 'tap', it => huAsk('medkit', 0, () => { inv.band += 1; toast('Bandage roll, still sealed. +1 bandage.'); sfx('drawer', it.x, it.y); })),
+  hvFuel: D_(huLbl('Fuel drums: fill a can (10 crew fuel)', 'fuelcan'), 'tap', it => huAsk('fuelcan', 0, () => { inv.fuel += 1; toast('A full can of fuel. +1.'); sfx('water', it.x, it.y); })),
+  hvPatch: D_(huLbl('Infirmary: get patched up (4 crew meds)', 'patch'), 'tap', it => huAsk('patch', 0, () => { P.hp = hpCap(); inv.band += 2; toast('Cleaned, stitched, sent off with two bandages.'); sfx('drawer', it.x, it.y); })),
+  hvBench: D_('Workbench: upgrade the gun in your hands', 'tap', () => openBench()),
+  hvScrap: D_(huLbl('Workshop stores: take 5 scrap (10 crew scrap)', 'scrapout'), 'tap', it => huAsk('scrapout', 0, () => { inv.scrap += 5; toast('+5 scrap in your backpack for the bench.'); })),
+  hvGarage: D_('Garage: vehicle upgrades', 'tap', () => openGarage()),
+  hvRepair: D_(it => { const c = huCar(); return c ? huLbl('Fix up the ' + (vehOf(c).name || 'car') + ' (8 scrap, 10 fuel from the crew)', 'repair')() : 'Park a vehicle here to fix it up'; }, 'tap', it => { const c = huCar(); if (!c) { toast('Bring a vehicle into the car park first.'); return; } if (c.hp >= 99 && c.fuel >= 99) { toast('It is already in good shape.'); return; }
+    huAsk('repair', 0, () => { c.hp = 100; c.fuel = 100; c.smoke = 0; sfx('clang', c.x, c.y); toast('Patched, topped up, ready to go.'); try { parkOnExit(c); } catch (e) {} }); }),
+  hvRadio: D_('Radio: listen in', 'tap', it => { if (!huLocal('radio', 8)) return; const L = pick(RADIO_L); say(L[0], L[1], { fx: 'radio' }).catch(() => {}); }),
+  hvGen: D_('Generator: check the gauges', 'tap', it => { const L = (HV.b && HV.b.power) || 0; toast(L ? 'Generator level ' + L + '. It burns a little fuel every hour; the crew has ' + ((NET.crew && NET.crew.res && NET.crew.res.fuel) | 0) + '.' : 'No generator yet. Build Power at the command table.'); sfx('click', it.x, it.y); }),
+  hvHarvest: D_(it => huLbl('Harvest the ' + (it.crop || 'field') + ' (+3 food)', 'harvest:' + it.i)(), 'hold', it => { if (!it.live) { toast('Nothing has come up yet. Build the farm at the command table.'); return; } huAsk('harvest', it.i, () => { toast('A basket of ' + (it.crop || 'vegetables') + '. Crew food +3.'); gainXP(3, 'CHORES'); }); }, { time: 3 }),
+  hvEggs: D_(huLbl('Collect eggs (+2 food)', 'eggs'), 'tap', it => huAsk('eggs', 0, () => { toast('Six eggs, one of them warm. Crew food +2.'); })),
+  hvMilk: D_(huLbl('Milk the cow (+3 food)', 'milk'), 'hold', it => huAsk('milk', 0, () => { toast('A full pail. The cow seems unimpressed. Crew food +3.'); }), { time: 3 }),
+  hvPigs: info('Feed the pigs', ['They take the scraps and your glove too.', 'The big one stares at you like it knows something.']),
+  hvOut: info('Use the outhouse', ['Occupied. By a spider the size of a hand.', 'You did not need to see that. Nobody did.', 'There is a newspaper from before. You read the weather.'], 'creak'),
+  hvSign: D_('Read the signpost', 'tap', () => { const L = SIGN_L(); toast(L.length ? L.slice(0, 3).join('  ·  ') : 'Somebody painted HOME on every arrow.'); if (L.length > 3) setTimeout(() => toast(L.slice(3).join('  ·  ')), 600); }),
+  hvTent: D_('Look inside the tent', 'tap', () => toast(pick(['Sleeping bags, a radio with no batteries, a photo of a dog.', 'Somebody is keeping a diary. You leave it alone.', 'Neatly folded. Someone here was in the army.'])))
+});
+function huCar() { let best = null, bd = 1e9; for (const c of cars) { if (c.gone || c === driving || !inPark(c.x, c.y)) continue; const d = Math.hypot(c.x - P.x, c.y - P.y); if (d < 420 && d < bd) { bd = d; best = c; } } return best; }
+// put an interaction on a footprint: the prompt shows from any side, within a couple of metres of its edge
+function hvIA(kind, x0, y0, x1, y1, o) { const it = oIA(HV.rec, (x0 + x1) / 2, (y0 + y1) / 2, kind, Object.assign({ r: 6, rect: { x0, y0, x1, y1 } }, o || {})); return it; }
+function havenIA(B) {
+  if (!HV.rec) return; const R = HVR, gx = HVGATE.x;
+  const map = { HP_messhall: 'hvMeal', HP_watertower: 'hvWater', HP_burnbarrel: 'hvFire', HP_woodpile: 'hvChop', HP_scrap: 'hvSort', HP_tires: 'hvSort', HP_pallets: 'hvStack', HK_rack: 'hvStack', HK_forklift: 'hvStack', HK_palletjack: 'hvStack',
+    HP_container_b: 'hvStores', HP_container_r: 'hvStores', HP_container_g: 'hvStores', HP_container_y: 'hvStores', HK_container40: 'hvStores', HK_boxes: 'hvMedkit', HP_shelves: 'hvMedkit', HP_drums: 'hvFuel', HK_barrel: 'hvFuel',
+    HP_picnic: 'hvSit', HP_leanto: 'hvSit', HP_outhouse: 'hvOut', HP_signpost: 'hvSign', HP_lookout: 'hvWatch' };
+  for (const d of HV.dressed || []) { const k = map[d.n]; if (!k) continue; const o = {};
+    if (k === 'hvWatch') Object.assign(o, { wx: (d.x0 + d.x1) / 2, wy: (d.y0 + d.y1) / 2, wh: 4.4 + 1.6 });
+    hvIA(k, d.x0, d.y0, d.x1, d.y1, o); }
+  // the camp fire in the plaza
+  if (HV.fire) { const p = HV.fire.position; hvIA('hvFire', p.x / S3 - 40, p.z / S3 - 40, p.x / S3 + 40, p.z / S3 + 40); }
+  // corner watchtowers
+  [[R.x0 + 40, R.y0 + 40], [R.x1 - 40, R.y0 + 40], [R.x0 + 40, R.y1 - 40], [R.x1 - 40, R.y1 - 40], [gx + 130 + 70, R.y0 + 60]].slice(0, Math.min(5, B.tower | 0)).forEach(([x, y]) => hvIA('hvWatch', x - 34, y - 34, x + 34, y + 34, { wx: x, wy: y, wh: 6 + (B.tower >= 4 ? 1.2 : 0) + 1.6 }));
+  // buildings
+  { const x = gx + 280, y = R.y0 + 140, L = B.workshop | 0, w = 240 + 40 * Math.min(2, Math.max(0, L - 1)); if (!L) { hvIA('hvBench', x + 70, y + 20, x + 170, y + 80); } else { hvIA('hvBench', x + w / 2 - 50, y + 60, x + w / 2 + 10, y + 110); hvIA('hvScrap', x + w / 2 + 30, y + 60, x + w / 2 + 80, y + 110); } }
+  { const x = gx - 520, y = R.y0 + 140, L = B.infirmary | 0; if (L >= 1) { if (L < 3) hvIA('hvPatch', x + 70, y + 40, x + 190, y + 120); else hvIA('hvPatch', x + 110, y + 70, x + 190, y + 130); } }
+  { const x = R.x0 + 650, y = R.y1 - 360, L = B.garage | 0, w = 260 + 60 * Math.min(2, L); if (L) { hvIA('hvGarage', x + 20, y + 140, x + 90, y + 190); hvIA('hvRepair', x + w - 110, y + 140, x + w - 20, y + 190); } else hvIA('hvRepair', HVPARK.x0 + 40, HVPARK.y0 + 20, HVPARK.x0 + 120, HVPARK.y0 + 80); }
+  { const x = gx - 250, y = 3420; hvIA('hvRadio', x - 30, y - 30, x + 30, y + 30); }
+  if ((B.power | 0) >= 1) { const gx0 = gx + 60, gy0 = R.y1 - 300; hvIA('hvGen', gx0 - 50, gy0 - 40, gx0 + 50, gy0 + 30); }
+  // farm: each field, the coop, the pig pen, the cows
+  { const F = B.farm | 0, fx0 = R.x1 - 640, fy0 = R.y0 + 120, fields = Math.max(1, Math.min(4, F + (F ? 1 : 0))), crops = ['corn', 'wheat', 'pumpkins', 'greens'];
+    for (let f = 0; f < fields; f++) { const x = fx0 + (f % 2) * 300, y = fy0 + Math.floor(f / 2) * 330; hvIA('hvHarvest', x, y, x + 260, y + 290, { i: f, crop: crops[f % 4], live: F > 0 }); }
+    const yb = R.y1 - 520; if (F >= 1) hvIA('hvEggs', fx0 + 20, yb + 20, fx0 + 120, yb + 90); if (F >= 2) hvIA('hvPigs', fx0 + 210, yb, fx0 + 410, yb + 180); if (F >= 3) hvIA('hvMilk', fx0 - 40, yb + 200, fx0 + 430, yb + 480); }
+  // housing: a nap in a cabin, a look in a tent
+  { const n = B.housing ? 2 + 2 * B.housing : 0; for (let i = 0; i < Math.max(2, n); i++) { const col = i % 2, row = Math.floor(i / 2), x = R.x0 + 110 + col * 330, y = R.y0 + 300 + row * 160; if (y + 120 > R.y1 - 60) break;
+      if (!B.housing) hvIA(i % 2 ? 'hvTent' : 'hvNap', x + 60, y + 25, x + 120, y + 75); else hvIA('hvNap', x + 90, y + 35, x + 150, y + 85); } }
+}
 const HVRES = { scrap: ['⚙', 'Scrap'], food: ['❦', 'Food'], fuel: ['⛽', 'Fuel'], meds: ['✚', 'Meds'], ammo: ['⁍', 'Ammo'] };
 function havenOpen() {
   if (!NET.on || !NET.crew) { toast('The command table needs your crew online.'); return; }

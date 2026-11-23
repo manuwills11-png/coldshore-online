@@ -118,6 +118,31 @@ Everything you see comes from the building levels saved on the server, so it cha
 
 **The car park (build 61).** The garage and its painted apron are the crew's car park. Get out of a vehicle inside it and the server keeps it there for the whole crew, between sessions (colour, fuel and damage included). Drive it out and the space frees up. There are 6 spaces plus 2 per garage level.
 
+**Everything in Haven does something (build 62).** Walk up to it and press E (or hold E for chores):
+
+| Where | What it does | Cost / reward | Wait |
+|---|---|---|---|
+| Mess hall | Hot meal: full health, then slow healing for 5 minutes | 3 crew food | 3 min |
+| Water tower | Drink | +15 health | 45 s |
+| Camp fire, burn barrels | Warm up | +8 health | 30 s |
+| Cabins, tents | Nap (when hurt) or look inside | Full health | 5 min |
+| Picnic tables, lean-tos | Sit and rest | Slow healing | — |
+| Container stores | Two magazines for the gun in your hands | 20 crew ammo | 2 min |
+| Supply boxes, shelving | A bandage | 2 crew meds | 2 min |
+| Fuel drums, barrels | A fuel can | 10 crew fuel | 2.5 min |
+| Infirmary | Full health and two bandages | 4 crew meds | 4 min |
+| Workshop | Workbench (gun upgrades); take 5 scrap | 10 crew scrap | 2 min |
+| Garage, car park | Vehicle upgrades; fix and refuel a parked vehicle | 8 scrap + 10 fuel | 20 s |
+| Woodpile (hold) | Split firewood | +2 crew scrap | 75 s |
+| Pallets, racking, forklift (hold) | Stack the yard | +2 crew scrap | 90 s |
+| Scrap pile, tyres (hold) | Sort it | +3 scrap for you | 90 s |
+| Crop fields (hold) | Harvest | +3 crew food each field | 2 min |
+| Coop / cows (hold) | Eggs / milk | +2 / +3 crew food | 2.5 / 3 min |
+| Lookouts and watchtowers | Climb up and keep watch; right mouse for binoculars | — | — |
+| Radio mast, generator, signpost, outhouse, pigs | Radio chatter, fuel status, distances to towns, flavour | — | — |
+
+Anything that spends or earns crew supplies is checked by the server, which also keeps each player's waits. The workshop and infirmary buildings are now fitted out as a workshop (benches, pegboard, racking) and a ward (beds, drips, cabinets, a desk).
+
 **Upgrading is done in person at the command table** in the plaza. It lifts the camera over Haven and flies it to whichever building you pick. Each building has a card showing its level pips, what it does now and after the upgrade, the cost (red where you are short), and any lock. Hold Space, or the button, to build. A scaffold goes up, dust rises, the new level grows out of the ground and a banner announces it to the whole crew.
 
 Supplies: **scrap, food, fuel, meds, ammo**. Missions pay them out. The farm makes food over time, housing makes scrap, and power burns fuel.

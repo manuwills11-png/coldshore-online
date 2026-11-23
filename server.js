@@ -263,7 +263,10 @@ const now = () => Date.now();
 const rid = n => crypto.randomBytes(n).toString('hex');
 const code6 = () => { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s; do { s = ''; for (let i = 0; i < 6; i++) s += A[crypto.randomInt(A.length)]; } while (DB.crews[s]); return s; };
 const clampN = (v, a, b) => Math.max(a, Math.min(b, v));
-const PARK = { x0: 5900, y0: 3650, x1: 6300, y1: 4100 };   // build 61: Haven's car park (the garage and its apron), game units
+const PARK = { x0: 5900, y0: 3650, x1: 6300, y1: 4100 };
+const HUSE = { meal: { cost: { food: 3 }, cd: 180 }, patch: { cost: { meds: 4 }, cd: 240, need: { infirmary: 1 } }, stores: { cost: { ammo: 20 }, cd: 120 }, medkit: { cost: { meds: 2 }, cd: 120 },
+  fuelcan: { cost: { fuel: 10 }, cd: 150 }, chop: { gain: { scrap: 2 }, cd: 75 }, sort: { cd: 90 }, stack: { gain: { scrap: 2 }, cd: 90 }, harvest: { gain: { food: 3 }, cd: 120, per: 1, need: { farm: 1 } },
+  eggs: { gain: { food: 2 }, cd: 150, need: { farm: 1 } }, milk: { gain: { food: 3 }, cd: 180, need: { farm: 3 } }, repair: { cost: { scrap: 8, fuel: 10 }, cd: 20 }, scrapout: { cost: { scrap: 10 }, cd: 120, need: { workshop: 1 } } };   // build 61: Haven's car park (the garage and its apron), game units
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 function newCrew(name) {
   return { code: code6(), name: String(name || 'Unnamed Crew').slice(0, 24), created: now(), members: {}, done: 0, fails: 0, storyDone: [], log: [],
@@ -721,6 +724,16 @@ function handle(p, m) {
         c.parkN = (c.parkN | 0) + 1; e = { id: 'pk' + c.parkN }; c.parked.push(e); }
       Object.assign(e, { kind, x: Math.round(x), y: Math.round(y), a: Math.round((+m.a || 0) * 1000) / 1000, col: Math.max(0, Math.min(0xffffff, +m.col | 0)), fuel: Math.round(clampN(+m.fuel || 50, 0, 100)), hp: Math.round(clampN(+m.hp || 100, 1, 100)), by: p.name });
       save(); crewUpdate(room); return; }
+    // build 62: things in Haven that spend or earn crew supplies. The server keeps the stores and everyone's cooldowns
+    case 'huse': { const c = DB.crews[room.code], k = String(m.k || ''), A = HUSE[k], id = m.id | 0, no = (why, cd) => send(p, { t: 'hused', id, ok: 0, why, cd });
+      if (!c || !A) return no('Nothing to do here.'); if (p.op) return no('Not while you are out on an operation.');
+      if (p.st && (p.st.x < 5150 || p.st.x > 7650 || p.st.y < 2860 || p.st.y > 4360)) return no('Only inside Haven.');
+      for (const b in A.need || {}) if ((c.b[b] | 0) < A.need[b]) return no('Needs ' + b + ' level ' + A.need[b] + '. Build it at the command table.');
+      room.hcd = room.hcd || new Map(); const key = p.name + '|' + k + (A.per ? ':' + (m.i | 0) : ''), t0 = room.hcd.get(key) || 0;
+      if (now() < t0) return no('Not yet.', Math.ceil((t0 - now()) / 1000));
+      for (const r in A.cost || {}) if ((c.res[r] | 0) < A.cost[r]) return no('The crew is short of ' + r + ' (' + (c.res[r] | 0) + ' of ' + A.cost[r] + ').');
+      for (const r in A.cost || {}) c.res[r] -= A.cost[r]; for (const r in A.gain || {}) c.res[r] = (c.res[r] | 0) + A.gain[r];
+      room.hcd.set(key, now() + A.cd * 1000); send(p, { t: 'hused', id, ok: 1, cd: A.cd }); if (A.cost || A.gain) { save(); crewUpdate(room); } return; }
     case 'unpark': { const c = DB.crews[room.code]; if (!c || !c.parked) return; const i = c.parked.findIndex(q => q.id === m.id); if (i < 0) return; c.parked.splice(i, 1); save(); crewUpdate(room); return; }
     case 'give': { const id = m.id | 0, no = why => send(p, { t: 'gave', id, ok: 0, why }); const q = room.players.get(m.to);
       if (!q || q === p) return no('They are not online.'); if ((q.op || null) !== (p.op || null)) return no('They are not with you.'); if (!p.st || !q.st || dist(p.st, q.st) > 160) return no('Stand closer to them.');
