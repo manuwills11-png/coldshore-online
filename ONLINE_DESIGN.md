@@ -95,6 +95,12 @@ There are no rules about who goes where. Every player picks for themselves.
 
 ## Netcode
 
+**Build 63: one shared world, no visible lag.**
+- Every client learns the server's clock from round trips (it trusts the fastest ones). Every position is stamped with the moment it was true, so each screen moves teammates and their cars forward to where they are now instead of drawing them in the past. State goes out 30 times a second while moving (10 when still), with velocity. Measured with two clients over a simulated 70 to 110 ms connection: a driving teammate shows up about 50 ms behind (mean 1 m off at 25 m/s while weaving) and one on foot about 35 ms (0.2 m).
+- A slow connection skips a zombie update instead of queueing it, so it can never delay player positions.
+- Every car has an id from where it was made, and the same spot always holds the same model and colour. A car somebody drives is the same car (model, colour, fuel, already hotwired) on everyone's screen; if a client doesn't have it, it makes it.
+- The county is built from fixed seeds per stage (and three.js object ids no longer draw from the seeded random stream), so trees, cars, houses and loot spots match between players. Time of day (a 24-minute day) and weather come from the server clock.
+
 - Teammates are drawn slightly in the past (about 100 to 350 ms, adapting to how jittery the connection is), between two real updates, so they move smoothly. They face the way they walk, play a reversed walk when backing up, and face their aim when shooting.
 - Every state message carries the sender's clock, so packets that arrive bunched together are still spaced out correctly.
 - The sim host streams only zombies that moved or changed, every 0.1 s near players and at least once a second for the rest (about a third of the old traffic). Puppets keep moving at their last speed between updates.

@@ -362,7 +362,7 @@ function startMission(room, starter, mid, tier, squadPids) {
   M.loadTimer = setTimeout(() => goMission(room, M), 120000);
   c.log.push({ t: now(), m: squad.map(q => q.name).join(', ') + ' headed out: ' + M.name + '.' }); crewUpdate(room);
 }
-function armoryOf(p) { const pr = DB.profiles[p.pid]; return pr && pr.armory ? Object.keys(pr.armory) : []; }
+function armoryOf(p) { const pr = DB.profiles[p.pid]; if (!pr || !pr.armory) return []; const out = []; for (const id of Object.keys(pr.armory)) { const n = Math.max(1, (pr.armc && pr.armc[id]) | 0); for (let i = 0; i < n; i++) out.push(id); } return out; }   // one entry per copy
 function publicMission(M) { const op = opById(M.op) || {}; return { id: M.id, name: M.name, type: M.type, town: M.town, tier: M.tier, threat: M.threat, night: M.night, brief: M.brief, stages: M.stages.map(s => s.txt), stage: M.stage, pts: M.pts, claims: M.claims, reward: M.reward, T: M.T, bonus: M.bonus.txt, tips: op.tips || [], grab: M.grab, spit: M.spit, bars: M.bars, ch: op.ch || 0, chn: CHN[op.ch] || '', num: OPS.indexOf(op) + 1 }; }
 function goMission(room, M) {
   if (!M || M.go || M.ended) return; M.go = true; clearTimeout(M.loadTimer);
@@ -609,6 +609,9 @@ const server = http.createServer((req, res) => {
 
 /* ---------------- websocket protocol ---------------- */
 const wss = new WebSocketServer({ server, maxPayload: 256 * 1024 });
+// tests only: CS_LAG=80 adds 80 ms (plus up to CS_JIT ms of jitter) to everything the server sends, like a real connection
+const LAG = Math.max(0, +process.env.CS_LAG || 0), JIT = Math.max(0, +process.env.CS_JIT || 0);
+if (LAG || JIT) wss.on('connection', ws => { const raw = ws.send.bind(ws); let last = 0; ws.send = d => { const at = Math.max(last, Date.now() + LAG + Math.random() * JIT); last = at; setTimeout(() => { if (ws.readyState === 1) raw(d); }, at - Date.now()); }; });
 wss.on('connection', ws => {
   const p = { ws, pid: null, name: 'Survivor', look: 'PM1', room: null, ready: false, inMission: false, loaded: false, st: null, rtt: 0, msgN: 0, msgT: now() };
   ws.on('message', raw => {
@@ -688,7 +691,7 @@ function handle(p, m) {
       const s = m.s; if (!s || !isFinite(s.x) || !isFinite(s.y)) return; if (s.down && !p.down && M) M.downs++; p.st = s; p.down = !!s.down;
       if (M) bop(room, M, { t: 'ps', pid: p.pid, s }, p); else bhaven(room, { t: 'ps', pid: p.pid, s }, p); return; }
     case 'shot': if (M) bop(room, M, { t: 'shot', pid: p.pid, a: m.a, b: m.b, w: m.w }, p); else bhaven(room, { t: 'shot', pid: p.pid, a: m.a, b: m.b, w: m.w }, p); return;
-    case 'zs': if (M && p.pid === M.host) bop(room, M, { t: 'zs', z: m.z, tm: m.tm }, p); return;
+    case 'zs': if (M && p.pid === M.host) { const o = JSON.stringify({ t: 'zs', z: m.z, tm: m.tm }); for (const q of squadOf(room, M)) if (q !== p && q.ws.readyState === 1 && q.ws.bufferedAmount < 96 * 1024) q.ws.send(o); } return;   // build 63: a slow link skips a zombie frame rather than delaying everyone's positions
     case 'hit': if (M) { const h = room.players.get(M.host); if (h && h !== p) send(h, { t: 'hit', pid: p.pid, h: m.h }); } return;
     case 'zdead': if (M && p.pid === M.host) { for (const [nid, by, el] of (m.list || [])) { if (by) M.kills[by] = (M.kills[by] || 0) + 1; if (el) M.elites++; } bop(room, M, { t: 'zdead', list: m.list }, p); } return;
     case 'pdmg': if (M && p.pid === M.host) { for (const [pid, n] of (m.list || [])) { const q = room.players.get(pid); if (q && q.op === M.id) send(q, { t: 'pdmg', n }); } } return;
@@ -714,6 +717,7 @@ function handle(p, m) {
     case 'bk': if (M && p.pid === M.host) { const i = m.i | 0; M.bars = M.bars.filter(b => b.i !== i); bop(room, M, { t: 'bk', i }, p); } return;
     case 'revive': if (M) { const q = room.players.get(m.pid); if (q && q.op === M.id && q.down && p.st && q.st && dist(p.st, q.st) < 80) { send(q, { t: 'revived', by: p.name }); bop(room, M, { t: 'chat', name: '', m: p.name + ' picked up ' + q.name + '.' }); } } return;
     case 'car': if (M) bop(room, M, { t: 'car', pid: p.pid, c: m.c }, p); else bhaven(room, { t: 'car', pid: p.pid, c: m.c }, p); return;
+    case 'clk': send(p, { t: 'clk', c: m.c, s: now() }); return;   // build 63: clock sync, so everyone can tell how old a position is
     case 'ping': { if (!isFinite(m.x) || !isFinite(m.y)) return; const o = { t: 'ping', pid: p.pid, name: p.name, x: Math.round(m.x), y: Math.round(m.y) }; if (M) bop(room, M, o, p); else bhaven(room, o, p); return; }
     case 'wpt': { if (m.clear || !isFinite(m.x) || !isFinite(m.y)) p.wpt = null; else p.wpt = { x: Math.round(m.x), y: Math.round(m.y), label: m.label ? String(m.label).slice(0, 40) : null }; crewUpdate(room); return; }
     // build 61: Haven's car park. A vehicle left inside the lot stays there for the whole crew, across sessions
@@ -741,9 +745,9 @@ function handle(p, m) {
       if (k.band > 0) pack.band = Math.min(20, k.band | 0); if (k.ammo > 0) { pack.ammo = Math.min(400, k.ammo | 0); pack.k = ['ammo', 'shells', 'rifleammo', 'huntammo', 'bolts'].includes(k.k) ? k.k : 'ammo'; } if (k.gun && typeof k.gun.id === 'string' && (ARMS.has(k.gun.id) || ['pistol', 'smg', 'shotgun', 'rifle', 'hunting', 'machete'].includes(k.gun.id))) pack.gun = { id: k.gun.id, mag: Math.max(0, Math.min(150, k.gun.mag | 0)), ammo: Math.max(0, Math.min(400, k.gun.ammo | 0)) };
       if (k.items && typeof k.items === 'object') { const it = {}; for (const key of ['scrap', 'cloth', 'fuel', 'pipe', 'molo', 'bottle']) { const n = k.items[key] | 0; if (n > 0) it[key] = Math.min(99, n); } if (Object.keys(it).length) pack.items = it; }
       if (!Object.keys(pack).length) return no('Nothing to give.');
-      if (pack.gun) { const pr = DB.profiles[p.pid]; if (pr && pr.armory && pr.armory[pack.gun.id]) { delete pr.armory[pack.gun.id]; save(); } }   // a gun you hand over leaves your armory too
+      if (pack.gun) { const pr = DB.profiles[p.pid], gid = pack.gun.id; if (pr && pr.armory && pr.armory[gid]) { pr.armc = pr.armc || {}; const n = (pr.armc[gid] || 1) - 1; if (n > 0) pr.armc[gid] = n; else { delete pr.armory[gid]; delete pr.armc[gid]; } save(); } }   // a gun you hand over leaves your armory too
       send(q, { t: 'given', name: p.name, pid: p.pid, pack }); send(p, { t: 'gave', id, ok: 1, name: q.name, pack }); return; }
-    case 'armory': { const id = String(m.id || ''); if (!ARMS.has(id)) return; const prof = DB.profiles[p.pid] || (DB.profiles[p.pid] = { name: p.name, xp: 0, kills: 0, missions: 0 }); prof.armory = prof.armory || {}; if (!prof.armory[id]) { prof.armory[id] = now(); save(); bcast(room, { t: 'chat', name: '', m: p.name + ' found a ' + String(m.name || id).slice(0, 30) + '.' }); } return; }
+    case 'armory': { const id = String(m.id || ''); if (!ARMS.has(id)) return; const prof = DB.profiles[p.pid] || (DB.profiles[p.pid] = { name: p.name, xp: 0, kills: 0, missions: 0 }); prof.armory = prof.armory || {}; prof.armc = prof.armc || {}; const had = !!prof.armory[id]; if (!had) prof.armory[id] = now(); prof.armc[id] = Math.min(20, (prof.armc[id] || (had ? 1 : 0)) + 1); save(); if (!had) bcast(room, { t: 'chat', name: '', m: p.name + ' found a ' + String(m.name || id).slice(0, 30) + '.' }); return; }   // build 63: copies are counted, so the same gun can turn up again and be handed on
   }
 }
 let last = now();
