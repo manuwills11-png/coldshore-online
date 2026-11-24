@@ -220,3 +220,23 @@ Each player earns XP and kills for their own profile. The crew earns supplies, c
 ## Asset credits
 
 Models are from BlendSwap and were reduced for the browser: M1 Humvee by panko10 (CC-BY), Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0), Ford Crown Victoria Police Interceptor 2005 (CC-BY 3.0; the Highway Patrol livery isn't the uploader's), Mercedes-AMG GLS (CC0), BMW 3 Series Coupe by mikepan (CC-BY-SA 3.0), Trees & Bushes pack by Painkiller5555, Dodge Challenger 1970 R/T (license not stated on the upload; check before release), Low Quality Weapon Pack (CC0). Haven's structures are built in Blender by tools/haven_blend.py. Build 59 adds props.json, also built in Blender (tools/props_blend.py, 34 props): in Haven a mess hall, gate lookouts, HESCO walls and a jersey chicane, a container yard, a water tower, woodpiles, lean-tos, outhouses, burn barrels, picnic tables, shelving, scrap and lamps; in every county town burnt-out cars, rubbish, rubble, abandoned luggage, carts, bus shelters, benches, news boxes, phone booths, a police roadblock, a billboard, and relief camps in Millbrook, Fairhaven and Seaview. Build 60 adds kit2.json from the BlendSwap "Warehouse" pack by argonius (CC0), cut down in tools/kit2_blend.py: a forklift, a pallet jack, loaded pallet racking, stacked boxes, barrels and a 40 ft container, used in Haven's store yard and in loading corners behind the bigger buildings in every town. The "Low Poly Street Props" pack was tried and left out because its textures don't survive the conversion.
+
+Build 64 adds seven more BlendSwap downloads:
+- **Lamborghini Aventador (For games)** by shadewar (CC-BY), converted by convert_vehicle.py into veh_lambo.json. It is a rare drivable car, with five in the county.
+- **kit3.json**, built by tools/kit3_blend.py from five CC0 packs:
+  - **military_outpost_kit_1.0** by Britdawgmasterfunk: HESCO, sandbags, concrete barriers, floodlight tower, generator, ammo tins, cases, cot and camo net. Each town's police roadblock becomes a quarantine checkpoint, and Haven gets floodlights, more HESCO, sandbags, a generator and stores.
+  - **Buildings_kit_1.0** by Britdawgmasterfunk: radiators, wood-burning stoves, wall-hung toilets and porch lanterns. Every house gets a lantern either side of its door, and the downtown roofs get AC condensers.
+  - **The_Breakers_yard_1.0** by Britdawgmasterfunk: stripped car shells, frames, tyres, seats, bumpers, engines and batteries. They go in town side yards and by Haven's workshop and garage.
+  - **Living/TV Room Study** by mbarros: leather couch, media unit, side table with lamp and potted plant.
+  - **Family House Collection** by tastyfish: boarded-up houses on empty lots in the towns.
+- **The Hartwell house**, from "Victorian Style House" by MrChimp2313 (CC0) and converted by tools/vic_blend.py. It is a full two-storey house on its own lot, with every room and a real staircase. Its walls are the model sliced at waist height, and the doorways are cleared from the door frames. Every room on both floors is reachable.
+
+Build 64 also fixes these audit findings:
+- **Interiors:** each house has its own paint, and public buildings get plaster, clean paint or painted block in place of house wallpaper, with roller blinds in their windows. Ceilings are lighter.
+- **Loot:** indoors it is a cardboard box, not a 1.15 m wooden crate.
+- **Rugs:** new woven designs replace the concentric squares.
+- **Stairs:** upstairs landings have a banister with balusters instead of a solid board.
+- **Attic windows:** they have a dark glass pane instead of a glowing white square.
+- **Town signs:** the welcome signs are a real board readable from both sides; the back used to read mirrored.
+- **Downtown towers:** they have eight facades, cornices, belt courses and a plant room on the roof.
+- **Doorways:** props are kept off every house's doorstep; a checkpoint HESCO used to block a front door.

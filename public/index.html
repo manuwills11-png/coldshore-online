@@ -173,7 +173,7 @@ html body #bagui .givebar{background:rgba(8,9,10,.97)}
 `; document.head.appendChild(st);
 })();
 function uiK(k) { return '<kbd class="u-k">' + k + '</kbd>'; }
-function uiBar(items) { return '<div class="u-bar">' + items.map(([k, t, m]) => '<span' + (m ? ' data-m="' + m + '"' : '') + '>' + k.map(uiK).join('') + ' ' + t + '</span>').join('') + '<span class="r">PROTOTYPE BUILD 63</span></div>'; }
+function uiBar(items) { return '<div class="u-bar">' + items.map(([k, t, m]) => '<span' + (m ? ' data-m="' + m + '"' : '') + '>' + k.map(uiK).join('') + ' ' + t + '</span>').join('') + '<span class="r">PROTOTYPE BUILD 64</span></div>'; }
 function uiMainItems() {
   const ready = assetsReady.kit && assetsReady.trees && assetsReady.car && assetsReady.furn && assetsReady.people && assetsReady.wtex;
   const SV = lvlLoad(), hasSv = SV.last !== null && SV.levels[SV.last];
@@ -213,9 +213,9 @@ function renderTitle() {
   } else if (titleMode === 'settings') {
     h += '<div class="u-scr"><div class="u-head"><div class="step">OPTIONS</div><h2>Settings</h2></div><div class="u-set">' + uiSettingsHTML() + '</div><div class="u-row2"><span class="u-btn" data-m="back">Back</span></div></div>' + uiBar([[['Esc'], 'Back', 'back']]);
   } else if (titleMode === 'credits') {
-    h += '<div class="u-scr"><div class="u-head"><div class="step">ABOUT</div><h2>Credits</h2></div><div class="u-cred"><p>ColdShore prototype. Characters, zombies, vehicles, buildings, trees and animation built procedurally in Blender. Engine: three.js. Voices: your browser&#39;s speech engine.</p><h4>Models</h4><p style="font-size:13px">From BlendSwap, reduced for the browser: M1 Humvee by panko10 (CC-BY); Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0); Ford Crown Victoria Police Interceptor 2005 (CC-BY 3.0); Mercedes-AMG GLS (CC0); BMW 3 Series Coupe by mikepan (CC-BY-SA 3.0); Trees &amp; Bushes pack by Painkiller5555; Dodge Challenger 1970 R/T; Low Quality Weapon Pack (CC0); Warehouse by argonius (CC0).</p></div><div class="u-row2"><span class="u-btn" data-m="back">Back</span></div></div>' + uiBar([[['Esc'], 'Back', 'back']]);
+    h += '<div class="u-scr"><div class="u-head"><div class="step">ABOUT</div><h2>Credits</h2></div><div class="u-cred"><p>ColdShore prototype. Characters, zombies, vehicles, buildings, trees and animation built procedurally in Blender. Engine: three.js. Voices: your browser&#39;s speech engine.</p><h4>Models</h4><p style="font-size:13px">From BlendSwap, reduced for the browser: M1 Humvee by panko10 (CC-BY); Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0); Ford Crown Victoria Police Interceptor 2005 (CC-BY 3.0); Mercedes-AMG GLS (CC0); BMW 3 Series Coupe by mikepan (CC-BY-SA 3.0); Trees &amp; Bushes pack by Painkiller5555; Dodge Challenger 1970 R/T; Low Quality Weapon Pack (CC0); Warehouse by argonius (CC0); Lamborghini Aventador (For games) by shadewar (CC-BY); Victorian Style House by MrChimp2313 (CC0); military_outpost_kit_1.0, Buildings_kit_1.0 and The_Breakers_yard_1.0 by Britdawgmasterfunk (CC0); Living/TV Room Study by mbarros (CC0); Family House Collection by tastyfish (CC0).</p></div><div class="u-row2"><span class="u-btn" data-m="back">Back</span></div></div>' + uiBar([[['Esc'], 'Back', 'back']]);
   }
-  if (titleMode === 'press') h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 63</div>';
+  if (titleMode === 'press') h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 64</div>';
   titleEl.innerHTML = h; titleEl.classList.add('on');
   titleEl.querySelectorAll('[data-m]').forEach(a => a.onclick = () => { const m = a.dataset.m; if (m === 'bgback') { titleMode = 'bg'; beep(520, .04, 'triangle', .03); renderTitle(); return; } titleAction(m); });
   titleEl.querySelectorAll('.u-menu a[data-i]').forEach(a => a.onmouseenter = () => { if (UI61.sel === +a.dataset.i) return; UI61.sel = +a.dataset.i; beep(880, .015, 'sine', .012); renderTitle(); });
@@ -591,7 +591,7 @@ function clothTex(base, torn) {
 /* ---------- Materials / geometry helpers ---------- */
 const LM = o => new THREE.MeshStandardMaterial(Object.assign({ roughness: 0.85, metalness: 0 }, o));
 const M = {
-  wall: LM({ map: T.siding }), paper: LM({ map: T.paper }), roof: LM({ map: T.roof }), ceil: LM({ color: 0x8a8478, emissive: 0x1c1a16 }),
+  wall: LM({ map: T.siding }), paper: LM({ map: T.paper }), roof: LM({ map: T.roof }), ceil: LM({ color: 0xd2cdc2, emissive: 0x3a3833 }),
   woodFloor: LM({ map: T.wood }), tileFloor: LM({ map: T.tile }), concFloor: LM({ map: T.conc }),
   trim: LM({ color: 0x2c2118 }), crate: LM({ map: T.crate, color: 0xb0b0b0 }), crateOpen: LM({ map: T.crate, color: 0x4a4a4a }),
   trunk: LM({ color: 0x4a3524 }), leaf: [LM({ color: 0x1d4a2a }), LM({ color: 0x255c34 }), LM({ color: 0x2c6a3a })],
@@ -772,6 +772,12 @@ function rollItem() {
   if (r < 97.5) return { k: 'bottle', n: 1 + (Math.random() < .3 ? 1 : 0) };
   return { k: Math.random() < .5 ? 'pipe' : 'molo', n: 1 };
 }
+// build 64: loot indoors is a taped cardboard box; opened, it is flattened and darker. Outdoors it stays a wooden crate.
+function cboxMat(open) { const k = open ? '_cbo' : '_cbc'; if (M[k]) return M[k];
+  const c = mkCanvas(128, 128), g = c.getContext('2d'); g.fillStyle = open ? '#6a5236' : '#a8865a'; g.fillRect(0, 0, 128, 128); for (let i = 0; i < 300; i++) { g.fillStyle = 'rgba(60,40,20,' + Math.random() * .12 + ')'; g.fillRect(Math.random() * 128, Math.random() * 128, 2, 2); }
+  g.fillStyle = open ? '#5a4a30' : '#c8b48a'; g.fillRect(56, 0, 16, 128); g.fillStyle = 'rgba(30,20,10,.5)'; g.font = 'bold 16px Arial'; g.fillText(open ? '' : 'FRAGILE', 8, 30);
+  return M[k] = LM({ map: mkTex(c, false), roughness: .95 }); }
+function crateShut(c) { if (!c.m) return; if (c.ins) { c.m.material = cboxMat(true); c.m.scale.y = .55; c.m.position.y = .25 * .55 + (c.fy !== undefined ? c.fy : (c.lv | 0) * 3.1); } else { c.m.material = M.crateOpen; c.m.scale.y = .7; c.m.position.y = .35; } }
 function mkCrate(x, y) {
   const items = []; const n = 2 + Math.floor(Math.random() * 2);
   for (let i = 0; i < n; i++) items.push(rollItem());
@@ -843,6 +849,27 @@ const FUR = {
   desk(g) { mb(g, 1.4, .06, .7, M.wood, 0, .75, 0); mb(g, .5, .7, .6, M.darkwood, -.45, .35, 0); mb(g, .06, .75, .6, M.darkwood, .65, .375, 0); mb(g, .5, .35, .4, M.black, .1, .95, -.1); mb(g, .45, .3, .04, M.tv, .1, 1.1, -.25); mb(g, .4, .02, .15, M.black, .1, .79, .15);
     mb(g, .42, .05, .42, M.wood, .1, .46, .75); mb(g, .42, .5, .05, M.wood, .1, .72, .96); }
 };
+// build 64: new pieces; each has a plain stand-in for when kit3.json has not loaded
+Object.assign(DIM, { sidetable: [.55, .55], radiator: [.8, .26], stove: [.66, .46], media: [1.96, .55] });
+Object.assign(FUR, {
+  sidetable(g) { g.add(msh(cyl(.27, .27, .03, 16), M.wood, 0, .47, 0)); for (let k = 0; k < 3; k++) { const a = k * 2.09; mb(g, .03, .46, .03, M.darkwood, Math.cos(a) * .17, .23, Math.sin(a) * .17); } g.add(msh(cyl(.06, .08, .22, 10), M.white, 0, .6, 0)); g.add(msh(cyl(.1, .15, .18, 10), M.shade, 0, .8, 0)); },
+  radiator(g) { for (let k = 0; k < 9; k++) mb(g, .06, .66, .18, M.white, -.32 + k * .08, .43, 0); mb(g, .76, .04, .2, M.white, 0, .1, 0); mb(g, .76, .04, .2, M.white, 0, .76, 0); },
+  stove(g) { mb(g, .6, .55, .42, M.black, 0, .42, 0); mb(g, .32, .26, .02, LM({ color: 0x3a1a0a, emissive: 0x2a0a00 }), 0, .45, .22); g.add(msh(cyl(.07, .07, 1.6, 10), M.black, 0, 1.5, -.05)); for (const sx of [-.25, .25]) mb(g, .05, .14, .05, M.black, sx, .07, 0); },
+  media(g) { mb(g, 1.9, .5, .45, M.darkwood, 0, .25, 0); mb(g, 1.5, .85, .05, M.tv, 0, 1.0, -.05); mb(g, 1.54, .89, .04, M.black, 0, 1.0, -.08); }
+});
+// pieces from kit3.json that stand in for the procedural ones in some houses (chosen from a hash, never from Math.random, so every client agrees)
+let K3G = null, K3FAIL = false;
+function k3Wrap(n, ry, sc, y0) { const src = typeof hpSrc === 'function' ? hpSrc(n) : null; if (!src) return null; const o = src.clone(true); o.rotation.y = ry || 0; o.scale.setScalar(sc || 1); o.position.y = y0 || 0; const g = new THREE.Group(); g.add(o); return g; }
+const K3FUR = {
+  couch: hi => hashI(hi * 5 + 1) % 2 ? null : k3Wrap('LR_couch', -Math.PI / 2, .93),
+  plant: hi => hashI(hi * 7 + 2) % 2 ? null : k3Wrap('LR_plant', 0, .85),
+  toilet: hi => hashI(hi * 3 + 5) % 2 ? null : k3Wrap('BK_toilet', 0, .55, .18),
+  sidetable: () => { const g = k3Wrap('LR_side', 0, 1); if (!g) return null; const l = k3Wrap('LR_tlamp', 0, 1, .47); if (l) g.add(l); return g; },
+  radiator: () => k3Wrap('BK_radiator', 0, 1, .08),
+  stove: () => { const g = k3Wrap('BK_logburner', 0, 1.25); if (g) g.add(msh(cyl(.07, .07, 1.7, 10), M.black, 0, 1.6, -.08)); return g; },
+  media: () => k3Wrap('LR_media', -Math.PI / 2, .8)
+};
+function k3Furn(name, hi) { if (!K3G || !K3FUR[name]) return null; const g = K3FUR[name](hi); if (g && FKN[name] && FURK) { Math.random(); Math.random(); } return g; }   // eat the two randoms furnClone would have used
 function ovl(a, b, m) { return a.x < b.x + b.w + m && a.x + a.w + m > b.x && a.y < b.y + b.h + m && a.y + a.h + m > b.y; }
 
 /* ---------- Blender furniture kit (furn.json) ---------- */
@@ -898,9 +925,17 @@ function detMats() {
     else if (v % 3 === 1) { g.fillStyle = `hsl(${hue},25%,85%)`; g.fillRect(0, 0, 128, 96); for (let i = 0; i < 7; i++) { g.fillStyle = `hsla(${(hue + i * 47) % 360},55%,${35 + Math.random() * 30}%,.85)`; g.fillRect(Math.random() * 100, Math.random() * 70, 10 + Math.random() * 50, 10 + Math.random() * 40); } }
     else { g.fillStyle = '#d8d0c0'; g.fillRect(0, 0, 128, 96); g.fillStyle = `hsl(${hue},20%,45%)`; g.fillRect(14, 10, 100, 76); g.fillStyle = '#e8c8a8'; for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(38 + i * 26, 46, 9, 0, 7); g.fill(); g.fillRect(30 + i * 26, 56, 16, 24); } }
     DETM.art.push(LM({ map: mkTex(c, false), roughness: .6 })); }
-  DETM.rug = []; for (let v = 0; v < 5; v++) { const c = mkCanvas(128, 128), g = c.getContext('2d'); const h = Math.floor(Math.random() * 360); g.fillStyle = `hsl(${h},35%,28%)`; g.fillRect(0, 0, 128, 128); g.strokeStyle = `hsl(${(h + 30) % 360},40%,55%)`; g.lineWidth = 6; g.strokeRect(10, 10, 108, 108); g.lineWidth = 2; g.strokeRect(22, 22, 84, 84);
-    for (let i = 0; i < 6; i++) { g.fillStyle = `hsla(${(h + 180) % 360},30%,50%,.6)`; g.beginPath(); g.arc(64, 64, 34 - i * 5, 0, 7); g.stroke(); } for (let i = 0; i < 900; i++) { g.fillStyle = 'rgba(0,0,0,.08)'; g.fillRect(Math.random() * 128, Math.random() * 128, 2, 2); }
-    DETM.rug.push(LM({ map: mkTex(c, false), roughness: .95, polygonOffset: true, polygonOffsetFactor: -1 })); }
+  // build 64: rugs that look woven: a muted field, a border, and one of five simple patterns (kilim bands, a lozenge, a check, plain, stripes)
+  DETM.rug = []; { const PAL = [['#6b2b24', '#c9a46a', '#2c3a52'], ['#2f3d4e', '#b9ad92', '#7a2e24'], ['#4f5a3a', '#d2c4a0', '#5b3a26'], ['#8a7a62', '#3a3028', '#e2d8c2'], ['#5a2f3e', '#c8b088', '#2a2a2e'], ['#3b4a46', '#cdbd98', '#8a4a2a']];
+  for (let v = 0; v < 6; v++) { const c = mkCanvas(256, 256), g = c.getContext('2d'), [f, a, b] = PAL[v]; g.fillStyle = f; g.fillRect(0, 0, 256, 256);
+    g.fillStyle = a; g.fillRect(14, 14, 228, 10); g.fillRect(14, 232, 228, 10); g.fillRect(14, 14, 10, 228); g.fillRect(232, 14, 10, 228); g.fillStyle = b; g.fillRect(30, 30, 196, 4); g.fillRect(30, 222, 196, 4); g.fillRect(30, 30, 4, 196); g.fillRect(222, 30, 4, 196);
+    if (v % 5 === 0) { for (let k = 0; k < 5; k++) { g.fillStyle = k % 2 ? a : b; for (let x = 44; x < 212; x += 24) { g.beginPath(); g.moveTo(x, 70 + k * 28); g.lineTo(x + 12, 58 + k * 28); g.lineTo(x + 24, 70 + k * 28); g.lineTo(x + 12, 82 + k * 28); g.fill(); } } }
+    else if (v % 5 === 1) { g.fillStyle = a; g.beginPath(); g.moveTo(128, 52); g.lineTo(196, 128); g.lineTo(128, 204); g.lineTo(60, 128); g.fill(); g.fillStyle = b; g.beginPath(); g.moveTo(128, 82); g.lineTo(168, 128); g.lineTo(128, 174); g.lineTo(88, 128); g.fill(); g.fillStyle = f; g.fillRect(122, 122, 12, 12); }
+    else if (v % 5 === 2) { for (let x = 40; x < 216; x += 22) for (let y = 40; y < 216; y += 22) if (((x + y) / 22) % 2 < 1) { g.fillStyle = a; g.globalAlpha = .55; g.fillRect(x, y, 22, 22); g.globalAlpha = 1; } }
+    else if (v % 5 === 4) { for (let y = 44; y < 214; y += 18) { g.fillStyle = (y / 18) % 2 < 1 ? a : b; g.globalAlpha = .5; g.fillRect(40, y, 176, 8); g.globalAlpha = 1; } }
+    for (let i = 0; i < 2600; i++) { g.fillStyle = 'rgba(' + (Math.random() < .5 ? '0,0,0' : '255,255,255') + ',' + (Math.random() * .06) + ')'; g.fillRect(Math.random() * 256, Math.random() * 256, 2, 1); }
+    for (let x = 0; x < 256; x += 4) { g.fillStyle = a; g.fillRect(x, 0, 2, 6); g.fillRect(x, 250, 2, 6); }
+    DETM.rug.push(LM({ map: mkTex(c, false), roughness: .97, polygonOffset: true, polygonOffsetFactor: -1 })); } }
   DETM.frame = LM({ color: 0x2a1c12, roughness: .5 }); DETM.gold = LM({ color: 0x8a6a2a, roughness: .35, metalness: .6 }); DETM.plate = LM({ color: 0xe8e4dc, roughness: .5 });
   DETM.bulb = new THREE.MeshBasicMaterial({ color: 0xfff0c8 }); DETM.shade = LM({ color: 0xd8d0c0, roughness: .8, side: THREE.DoubleSide }); DETM.cloth = [0x3a4a6a, 0x6a3a3a, 0x4a5a3a, 0x8a8070].map(c => LM({ color: c, roughness: .95 }));
   DETM.can = LM({ color: 0xb03030, roughness: .3, metalness: .7 }); DETM.bottle = LM({ color: 0x2a5a2a, roughness: .1, metalness: .2, transparent: true, opacity: .8 });
@@ -941,6 +976,7 @@ function furnishHouse(H, hi) {
   const kind = bKind(hi), RES = kind === 'house'; H.kind = kind;
   const theme = RES ? RES_THEMES[hashI(hi) % RES_THEMES.length] : kind; H.theme = theme;
   const blk = [], dd = RES ? 72 : kind === 'church' ? 44 : 64, dw = RES ? 40 : 48;
+  for (const c of crates) if (c.x > H.x && c.x < H.x + H.w && c.y > H.y && c.y < H.y + H.h) blk.push({ x: c.x - 22, y: c.y - 20, w: 44, h: 40 });   // build 64
   if (H.door === 'n') blk.push({ x: cx - dw, y: H.y, w: dw * 2, h: dd });
   if (H.door === 's') blk.push({ x: cx - dw, y: H.y + H.h - dd, w: dw * 2, h: dd });
   if (H.door === 'w') blk.push({ x: H.x, y: cy - dw, w: dd, h: dw * 2 });
@@ -975,7 +1011,9 @@ function furnishHouse(H, hi) {
     { const ly = H.door === 'n' ? lane.y0 - 54 : lane.y1; blk.push({ x: lane.x1 - 46, y: ly, w: 52, h: 54 }, { x: lane.x0 - 44, y: ly, w: 46, h: 54 }); } // landings kept clear top and bottom (build 33)
     // stair treads and a side stringer
     const n = 12, run = L / n; for (let k = 0; k < n; k++) { const h0 = (k + 1) * 3.1 / n; sg.add(box(run * S3 + .01, h0, 40 * S3, M.darkwood, (lane.x0 + run * (k + .5)) * S3, h0 / 2, (lane.y0 + 20) * S3)); }
-    sg.add(box((L - 26) * S3, 1.05, .06, M.darkwood, (lane.x0 + (L - 26) / 2) * S3, 3.1 + .5, (openY + 3) * S3)); sg.add(box(L * S3, 2.9, .06, M.paper, (lane.x0 + L / 2) * S3, 1.45, (openY + 3) * S3));
+    { const RL = (L - 26) * S3, rx = (lane.x0 + (L - 26) / 2) * S3, rz = (openY + 3) * S3;   // build 64: a banister with balusters instead of a solid board
+      sg.add(box(RL, .07, .09, M.darkwood, rx, 3.1 + 1.0, rz)); sg.add(box(RL, .05, .07, M.darkwood, rx, 3.1 + .06, rz)); for (let k = 0, nb = Math.max(2, Math.floor(RL / .13)); k <= nb; k++) sg.add(box(.035, .92, .035, M.trim, rx - RL / 2 + k * RL / nb, 3.1 + .52, rz));
+      sg.add(box(.09, 1.12, .09, M.darkwood, rx - RL / 2, 3.1 + .56, rz)); } sg.add(box(L * S3, 2.9, .06, M.paper, (lane.x0 + L / 2) * S3, 1.45, (openY + 3) * S3));
   }
 
   function place(name, cands, solid, y) {
@@ -986,7 +1024,7 @@ function furnishHouse(H, hi) {
       if (r.x < ix0 || r.y < iy0 || r.x + r.w > ix1 || r.y + r.h > iy1) continue;
       if (px && ((r.x < px - 5 && r.x + r.w > px - 5) || (r.x < px + 5 && r.x + r.w > px + 5))) continue;
       if (blk.some(b => ovl(r, b, solid === false ? -2 : 3))) continue;
-      let g = FKN[name] ? furnClone(FKN[name]) : null;
+      let g = k3Furn(name, hi) || (FKN[name] ? furnClone(FKN[name]) : null);
       if (!g) { if (!FUR[name]) return false; g = new THREE.Group(); FUR[name](g); }
       g.position.set(c.x * S3, y || 0, c.y * S3); g.rotation.y = rot; sg.add(g); (H.items || (H.items = [])).push(name); iaAdd(c.x, c.y, name, PLV ? { lv: PLV } : undefined);
       if (solid !== false) { walls.push({ x: r.x, y: r.y, w: r.w, h: r.h, low: true, lv: PLV }); blk.push(r); }
@@ -1013,7 +1051,7 @@ function furnishHouse(H, hi) {
   const HA = (H.door === 'n' || H.door === 's' ? R0.x1 - R0.x0 : R0.y1 - R0.y0) / 2, HD = (H.door === 'n' || H.door === 's' ? R0.y1 - R0.y0 : R0.x1 - R0.x0) / 2;
   const faceDoor = Math.atan2(dv[0], dv[1]);
   const lp = (a, b, rr) => ({ x: RCX + acr[0] * a + inw[0] * b, y: RCY + acr[1] * a + inw[1] * b, rot: faceDoor + (rr || 0) });
-  const rug = (R, w, d, rot) => { const rg = new THREE.Mesh(new THREE.PlaneGeometry(w || 2.2, d || 1.5), M.rug); rg.rotation.set(-Math.PI / 2, 0, rot !== undefined ? rot : (Math.random() < .5 ? 0 : Math.PI / 2)); rg.position.set(((R.x0 + R.x1) / 2) * S3 + rnd(-.3, .3), 0.04, ((R.y0 + R.y1) / 2) * S3 + rnd(-.3, .3)); sg.add(rg); };
+  const rug = (R, w, d, rot) => { const rg = new THREE.Mesh(new THREE.PlaneGeometry(w || 2.2, d || 1.5), DETM.rug && DETM.rug.length ? pick(DETM.rug) : M.rug); rg.rotation.set(-Math.PI / 2, 0, rot !== undefined ? rot : (Math.random() < .5 ? 0 : Math.PI / 2)); rg.position.set(((R.x0 + R.x1) / 2) * S3 + rnd(-.3, .3), 0.04, ((R.y0 + R.y1) / 2) * S3 + rnd(-.3, .3)); sg.add(rg); };
   const FLOOR = { kitchen: M.tileFloor, garage: M.concFloor, clinic: M.tileFloor, diner: M.tileFloor, gas: M.tileFloor, fire: M.concFloor, warehouse: M.concFloor, lab: M.tileFloor, annex: M.tileFloor, gate: M.concFloor, bunker: M.concFloor };
 
   // build 61: a real bathroom in a corner of the house (ground floor of a bungalow, upstairs in a two-storey): two inner walls, a doorway with a door left open, tiles, a tub, a toilet and a vanity
@@ -1065,18 +1103,18 @@ function furnishHouse(H, hi) {
     const P_ = (n, sides, fr, solid) => place(n, along(R, n, shuf(sides || SIDES), fr || FR), solid);
     const CORNER = [.05, .95, .1, .9];
     switch (type) {
-      case 'living': P_('couch'); P_('tv'); place('coffee', mid(R)); P_('armchair'); P_('shelf'); P_('lamp', 0, CORNER); P_('plant', 0, CORNER); rug(R); break;
-      case 'kitchen': P_('counter'); P_('fridge', 0, [.05, .95, .5, .2, .8]); place('dining', mid(R)); P_('washer', 0, CORNER); P_('trash', 0, [.05, .95, .5]); P_('plant', 0, CORNER); break;
-      case 'bedroom': P_('bed'); P_('nightstand', 0, [.05, .95, .1, .9, .2]); P_('wardrobe'); P_('dresser'); P_('lamp', 0, CORNER); rug(R); break;
-      case 'parlor': P_('fireplace'); P_('armchair'); P_('armchair'); P_('piano'); P_('shelf'); P_('shelf'); place('coffee', mid(R)); P_('lamp', 0, CORNER); P_('plant', 0, CORNER); rug(R, 2.8, 2); break;
-      case 'bedroomE': P_('bed'); P_('nightstand', 0, [.05, .95, .1, .9]); P_('dresser'); P_('wardrobe'); P_('armchair'); P_('plant', 0, CORNER); rug(R); break;
-      case 'kidsroom': P_('kidbed'); P_('kidbed'); P_('crib'); P_('dresser'); P_('shelf'); place('toys', mid(R), false); rug(R, 2, 2); break;
-      case 'den': P_('couch'); P_('tv'); place('coffee', mid(R)); P_('desk'); P_('boxes'); P_('boxes'); P_('trash', 0, CORNER); break;
+      case 'living': P_('couch'); P_('tv'); place('coffee', mid(R)); P_('armchair'); P_('shelf'); P_('sidetable', 0, CORNER); P_('lamp', 0, CORNER); P_('plant', 0, CORNER); P_('radiator'); rug(R); break;
+      case 'kitchen': P_('counter'); P_('fridge', 0, [.05, .95, .5, .2, .8]); place('dining', mid(R)); P_('washer', 0, CORNER); P_('trash', 0, [.05, .95, .5]); P_('plant', 0, CORNER); P_('radiator'); break;
+      case 'bedroom': P_('bed'); P_('nightstand', 0, [.05, .95, .1, .9, .2]); P_('wardrobe'); P_('dresser'); P_('lamp', 0, CORNER); P_('radiator'); rug(R); break;
+      case 'parlor': P_('fireplace'); P_('armchair'); P_('armchair'); P_('piano'); P_('shelf'); P_('shelf'); place('coffee', mid(R)); P_('sidetable', 0, CORNER); P_('lamp', 0, CORNER); P_('plant', 0, CORNER); rug(R, 2.8, 2); break;
+      case 'bedroomE': P_('bed'); P_('nightstand', 0, [.05, .95, .1, .9]); P_('dresser'); P_('wardrobe'); P_('armchair'); P_('plant', 0, CORNER); P_('radiator'); rug(R); break;
+      case 'kidsroom': P_('kidbed'); P_('kidbed'); P_('crib'); P_('dresser'); P_('shelf'); place('toys', mid(R), false); P_('radiator'); rug(R, 2, 2); break;
+      case 'den': P_('couch'); if (!P_('media')) P_('tv'); place('coffee', mid(R)); P_('sidetable', 0, CORNER); P_('desk'); P_('boxes'); P_('boxes'); P_('trash', 0, CORNER); break;
       case 'hoard': for (let i = 0; i < 6; i++) P_('boxes', 0, [.1, .3, .5, .7, .9, .2, .8]); P_('rack'); P_('rack'); P_('shelf'); P_('couch'); P_('trash', 0, CORNER); P_('trash', 0, CORNER); place('boxes', mid(R)); break;
-      case 'bunker': P_('rack'); P_('rack'); P_('bench'); P_('bed'); for (let i = 0; i < 3; i++) P_('boxes'); P_('barrel', 0, CORNER); P_('barrel', 0, CORNER); break;
-      case 'study': P_('desk'); P_('desk'); P_('shelf'); P_('shelf'); P_('shelf'); P_('armchair'); P_('lamp', 0, CORNER); P_('boxes'); rug(R); break;
+      case 'bunker': P_('rack'); P_('rack'); P_('bench'); P_('stove', 0, CORNER); P_('bed'); for (let i = 0; i < 3; i++) P_('boxes'); P_('barrel', 0, CORNER); P_('barrel', 0, CORNER); break;
+      case 'study': P_('desk'); P_('desk'); P_('shelf'); P_('shelf'); P_('shelf'); P_('armchair'); P_('lamp', 0, CORNER); P_('boxes'); P_('radiator'); rug(R); break;
       case 'studio': P_('bed'); P_('counter'); P_('fridge', 0, CORNER); P_('couch'); P_('tv'); place('coffee', mid(R)); P_('lamp', 0, CORNER); break;
-      case 'garage': P_('rack'); P_('rack'); P_('bench'); for (let i = 0; i < 3; i++) P_('barrel', 0, [.05, .95, .1, .9, .5]); P_('tires', 0, [.1, .9, .5]); P_('boxes'); P_('boxes'); break;
+      case 'garage': P_('rack'); P_('rack'); P_('bench'); P_('stove', 0, CORNER); for (let i = 0; i < 3; i++) P_('barrel', 0, [.05, .95, .1, .9, .5]); P_('tires', 0, [.1, .9, .5]); P_('boxes'); P_('boxes'); break;
       // ---- landmarks
       case 'church':
         place('altar', [lp(0, HD - 22, 0)]); for (const s of [-1, 1]) place('lectern', [lp(s * 62, HD - 24, 0)]); for (const s of [-1, 1]) place('plant', [lp(s * (HA - 14), HD - 14, 0)]);
@@ -1168,6 +1206,16 @@ const ROOFC = [0x5a5a5a, 0x6a4a3a, 0x48525e, 0x7a3e30, 0x4a5644, 0x3a3a3c];
 const LMWALL = { church: [0xf0ece2, 0x3c424c], clinic: [0xdcdcd4, 0], gas: [0xd8d4c8, 0], fire: ['brick', 0], diner: [0x6fa8a0, 0], warehouse: ['galv', 0], office: ['conc', 0],
   lab: ['conc', 0], annex: ['conc', 0], dorm: [0xb8b4a8, 0], gate: ['conc', 0] };
 const _hmc = {};
+/* build 64: interior finish per building. Houses pick one of seven paints from a hash (two of them keep the striped paper);
+   churches, clinics, labs, offices, the fire station and warehouses get plaster, clean paint or painted block instead of house wallpaper. */
+const PAINTC = { house: [0, 0, 0xd9d1bf, 0xb7c2ad, 0xc9ccce, 0xb3c3cf, 0xe0d3bd, 0xd5c0b2, 0xc4b59c], church: 0xe8dfcc, clinic: 0xe6ebe8, lab: 0xeef1ef, annex: 0xe2e5e0, dorm: 0xd6d1c3, fire: 0xb9bdb7,
+  warehouse: 0xaeb0aa, office: 0xd5d8d3, diner: 0xe3d5b4, gas: 0xe4dfd2, gate: 0xc8c8c0 };
+const _paintC = {};
+function paperFor(hi) {
+  const k = bKind(hi), v = PAINTC[k]; let c = v === undefined ? 0 : (Array.isArray(v) ? v[hashI(hi * 17 + 3) % v.length] : v);
+  if (!c) return M.paper; if (_paintC[c]) return _paintC[c];
+  const m = M.paper.clone(); m.map = null; m.color.setHex(c).convertSRGBToLinear(); m.bumpScale = k === 'fire' || k === 'warehouse' ? .4 : .06; m.roughness = .9; return _paintC[c] = m;
+}
 function hmat(hi) {
   const k = bKind(hi), r = hashI(hi + 7); let wk, rk;
   if (k === 'house') { const st = houseStyle(hi); wk = st.finish === 'brick' ? 'brick:' + BRICKC[r % BRICKC.length] : st.finish === 'stucco' ? 'stucco:' + STUCC[r % STUCC.length] : st.finish === 'shingle' ? 'shingle:' + SHINGC[r % SHINGC.length] : SIDINGC[r % SIDINGC.length]; rk = st.roofC; }
@@ -1540,18 +1588,23 @@ function buildRoads3D(free) {
 }
 function facadeTex(style) {
   const cv = mkCanvas(512, 1024), g = cv.getContext('2d'), em = mkCanvas(512, 1024), ge = em.getContext('2d');
-  const base = ['#8d8a82', '#3a4a58', '#7a4a38', '#2c2e30'][style], frame = ['#6a6862', '#5c6a74', '#d8cfc0', '#1a1b1c'][style];
+  // build 64: eight facades (concrete, blue glass, red brick, dark, limestone, green glass, white precast ribbons, brown brick with lintels)
+  const base = ['#8d8a82', '#3a4a58', '#7a4a38', '#2c2e30', '#b6a684', '#2c4440', '#d4d2ca', '#5a3a2c'][style], frame = ['#6a6862', '#5c6a74', '#d8cfc0', '#1a1b1c', '#3a3026', '#8a9a96', '#9aa0a2', '#d8cfc0'][style];
+  const curtain = style === 1 || style === 5, ribbon = style === 6, tall = style === 4;
   g.fillStyle = base; g.fillRect(0, 0, 512, 1024); ge.fillStyle = '#000'; ge.fillRect(0, 0, 512, 1024);
   for (let i = 0; i < 2500; i++) { g.fillStyle = `rgba(0,0,0,${Math.random() * .06})`; g.fillRect(Math.random() * 512, Math.random() * 1024, 4, 4); }
   for (let fy = 0; fy < 8; fy++) for (let bx = 0; bx < 4; bx++) {
-    const x = bx * 128, y = fy * 128, glass = style === 1;
-    const wx = x + (glass ? 6 : 22), wy = y + (glass ? 10 : 30), ww = glass ? 116 : 84, wh = glass ? 108 : 70;
+    const x = bx * 128, y = fy * 128, glass = curtain;
+    const wx = x + (glass ? 6 : ribbon ? 0 : tall ? 34 : 22), wy = y + (glass ? 10 : ribbon ? 40 : tall ? 16 : 30), ww = glass ? 116 : ribbon ? 128 : tall ? 60 : 84, wh = glass ? 108 : ribbon ? 52 : tall ? 96 : 70;
     const lit = Math.random() < .09, broke = Math.random() < .12;
     g.fillStyle = frame; g.fillRect(wx - 4, wy - 4, ww + 8, wh + 8);
     const gr = g.createLinearGradient(wx, wy, wx + ww, wy + wh); gr.addColorStop(0, glass ? '#2c3e4e' : '#1b2026'); gr.addColorStop(1, glass ? '#14202a' : '#0c0f12'); g.fillStyle = gr; g.fillRect(wx, wy, ww, wh);
     if (broke) { g.strokeStyle = 'rgba(200,210,220,.35)'; g.lineWidth = 1.5; for (let k = 0; k < 5; k++) { g.beginPath(); g.moveTo(wx + ww / 2, wy + wh / 2); g.lineTo(wx + Math.random() * ww, wy + Math.random() * wh); g.stroke(); } }
     if (lit) { const c = Math.random() < .5 ? '#ffcf86' : '#cfe6ff'; g.fillStyle = c; g.fillRect(wx + 2, wy + 2, ww - 4, wh - 4); ge.fillStyle = c; ge.fillRect(wx, wy, ww, wh); g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(wx + ww * .55, wy, ww * .1, wh); }
     else if (Math.random() < .4) { g.fillStyle = 'rgba(120,110,90,.25)'; g.fillRect(wx + 2, wy + 2, ww * .45, wh - 4); }
+    if (ribbon) { g.fillStyle = frame; for (let mx = 0; mx < 128; mx += 32) g.fillRect(x + mx, wy, 3, wh); }
+    if (style === 7) { g.fillStyle = '#c8bca4'; g.fillRect(wx - 8, wy - 14, ww + 16, 10); g.fillRect(wx - 6, wy + wh + 4, ww + 12, 6); }
+    if (style === 5) { g.fillStyle = 'rgba(200,220,215,.18)'; g.fillRect(wx, wy + wh * .5, ww, 2); }
     if (!glass) { g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(x, y + 120, 128, 8); }
   }
   const t = mkTex(cv), te = mkTex(em); return LM({ map: t, emissiveMap: te, emissive: new THREE.Color(0xffffff), emissiveIntensity: .9, roughness: style === 1 ? .25 : .85, metalness: style === 1 ? .4 : 0 });
@@ -1566,7 +1619,7 @@ function shopTex(k) {
 const SHOPN = ['PHARMACY', 'DELI', 'BANK', 'HARDWARE', 'BOOKS', 'LAUNDRY', 'PAWN', 'NOODLES', 'GUNS & TACKLE', 'COFFEE', 'ELECTRONICS', 'LIQUOR', 'DENTIST', 'BARBER', 'PIZZA', 'GROCERY'];
 function buildTowers3D() {
   if (!towers.length) return;
-  const FM = [0, 1, 2, 3].map(facadeTex), SM = [0, 1, 2, 3, 4, 5, 6, 7].map(shopTex), FL = 3.4;
+  const FM = [0, 1, 2, 3, 4, 5, 6, 7].map(facadeTex), SM = [0, 1, 2, 3, 4, 5, 6, 7].map(shopTex), FL = 3.4;
   { const p = new THREE.Mesh(new THREE.PlaneGeometry((CITY.x1 - CITY.x0 + 200) * S3, (CITY.y1 - CITY.y0 + 200) * S3), M.plaza); const uv = p.geometry.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 80, uv.getY(i) * 85); p.rotation.x = -Math.PI / 2; p.position.set((CITY.x0 + CITY.x1) / 2 * S3, .006, (CITY.y0 + CITY.y1) / 2 * S3); p.receiveShadow = true; world3.add(p); }
   for (const t of towers) {
     const cx = (t.x + t.w / 2) * S3, cz = (t.y + t.h / 2) * S3, w = t.w * S3, d = t.h * S3;
@@ -1587,6 +1640,9 @@ function buildTowers3D() {
     // roof: parapet, plant, water tank, antenna
     const top = Ht; sg.add(box(w, .9, .3, M.concrete, cx, top + .45, cz - d / 2 + .15), box(w, .9, .3, M.concrete, cx, top + .45, cz + d / 2 - .15), box(.3, .9, d, M.concrete, cx - w / 2 + .15, top + .45, cz), box(.3, .9, d, M.concrete, cx + w / 2 - .15, top + .45, cz));
     sg.add(box(w - .6, .1, d - .6, M.dark, cx, top + .05, cz));
+    { const cm = [M.concrete, M.concrete, M.stone || M.concrete, M.dark, M.stone || M.concrete, M.metal, M.concrete, M.stone || M.concrete][t.st] || M.concrete;   // build 64: cornice, belt courses every few floors, a plant room on the roof
+      sg.add(box(w + .7, .55, d + .7, cm, cx, top - .1, cz)); for (let f = 4; f < t.fl - 1; f += (t.st === 1 || t.st === 5 ? 6 : 3)) sg.add(box(w + .24, .22, d + .24, cm, cx, f * FL + 1.2, cz));
+      const pw = Math.min(w * .35, 9), pd = Math.min(d * .3, 7), px_ = cx + (t.x % 2 ? -1 : 1) * w * .18, pz_ = cz + (t.y % 2 ? -1 : 1) * d * .16; sg.add(box(pw, 3.2, pd, cm, px_, top + 1.6, pz_), box(pw + .3, .2, pd + .3, M.dark, px_, top + 3.25, pz_)); }
     if (t.halden) { const hm_ = labelMat('HALDEN', '#0c1418', '#d8f0ff', 1024, 256, 200); for (const [ox, oz, ry] of [[0, d / 2 + .2, 0], [0, -d / 2 - .2, Math.PI], [w / 2 + .2, 0, Math.PI / 2], [-w / 2 - .2, 0, -Math.PI / 2]]) { const pm = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(w, d) * .8, Math.min(w, d) * .2), hm_); pm.position.set(cx + ox, top - 4, cz + oz); pm.rotation.y = ry; sg.add(pm); } lampPos.push({ x: cx, z: cz + d / 2 + 6, y: top - 4, c: 0x9fd8ff, i: 2 }); }
     for (let k = 0; k < 2 + Math.floor(Math.random() * 3); k++) sg.add(box(rnd(1.5, 3), rnd(1, 1.8), rnd(1.5, 3), M.metal, cx + rnd(-w / 3, w / 3), top + .8, cz + rnd(-d / 3, d / 3)));
     if (Math.random() < .5) { const tx = cx + rnd(-w / 4, w / 4), tz = cz + rnd(-d / 4, d / 4); sg.add(msh(cyl(1.6, 1.6, 3, 12), M.wood, tx, top + 4.2, tz), msh(new THREE.ConeGeometry(1.75, 1, 12), M.dark, tx, top + 6.2, tz)); for (const [ox, oz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) sg.add(box(.15, 2.7, .15, M.metal, tx + ox * 1.1, top + 1.35, tz + oz * 1.1)); }
@@ -1784,7 +1840,8 @@ function styledHouse(h, i, hm, hw, hd, cxh, czh, UP) {
     hPoly([P(-A, B, yEb), P(A, B, yEb), P(A, bR, yR), P(-A, bR, yR)], roofM, 2);
     for (const e of [-1, 1]) hPoly([P(e * (wl / 2 - .02), -span / 2, Ye), P(e * (wl / 2 - .02), span / 2, Ye), P(e * (wl / 2 - .02), bR, yR)], wallM, ts);
     if (rise > 1.3) for (const e of [-1, 1]) { const a = e * (wl / 2 + .03), y = Ye + rise * .38, s_ = Math.min(.9, rise * .4), round = hashI(i * 41 + e) % 3 === 0;   // attic window in each gable
-      hBox(F, a + e * .035, bR, y, .03, s_ * (round ? 1 : .8), s_, HGL()); hBox(F, a + e * -.01, bR, y, .07, s_ * (round ? 1 : .8) + .16, s_ + .16, trimM); if (!round) hBox(F, a + e * .055, bR, y, .03, .05, s_, trimM); }
+      { const gw_ = s_ * (round ? 1 : .8); hBox(F, a, bR, y, .2, gw_, s_, HGL());   // build 64: dark glass right through the wall and a frame of four bars (a solid trim square used to cover the glass and glow white)
+        for (const sd of [-1, 1]) { hBox(F, a, bR + sd * (gw_ / 2 + .04), y, .24, .08, s_ + .16, trimM); hBox(F, a, bR, y + sd * (s_ / 2 + .04), .24, gw_ + .16, .08, trimM); } if (!round) hBox(F, a, bR, y, .22, .05, s_, trimM); } }
     // rake trim along the gable edges
     for (const e of [-1, 1]) for (const s of [-1, 1]) { const a0 = P(e * A, s * B, s < 0 ? yEf : yEb), a1 = P(e * A, bR, yR), m = box(.06, .2, a0.distanceTo(a1), trimM); m.position.copy(a0).add(a1).multiplyScalar(.5); m.lookAt(a1); sg.add(m); }
     if (roof === 'cross' && fOnB) {   // a front-facing gable over the door
@@ -1942,7 +1999,7 @@ function buildWorld3D() {
     const WH = H_.two ? 6.2 : 3; sg.add(hor ? tbox(L, WH, TH, hm.wall, cxw, WH / 2, czw, hm.ts) : tbox(TH, WH, L, hm.wall, cxw, WH / 2, czw, hm.ts));
     const dWall = (H_.door === 'n' && hor && sgm.y === H_.y) || (H_.door === 's' && hor && sgm.y > H_.y + H_.h - 20) || (H_.door === 'w' && !hor && sgm.x === H_.x) || (H_.door === 'e' && !hor && sgm.x > H_.x + H_.w - 20);
     const sign = hor ? (hcz > czw ? 1 : -1) : (hcx > cxw ? 1 : -1);
-    const ip = tplane(L, 3, M.paper, 2);
+    const ip = tplane(L, 3, paperFor(sgm.hi), 2);
     const off = TH / 2 + 0.01;
     if (hor) { ip.position.set(cxw, 1.5, czw + sign * off); ip.rotation.y = sign > 0 ? 0 : Math.PI; } else { ip.position.set(cxw + sign * off, 1.5, czw); ip.rotation.y = sign > 0 ? Math.PI / 2 : -Math.PI / 2; }
     sg.add(ip); if (H_.two) { const ip2 = ip.clone(); ip2.position.y = 4.6; sg.add(ip2); }
@@ -1957,7 +2014,7 @@ function buildWorld3D() {
           kitPut(H_.barricade ? 'Win_B' : kind, wx + ox * off, wz + oz * off, ox, oz); kitPut(H_.barricade ? 'Win_B' : 'Win_A', wx - ox * off, wz - oz * off, -ox, -oz);
           { const hs = hm.kind === 'house' ? houseStyle(sgm.hi) : null; if (hs && hs.shutters && !H_.barricade) { const sm = sMat('trim', hs.shutters), sw = shutterOff(); for (const lv of H_.two ? [0, 3.2] : [0]) for (const s2 of [-1, 1]) sg.add(box(hor ? .4 : .05, 1.3, hor ? .05 : .4, sm, wx + ox * (off + .05) + (hor ? s2 * sw : 0), 1.72 + lv, wz + oz * (off + .05) + (hor ? 0 : s2 * sw))); } }
           if (H_.two) { kitPut(kind, wx + ox * off, wz + oz * off, ox, oz, 3.2); kitPut('Win_A', wx - ox * off, wz - oz * off, -ox, -oz, 3.2); }
-          if (!H_.barricade) { const cg = new THREE.Group(); cg.add(box(.42, 1.35, .03, M.curtain, -.6, 1.75, 0), box(.42, 1.35, .03, M.curtain, .6, 1.75, 0)); cg.position.set(wx - ox * (off + .08), 0, wz - oz * (off + .08)); cg.rotation.y = hor ? 0 : Math.PI / 2; sg.add(cg); }
+          if (!H_.barricade) { const cg = new THREE.Group(); if (hm.kind === 'house') cg.add(box(.42, 1.35, .03, M.curtain, -.6, 1.75, 0), box(.42, 1.35, .03, M.curtain, .6, 1.75, 0)); else { const bl = M._blind || (M._blind = LM({ color: 0xcfcdc4, roughness: .8 })); cg.add(box(1.34, .62, .02, bl, 0, 2.08, 0), box(1.4, .07, .06, bl, 0, 2.42, 0)); }   /* build 64: roller blinds, not house curtains, in public buildings */ cg.position.set(wx - ox * (off + .08), 0, wz - oz * (off + .08)); cg.rotation.y = hor ? 0 : Math.PI / 2; sg.add(cg); }
         } else {
       // boarded window on the outside, curtained on the inside
       const wg = new THREE.Group(), out = -sign;
@@ -1974,11 +2031,11 @@ function buildWorld3D() {
   // interior partition walls
   for (const p of partitions) {
     p.two = !!(houses[p.hi] && houses[p.hi].two);
-    const seg = (ya, yb) => { const L = (yb - ya) * S3; if (L < .1) return; sg.add(tbox(.2, 3, L, M.paper, p.px * S3, 1.5, (ya + yb) / 2 * S3, 2)); sg.add(box(.26, .14, L, M.trim, p.px * S3, .07, (ya + yb) / 2 * S3)); };
+    const PP = paperFor(p.hi), seg = (ya, yb) => { const L = (yb - ya) * S3; if (L < .1) return; sg.add(tbox(.2, 3, L, PP, p.px * S3, 1.5, (ya + yb) / 2 * S3, 2)); sg.add(box(.26, .14, L, M.trim, p.px * S3, .07, (ya + yb) / 2 * S3)); };
     seg(p.y0, p.cy - p.g / 2); seg(p.cy + p.g / 2, p.y1);
-    sg.add(tbox(.2, .7, p.g * S3, M.paper, p.px * S3, 2.65, p.cy * S3, 2));
+    sg.add(tbox(.2, .7, p.g * S3, PP, p.px * S3, 2.65, p.cy * S3, 2));
     for (const s of [-1, 1]) sg.add(box(.1, 2.35, .26, M.trim, p.px * S3, 1.18, (p.cy + s * (p.g / 2 + .4)) * S3));
-    if (p.two) { const seg2 = (ya, yb) => yb - ya < 2 ? 0 : sg.add(tbox(.2, 3, (yb - ya) * S3, M.paper, p.px * S3, 4.6, (ya + yb) / 2 * S3, 2)); seg2(p.y0, p.cy - p.g / 2); seg2(p.cy + p.g / 2, p.y1); sg.add(tbox(.2, .7, p.g * S3, M.paper, p.px * S3, 5.75, p.cy * S3, 2)); }
+    if (p.two) { const seg2 = (ya, yb) => yb - ya < 2 ? 0 : sg.add(tbox(.2, 3, (yb - ya) * S3, PP, p.px * S3, 4.6, (ya + yb) / 2 * S3, 2)); seg2(p.y0, p.cy - p.g / 2); seg2(p.cy + p.g / 2, p.y1); sg.add(tbox(.2, .7, p.g * S3, PP, p.px * S3, 5.75, p.cy * S3, 2)); }
   }
   // doors: header, posts, ajar leaf, porch
   const doorG = new THREE.Group(); world3.add(doorG);
@@ -2100,7 +2157,8 @@ function buildWorld3D() {
   if (TREEG) placeTrees(); else { treeFBm = mergeStatic(treeFB); treeFBm.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); world3.add(treeFBm); }
 
   for (const c of crates) {
-    const m = new THREE.Mesh(GEO.crate || (GEO.crate = new THREE.BoxGeometry(1.15, 1.0, 1.15)), M.crate); m.position.set(c.x * S3, 0.5, c.y * S3); m.rotation.y = rnd(-0.3, 0.3); c.m = m; m.castShadow = true; m.receiveShadow = true; world3.add(m); cullList.push({ o: m, c: m.position, r: 1, s: 1 }); colC(c.x, c.y, 11, { lv: c.lv | 0 });   // build 63: a crate downstairs no longer blocks the top of the stairs
+    c.ins = c.ins || houses.some(h => c.x > h.x && c.x < h.x + h.w && c.y > h.y && c.y < h.y + h.h);   // build 64: indoors it is a cardboard box
+    const m = c.ins ? new THREE.Mesh(GEO.cbox || (GEO.cbox = new THREE.BoxGeometry(.74, .5, .58)), cboxMat(false)) : new THREE.Mesh(GEO.crate || (GEO.crate = new THREE.BoxGeometry(1.15, 1.0, 1.15)), M.crate); m.position.set(c.x * S3, c.ins ? .25 + (c.fy !== undefined ? c.fy : (c.lv | 0) * 3.1) : 0.5, c.y * S3); m.rotation.y = rnd(-0.3, 0.3); c.m = m; m.castShadow = true; m.receiveShadow = true; world3.add(m); cullList.push({ o: m, c: m.position, r: 1, s: 1 }); colC(c.x, c.y, 11, { lv: c.lv | 0 });   // build 63: a crate downstairs no longer blocks the top of the stairs
   }
   for (const c of cars) { c.m = buildCarMesh(c.col, false, c.kind); c.m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); world3.add(c.m); }
   const bm = new THREE.MeshBasicMaterial({ color: 0xf0d25a, transparent: true, opacity: 0.14, side: THREE.DoubleSide, fog: false, depthWrite: false }); NIGHTM.push([bm, .14, .9]);
@@ -2151,6 +2209,7 @@ function newGame0(key, attract) {
   bld('gate', 3985, 740, 130, 100, 'n'); bld('lab', 4200, 300, 420, 300, 's'); bld('annex', 4230, 760, 240, 180, 'n'); bld('dorm', 4540, 700, 170, 150, 'w');
   // Act II-B: Halden Tower security (downtown) and the Route 9 motel
   bld('hq', 28360, 19140, 320, 230, 's'); bld('dorm#motel', 12380, 13540, 340, 200, 's');
+  vicPick();   // build 64
   // procedural towns along the new roads
   // downtown towers in the city blocks
   towers = [];
@@ -2170,7 +2229,7 @@ function newGame0(key, attract) {
         const gx = 24, x0 = X0 + (X1 - X0) * i / nx + (i ? gx : 0), x1 = X0 + (X1 - X0) * (i + 1) / nx - (i < nx - 1 ? gx : 0);
         const y0 = Y0 + (Y1 - Y0) * j / ny + (j ? gx : 0), y1 = Y0 + (Y1 - Y0) * (j + 1) / ny - (j < ny - 1 ? gx : 0);
         const fl = Math.round(3 + core * core * rnd(8, 26) + rnd(0, 5));
-        towers.push({ x: Math.round(x0), y: Math.round(y0), w: Math.round(x1 - x0), h: Math.round(y1 - y0), fl, st: Math.floor(Math.random() * 4), shop: Math.floor(Math.random() * 8) });
+        towers.push({ x: Math.round(x0), y: Math.round(y0), w: Math.round(x1 - x0), h: Math.round(y1 - y0), fl, st: Math.floor(Math.random() * 8), shop: Math.floor(Math.random() * 8) });
       }
     }
     for (const t of towers) if (!t.plaza) walls.push({ x: t.x, y: t.y, w: t.w, h: t.h, tower: true, tw: t });
@@ -2267,7 +2326,7 @@ function newGame0(key, attract) {
   }
   Math.random = mulberry32(20261205);
   initStory();
-  if (typeof outReset === 'function') outReset(); pickKCLD(); colGrid = null; DOORLOG.length = 0; if (NET.on) havenClear(); extKinds(); if (typeof HV !== 'undefined') { HV.rec = null; HV.b = null; HV.mode = null; } doorClearPre(); window.__crateFix = crateFix(); buildWorld3D(); kcldMesh(); doorClear(); buildColGrid(); for (const c of cars) carFree(c); { const t0 = performance.now(), n = roomUnseal(); window.__unseal = [n, Math.round(performance.now() - t0)]; } setupInteriors(); interiorStream(330 * S3, 1390 * S3, true);
+  if (typeof outReset === 'function') outReset(); pickKCLD(); colGrid = null; DOORLOG.length = 0; if (NET.on) havenClear(); vicWalls(); extKinds(); if (typeof HV !== 'undefined') { HV.rec = null; HV.b = null; HV.mode = null; } doorClearPre(); window.__crateFix = crateFix(); buildWorld3D(); kcldMesh(); doorClear(); buildColGrid(); for (const c of cars) carFree(c); { const t0 = performance.now(), n = roomUnseal(); window.__unseal = [n, Math.round(performance.now() - t0)]; } setupInteriors(); interiorStream(330 * S3, 1390 * S3, true);
 
   P = { x: 330, y: 1390, r: 12, hp: 100, cd: 0, ang: 0, cap: 12, mag: 12, ammo: BG.ammo, rl: 0, moving: false, target: null, wp: { pistol: { has: true, mag: 12, ammo: BG.ammo }, shotgun: { has: false, mag: 0, ammo: 0 }, rifle: { has: false, mag: 0, ammo: 0 }, smg: { has: false, mag: 0, ammo: 0 }, hunting: { has: false, mag: 0, ammo: 0 }, machete: { has: false, mag: 0, ammo: 0 } } };
   if (VMS[curW]) VMS[curW].root.visible = false; curW = 'pistol'; VM = VMS.pistol || null; if (VM) VM.root.visible = true;
@@ -2383,7 +2442,7 @@ function addItem(it) {
   toast('+' + it.n + ' ' + names[it.k]);
 }
 function openCrate(c) {
-  c.open = true; c.m.material = M.crateOpen; c.m.scale.y = 0.7; c.m.position.y = 0.35;
+  c.open = true; crateShut(c);
   c.items.forEach(addItem);
   if (Math.random() < Math.min(0.6, S.forage * 0.07) + .15 * pk('scav')) { addItem(rollItem()); toast('Sharp eyes: extra find'); } gainXP(6, 'LOOT');
   if (typeof dropWeapon === 'function' && Math.random() < weaponDropChance('crate')) { const a = Math.atan2(P.y - c.y, P.x - c.x); dropWeapon(c.x + Math.cos(a) * 22, c.y + Math.sin(a) * 22, rollWeapon('crate'), c.lv || P.lv || 0); toast('Something heavier is in here.'); }
@@ -3374,9 +3433,51 @@ function canEscape(x, y, lv, rad) {
   while (q.length) { const k = q.pop(), i = k % N, j = (k / N) | 0; if (Math.hypot(i * C - rad, j * C - rad) > rad - 2 * C) return true; if (++n > 60000) return true;
     for (const [a, b] of [[i + 1, j], [i - 1, j], [i, j + 1], [i, j - 1]]) { if (a < 0 || b < 0 || a >= N || b >= N) continue; const k2 = b * N + a; if (seen[k2]) continue; seen[k2] = 1; if (spotFree(x0 + a * C, y0 + b * C, lv, 11)) q.push(k2); } }
   return false; }
+/* ======================= BUILD 64: THE HARTWELL HOUSE ======================= */
+// "Victorian Style House" by MrChimp2313 (BlendSwap, CC0), converted by tools/vic_blend.py: every room modelled, both floors walkable,
+// the stairs real, doorways open. It stands on its own lot facing a road south of it. Its walls are the model sliced at waist height.
+const VICCOL = { f1: 3.32, foot: [-184, -170, 184, 170], stairs: { x0: 37.7, x1: 83.2, y0: -20.7, y1: 64.2, dir: -1 }, boxes: [[-402,-90,366,6,0],[-396,-504,6,408,0],[-396,-510,12,6,0],[-396,-96,12,6,0],[-396,-516,642,6,0],[-348,-510,12,6,0],[-342,-96,6,6,0],[-294,-510,12,6,0],[-288,-96,6,6,0],[-240,-510,12,6,0],[-240,-96,12,6,0],[-186,-72,6,90,0],[-186,-510,12,6,0],[-186,-84,12,12,0],[-186,18,12,12,0],[-186,-96,48,6,0],[-186,30,126,6,0],[-144,-156,6,60,0],[-144,-162,258,6,0],[-138,84,6,18,0],[-138,78,12,6,0],[-138,102,12,6,0],[-138,108,18,6,0],[-132,-510,6,6,0],[-132,72,12,6,0],[-132,114,12,6,0],[-126,66,6,6,0],[-120,60,12,6,0],[-120,120,12,6,0],[-120,126,48,6,0],[-114,36,6,12,0],[-114,54,12,6,0],[-114,48,18,6,0],[-108,-96,66,6,0],[-102,42,12,6,0],[-96,36,36,6,0],[-84,120,18,6,0],[-78,-510,6,6,0],[-72,114,12,6,0],[-66,102,12,6,0],[-66,108,30,6,0],[-60,-54,6,6,0],[-60,96,12,6,0],[-54,24,12,6,0],[-54,90,18,6,0],[-54,18,60,6,0],[-48,12,24,6,0],[-42,-84,6,30,0],[-42,0,6,6,0],[-42,96,6,12,0],[-42,6,18,6,0],[-36,48,12,6,0],[-30,0,6,6,0],[-30,-510,12,6,0],[-30,42,12,6,0],[-30,24,36,6,0],[-24,36,12,6,0],[-24,30,24,6,0],[-18,12,12,6,0],[-12,-156,6,36,0],[-12,-84,6,6,0],[0,-78,6,6,0],[0,-72,12,6,0],[6,132,6,6,0],[6,-66,12,24,0],[6,-30,12,12,0],[6,78,12,12,0],[6,102,12,30,0],[6,138,12,12,0],[6,150,18,6,0],[6,156,24,6,0],[24,-168,6,6,0],[24,-510,12,6,0],[24,162,18,6,0],[24,-174,48,6,0],[30,-156,12,6,0],[30,168,60,6,0],[48,162,6,6,0],[54,-156,12,6,0],[66,-168,6,6,0],[66,162,12,6,0],[78,-510,6,6,0],[78,-12,6,6,0],[78,0,6,24,0],[78,30,6,30,0],[78,60,12,6,0],[78,-6,24,6,0],[78,24,24,6,0],[84,162,12,6,0],[90,-72,12,6,0],[90,66,12,6,0],[90,-78,18,6,0],[96,-12,6,6,0],[96,30,6,24,0],[96,54,12,6,0],[96,72,12,6,0],[96,-84,18,6,0],[96,150,36,6,0],[96,156,90,6,0],[102,-156,12,18,0],[102,-108,12,24,0],[102,84,12,6,0],[102,60,48,6,0],[102,78,48,6,0],[108,-138,6,30,0],[120,6,6,18,0],[120,66,6,12,0],[120,30,12,12,0],[120,0,24,6,0],[120,24,24,6,0],[132,-510,6,6,0],[138,6,6,18,0],[138,30,6,12,0],[138,66,6,12,0],[150,-90,12,6,0],[156,-84,12,6,0],[162,150,42,6,0],[168,18,6,12,0],[168,-78,12,6,0],[168,0,18,18,0],[168,30,18,24,0],[174,-162,12,12,0],[174,-72,12,18,0],[174,-24,12,24,0],[174,54,12,12,0],[174,96,12,54,0],[180,-54,6,30,0],[180,18,6,12,0],[180,90,6,6,0],[186,-510,6,6,0],[192,144,12,6,0],[216,144,12,6,0],[216,150,30,6,0],[234,-510,12,6,0],[234,-462,12,6,0],[234,-408,12,6,0],[234,-354,12,6,0],[234,-300,12,6,0],[234,-252,12,6,0],[234,-198,12,6,0],[234,-144,12,6,0],[234,-90,12,6,0],[234,-42,12,6,0],[234,12,12,6,0],[234,66,12,6,0],[234,120,12,6,0],[240,-504,6,42,0],[240,-456,6,48,0],[240,-402,6,48,0],[240,-348,6,48,0],[240,-294,6,42,0],[240,-246,6,48,0],[240,-192,6,48,0],[240,-138,6,48,0],[240,-84,6,42,0],[240,-36,6,48,0],[240,18,6,48,0],[240,72,6,48,0],[240,126,6,24,0],[-186,-12,6,6,1],[-186,-36,12,18,1],[-186,-18,18,6,1],[-186,-48,24,6,1],[-186,-42,30,6,1],[-180,-6,6,6,1],[-180,-54,12,6,1],[-174,-72,6,18,1],[-174,-12,12,6,1],[-174,0,12,24,1],[-174,-78,36,6,1],[-162,-72,6,18,1],[-162,-36,6,18,1],[-162,-54,12,6,1],[-144,-108,6,30,1],[-144,-156,12,30,1],[-144,-120,12,12,1],[-144,-126,30,6,1],[-144,-162,330,6,1],[-138,84,6,18,1],[-138,78,12,6,1],[-138,102,12,6,1],[-138,108,18,6,1],[-132,-72,6,24,1],[-132,72,12,6,1],[-132,114,12,6,1],[-126,66,6,6,1],[-126,120,18,6,1],[-120,60,12,6,1],[-120,126,48,6,1],[-114,24,6,36,1],[-114,-78,30,6,1],[-96,-72,12,6,1],[-90,-90,6,12,1],[-90,-66,6,6,1],[-84,120,18,6,1],[-78,6,72,6,1],[-72,114,12,6,1],[-66,102,24,6,1],[-66,108,84,6,1],[-30,102,12,6,1],[-24,-48,18,6,1],[-18,-36,12,6,1],[-18,0,12,6,1],[-18,-42,18,6,1],[-12,-156,6,66,1],[-6,-84,6,6,1],[-6,-78,12,6,1],[-6,102,24,6,1],[0,-72,12,6,1],[6,-66,12,12,1],[6,18,12,36,1],[6,66,12,36,1],[6,114,12,36,1],[6,150,18,6,1],[6,156,24,6,1],[6,54,42,12,1],[24,-168,6,6,1],[24,162,18,6,1],[24,-174,48,6,1],[30,168,60,6,1],[48,162,6,6,1],[66,-168,6,6,1],[66,162,12,6,1],[78,-66,18,12,1],[84,-72,18,6,1],[84,162,18,6,1],[90,-78,12,6,1],[96,156,12,6,1],[96,150,18,6,1],[102,90,6,24,1],[102,-156,12,48,1],[102,114,12,36,1],[138,-12,48,6,1],[144,-6,6,6,1],[144,30,18,6,1],[144,0,42,6,1],[144,36,42,6,1],[150,102,36,12,1],[168,-6,18,6,1],[174,-156,12,18,1],[174,-108,12,66,1],[174,-30,12,18,1],[174,42,12,18,1],[174,84,12,18,1],[180,-138,6,30,1],[180,-42,6,12,1],[180,6,6,30,1],[180,60,6,24,1]] };
+const VIC = { c: null, g: null, lights: [], loaded: null, lotX0: -480, lotX1: 260, lotY0: -500, lotY1: 230 };
+function vicPick() {   // the first lot (nearest the middle of the county) that fits the house and its yard with a road along the front; same on every client
+  VIC.c = null; NOBUILD.length = 2; if (VIC.g && VIC.g.parent) VIC.g.parent.remove(VIC.g); VIC.g = null; VIC.lights = []; VIC.seen = false; const L = VIC, cands = [];
+  for (const r of roads) { if (r.lot || r.w <= r.h || r.w < 900) continue;
+    for (let t = 520; t < r.w - 300; t += 120) { const cx = Math.round(r.x + t), cy = Math.round(r.y - L.lotY1 - 70), R = { x: cx + L.lotX0, y: cy + L.lotY0, w: L.lotX1 - L.lotX0, h: L.lotY1 - L.lotY0 };
+      if (R.x < 200 || R.y < 200 || R.x + R.w > W - 200 || R.y + R.h > H - 200) continue;
+      if (R.x + R.w > CITY.x0 - 300 && R.x < CITY.x1 + 300 && R.y + R.h > CITY.y0 - 300 && R.y < CITY.y1 + 300) continue;
+      if (NOBUILD.some(q => R.x < q.x + q.w && R.x + R.w > q.x && R.y < q.y + q.h && R.y + R.h > q.y)) continue;
+      if (typeof HVR !== 'undefined' && R.x < HVR.x1 + 400 && R.x + R.w > HVR.x0 - 400 && R.y < HVR.y1 + 400 && R.y + R.h > HVR.y0 - 600) continue;
+      if (houses.some(q => R.x < q.x + q.w + 60 && R.x + R.w + 60 > q.x && R.y < q.y + q.h + 60 && R.y + R.h + 60 > q.y)) continue;
+      if (roads.some(q => q !== r && R.x < q.x + q.w + 20 && R.x + R.w + 20 > q.x && R.y < q.y + q.h + 20 && R.y + R.h + 20 > q.y)) continue;
+      let wet = false; for (let dx = 0; dx <= R.w && !wet; dx += 80) for (let dy = 0; dy <= R.h && !wet; dy += 80) if (isWater(R.x + dx, R.y + dy)) wet = true; if (wet) continue;
+      cands.push({ cx, cy, R, d: Math.hypot(cx - W * .42, cy - H * .38) }); } }
+  cands.sort((a, b) => a.d - b.d); const c = cands[0]; if (!c) return; VIC.c = c; NOBUILD.push({ x: c.R.x, y: c.R.y, w: c.R.w, h: c.R.h, vic: true });
+}
+function vicWalls() {   // after the county is laid out: the walls, the stairs, a little loot
+  const c = VIC.c; if (!c) return;
+  for (const [x, y, w, h, lv] of VICCOL.boxes) walls.push({ x: c.cx + x, y: c.cy + y, w, h, lv, vic: true });
+  const S = VICCOL.stairs; STAIRS.push({ ax: 'y', x0: c.cx + S.x0 + 4, x1: c.cx + S.x1 - 4, y0: c.cy + S.y0, y1: c.cy + S.y1, dir: S.dir, top: 1, fh: VICCOL.f1, vic: true });
+  trees = trees.filter(t => !(t.x > c.R.x && t.x < c.R.x + c.R.w && t.y > c.R.y && t.y < c.R.y + c.R.h));
+  cars = cars.filter(k => !(k.x > c.R.x - 40 && k.x < c.R.x + c.R.w + 40 && k.y > c.R.y - 40 && k.y < c.R.y + c.R.h));
+  for (const [dx, dy, lv] of [[-120, 90, 0], [120, -120, 0], [-110, -110, 1], [110, 100, 1]]) { const k = mkCrate(c.cx + dx, c.cy + dy); k.ins = true; k.lv = lv; k.fy = lv ? VICCOL.f1 : 0; crates.push(k); }
+}
+function vicMesh() {   // the model, once both the county and vic.json are ready
+  const c = VIC.c; if (!c || !VIC.loaded || !world3 || VIC.g) return;
+  const src = VIC.loaded.scene.getObjectByName('VIC_house') || VIC.loaded.scene, g = new THREE.Group(); g.add(src.clone(true)); g.position.set(c.cx * S3, .09, c.cy * S3);   // a hair above the ground so no floor dips under the grass
+  g.traverse(o => { if (!o.isMesh) return; o.castShadow = true; o.receiveShadow = true; const m = o.material; if (/VH_glass/.test(m.name)) { m.transparent = true; m.opacity = .35; m.depthWrite = false; m.side = THREE.DoubleSide; if (VMENV) { m.envMap = VMENV; m.envMapIntensity = 1; } } });
+  { const F = VICCOL.foot, sl = new THREE.Mesh(new THREE.PlaneGeometry((F[2] - F[0]) * S3, (F[3] - F[1]) * S3), LM({ color: 0x7a7872, roughness: .95 })); sl.rotation.x = -Math.PI / 2; sl.position.set((F[0] + F[2]) / 2 * S3, -.07, (F[1] + F[3]) / 2 * S3); sl.receiveShadow = true; g.add(sl); }   // a concrete slab under it all (the garage floor in the model is far below)
+  const deck = new THREE.Mesh(new THREE.PlaneGeometry(9.2, 4.2), LM({ color: 0x6e5038, roughness: .85 })); deck.rotation.x = -Math.PI / 2; deck.position.set(-3.7, .02, 7.6); deck.receiveShadow = true; g.add(deck);   // the porch boards (the model's deck sits below the ground)
+  for (const [x, y, z] of [[-3, 2.1, 1], [3, 2.1, -3], [-3, 5.3, 1], [2, 5.3, -2]]) { const L = new THREE.PointLight(0xffd8a0, 0, 11, 2); L.position.set(x, y, z); g.add(L); VIC.lights.push(L); }
+  world3.add(g); VIC.g = g; cullList.push({ o: g, c: new THREE.Vector3(c.cx * S3, 6, c.cy * S3), r: 30 });
+}
+function vicTick() { if (!VIC.g || !VIC.c) { if (VIC.c && VIC.loaded && world3 && !VIC.g) vicMesh(); return; } const inside = P.x > VIC.c.cx + VICCOL.foot[0] && P.x < VIC.c.cx + VICCOL.foot[2] && P.y > VIC.c.cy + VICCOL.foot[1] && P.y < VIC.c.cy + VICCOL.foot[3];
+  const near = Math.hypot(P.x - VIC.c.cx, P.y - VIC.c.cy) < 700, dark = typeof TOD === 'undefined' || TOD.h < 7 || TOD.h > 18.5; for (const L of VIC.lights) L.intensity = near && (inside || dark) ? .9 : 0;
+  P.r = inside ? 9 : 12;   // the house's doors are real 0.86 m doors: squeeze through them
+  if (inside && !VIC.seen) { VIC.seen = true; toast('The Hartwell house.'); } }
+loadGlbJson('vic.json').then(g => { VIC.loaded = g; }).catch(e => console.warn('vic', e));
 function lvValid(e) {   // an upper floor only exists inside a two-storey house, an open tower or an interior
   const lv = e.lv | 0; if (lv <= 0 && !(e.lvf > .01)) return true; if (INT.cur || e.onStair) return true;
   if (TF.t && e.x > TF.t.x - 4 && e.x < TF.t.x + TF.t.w + 4 && e.y > TF.t.y - 4 && e.y < TF.t.y + TF.t.h + 4) return true;
+  if (lv <= 1 && VIC.c && e.x > VIC.c.cx + VICCOL.foot[0] - 2 && e.x < VIC.c.cx + VICCOL.foot[2] + 2 && e.y > VIC.c.cy + VICCOL.foot[1] - 2 && e.y < VIC.c.cy + VICCOL.foot[3] + 2) return true;
   return lv <= 1 && houses.some(h => h.two && e.x > h.x - 2 && e.x < h.x + h.w + 2 && e.y > h.y - 2 && e.y < h.y + h.h + 2); }
 function lvFix(e) { if (lvValid(e)) return false; e.lv = 0; e.lvf = 0; e.fh = 3.1; e.onStair = null; return true; }
 function unstick(auto) {
@@ -4543,7 +4644,7 @@ function setQuality(n, auto) {
   if (auto && toasts) toast('Framerate low: graphics set to ' + ['LOW', 'MEDIUM', 'HIGH'][quality]);
 }
 function renderFrame(dt) {
-  if (!TPROPS.done && HPG && (HKG || HKFAIL) && state === 'play') { try { townDress(); } catch (e) { console.warn('town props', e); TPROPS.done = true; } } townPropsTick();
+  if (!TPROPS.done && HPG && (HKG || HKFAIL) && (K3G || K3FAIL) && state === 'play') { try { townDress(); } catch (e) { console.warn('town props', e); TPROPS.done = true; } } townPropsTick(); vicTick();
   if (quality >= 1 && composer) {
     const u = finalPass.uniforms; u.time.value = elapsed; u.hurt.value = Math.min(1, flash * 3); u.low.value = (P && P.hp < 35) ? 1 : 0; u.res.value.set(VW, VH);
     composer.render(dt);
@@ -5141,7 +5242,9 @@ function townSigns() {
     const r = roads.filter(q => !q.lot).sort((a, b) => Math.hypot(a.x + a.w / 2 - T_.x, a.y + a.h / 2 - T_.y) - Math.hypot(b.x + b.w / 2 - T_.x, b.y + b.h / 2 - T_.y))[0]; if (!r) continue;
     const hor = r.w > r.h, x = hor ? T_.x - T_.r * .8 : r.x + r.w + 30, y = hor ? r.y + r.h + 30 : T_.y - T_.r * .8;
     const sm = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 1.4), labelMat('WELCOME TO\n' + T_.n + '\nPOP. 0', '#2a4a34', '#e8e4d0', 512, 224, 46));
-    sm.position.set(x * S3, 2.3, y * S3); sm.rotation.y = hor ? 0 : Math.PI / 2; sg.add(sm);
+    // build 64: a real board with a face on each side (the label material is double-sided, so the back used to read mirrored)
+    sm.material = sm.material.clone(); sm.material.side = THREE.FrontSide; const sb = new THREE.Group(); sb.position.set(x * S3, 2.3, y * S3); sb.rotation.y = hor ? 0 : Math.PI / 2;
+    sm.position.set(0, 0, .045); sb.add(sm); const back = sm.clone(); back.rotation.y = Math.PI; back.position.z = -.045; sb.add(back); sb.add(box(3.34, 1.54, .08, M.darkwood, 0, 0, 0)); sg.add(sb);
     for (const s_ of [-1, 1]) sg.add(box(.1, 2.4, .1, M.wood, x * S3 + (hor ? s_ * 1.4 : 0), 1.2, y * S3 + (hor ? 0 : s_ * 1.4)));
   }
 }
@@ -5727,7 +5830,7 @@ function npcScav(n, dt, dp) {
     n.a = Math.atan2(t.y - n.y, t.x - n.x); n.scavT = (n.scavT || 0) + dt; if (Math.random() < dt * 4) sfx('rummage', t.x, t.y);
     if (n.scavT > 1.6) {
       let got = 0;
-      if (t.items) { for (let i = t.items.length - 1; i >= 0; i--) if (AMMOK.has(t.items[i].k)) { got += t.items[i].n; t.items.splice(i, 1); } if (!t.items.length) { t.open = true; if (t.m) { t.m.material = M.crateOpen; t.m.scale.y = .7; t.m.position.y = .35; } } }
+      if (t.items) { for (let i = t.items.length - 1; i >= 0; i--) if (AMMOK.has(t.items[i].k)) { got += t.items[i].n; t.items.splice(i, 1); } if (!t.items.length) { t.open = true; if (t.m) crateShut(t); } }
       else if (t.def && t.def.table) { const c = iaContents(t, t.def.table); for (let i = c.length - 1; i >= 0; i--) if (c[i].item && AMMOK.has(c[i].item.k)) { got += c[i].item.n; c.splice(i, 1); } if (got) t.npcTook = n.ch; if (!c.length) t.looted = true; }
       t.npcChecked = true; got = Math.min(got, n.ammoMax - n.ammo); n.ammo += got; n.scav = null; n.scavT = 0;
       bark(n.ch, pick(got ? NFOUND : NEMPTY), true); if (got) toast(CAST[n.ch].name + ' found ' + got + ' rounds.');
@@ -7382,7 +7485,7 @@ function chunkBuild(cx, cy) {
   if (I.fields) for (const F of I.fields) { const m = oPlane(g, F, OM.crop[(F.x / 1900 | 0) % 3], .015); for (let x = F.x; x <= F.x + F.w; x += 190) oWall(rec, g, x, F.y - 6, 4, 6, OM.fence, .9, true); oWall(rec, g, F.x, F.y - 6, F.w, 4, OM.fence, .9, true); oWall(rec, g, F.x, F.y + F.h, F.w, 4, OM.fence, .9, true); }
   if (I.tents) { for (const [x, y] of I.tents) { const t = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 5, 3, 1, true), OM.tent); t.rotation.z = Math.PI / 2; t.position.set(x * S3, 1.6, y * S3); t.castShadow = true; g.add(t); intColAdd({ x: x - 50, y: y - 40, w: 100, h: 80 }, rec); }
     const c0 = I.x0 + 2500; for (let i = 0; i < 14; i++) oWall(rec, g, c0 + 200 + i * 90, I.y0 + 2500 - 1200, 70, 26, OM.sand, .9, true); }
-  if (I.crates) for (const [x, y] of I.crates) { const c = mkCrate(x, y); const m = new THREE.Mesh(GEO.crate || (GEO.crate = new THREE.BoxGeometry(1.15, 1.0, 1.15)), M.crate); m.position.set(x * S3, .5, y * S3); c.m = m; m.castShadow = true; world3.add(m); crates.push(c); rec.crates.push(c); }
+  if (I.crates) for (const [x, y] of I.crates) { const c = mkCrate(x, y); c.ins = true; const m = new THREE.Mesh(GEO.cbox || (GEO.cbox = new THREE.BoxGeometry(.74, .5, .58)), cboxMat(false)); m.position.set(x * S3, .25, y * S3); c.m = m; m.castShadow = true; world3.add(m); crates.push(c); rec.crates.push(c); }
   if (I.type === 'fort' && typeof fortBuild === 'function') fortBuild(rec, g);
   if (I.site && typeof siteBuild === 'function') siteBuild(rec, g, I);
   else if (I.type !== 'fort') roadblocks(rec, g, cx, cy);
@@ -10531,16 +10634,17 @@ function demolish(x, y, gas) {   // the set piece: a fireball, a shockwave, and 
 // Vehicles and guns converted from .blend files, decimated for the browser:
 //   M1 Humvee by panko10 (CC-BY), Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0), Dodge Challenger 1970 R/T, Low Quality Weapon Pack (CC0).
 // Each loads once in the background; until a model is ready the game falls back to its own stand-in.
-const EXTG = {}, EXTV = { Car_humvee: 'veh_humvee.json', Car_s10: 'veh_s10.json', Car_challenger: 'veh_challenger.json', Car_police: 'veh_police.json', Car_gls: 'veh_gls.json', Car_bmw: 'veh_bmw.json' };
-const EXTFALL = { Car_humvee: 'Car_suv', Car_s10: 'Car_pickup', Car_challenger: 'Car', Car_police: 'Car', Car_gls: 'Car_suv', Car_bmw: 'Car' };
-const EXTPAINT = { Car_humvee: /^Grey/, Car_s10: /paint/i, Car_challenger: null, Car_police: null, Car_gls: /^BodyPaint$/, Car_bmw: /^BodyPaint$/ };
+const EXTG = {}, EXTV = { Car_humvee: 'veh_humvee.json', Car_s10: 'veh_s10.json', Car_challenger: 'veh_challenger.json', Car_police: 'veh_police.json', Car_gls: 'veh_gls.json', Car_bmw: 'veh_bmw.json', Car_lambo: 'veh_lambo.json' };
+const EXTFALL = { Car_humvee: 'Car_suv', Car_s10: 'Car_pickup', Car_challenger: 'Car', Car_police: 'Car', Car_gls: 'Car_suv', Car_bmw: 'Car', Car_lambo: 'Car' };
+const EXTPAINT = { Car_humvee: /^Grey/, Car_s10: /paint/i, Car_challenger: null, Car_police: null, Car_gls: /^BodyPaint$/, Car_bmw: /^BodyPaint$/, Car_lambo: /^X_paint$/ };
 const EXTLOOK = {   // build 52: Crown Victoria police, Mercedes GLS, BMW 3 coupe
   Car_police: (m, n) => { const set = (c, r, mt, e) => { m.color.set(c).convertSRGBToLinear(); m.roughness = r; m.metalness = mt; if (e && m.emissive) { m.emissive.set(c).convertSRGBToLinear(); m.emissiveIntensity = e; } };
     if (/Car Paint \(Dark/.test(n)) set(0x0e1013, .35, .55); else if (/Car Paint \(White\)|Police Car Paint/.test(n)) set(0xeeeeea, .35, .4); else if (/Chrome|Mirror/.test(n)) set(0xb9bec3, .25, .9);
     else if (/^Tire/.test(n)) set(0x141414, .92, 0); else if (/Plastic|^Bar$|Bottom|Interior|Rim \(Plastic\)|Material\.0/.test(n)) set(0x1b1d1f, .7, .1); else if (/PL Red/.test(n)) { set(0xff2020, .4, 0, .4); m.name = 'C_red'; } else if (/^Red|Red Light/.test(n)) set(0xd01818, .4, 0, .6);
     else if (/PL Blue/.test(n)) { set(0x2050ff, .4, 0, .4); m.name = 'C_blue'; } else if (/^Blue/.test(n)) set(0x1a4ad8, .4, 0, .6); else if (/Orange|Turn Signal/.test(n)) set(0xe08a1a, .4, 0, .3); else if (/Headlight|Reverse|Clear/.test(n)) set(0xeef2f6, .15, .3, .2); else if (/Ford/.test(n)) set(0x1a3a7a, .4, .5); },
   Car_gls: (m, n) => { if (/Mat.riau|wire/.test(n)) { m.color.set(/wire/.test(n) ? 0xcfd2d4 : 0x1c1d1f).convertSRGBToLinear(); m.roughness = .6; m.metalness = .3; } },
-  Car_bmw: (m, n) => {}
+  Car_bmw: (m, n) => {},
+  Car_lambo: (m, n) => { if (/^Light$/.test(n)) m.name = 'HeadLight'; else if (/Red_Paint/.test(n)) m.name = 'tail'; else if (/Rubber/.test(n)) { m.color.set(0x161617).convertSRGBToLinear(); m.roughness = .9; m.metalness = 0; } else if (/MattePlastic|CarbonFibre|Grill/.test(n)) { m.color.set(0x161718).convertSRGBToLinear(); m.roughness = .55; m.metalness = .2; } }   // build 64: Lamborghini Aventador (For games) by shadewar, CC-BY
 };
 for (const k in EXTV) loadGlbJson(EXTV[k]).then(g => {
   g.scene.traverse(o => { if (!o.isMesh || !o.material) return; const m = o.material, n = m.name || '';
@@ -10554,7 +10658,8 @@ Object.assign(VEH, {
   Car_challenger: { hl: 48, hw: 19, kg: 1600, wr: .35, eye: -.06, acc: 560, top: 780, wb: 56, name: "'70 Challenger R/T", cam: -.38, lat: .38 },
   Car_police: { hl: 54, hw: 21, kg: 1850, wr: .36, eye: 0, acc: 520, top: 820, wb: 58, name: 'Crown Vic Interceptor', cam: -.3, lat: .4, col: 0xe9e9e4, siren: true },
   Car_gls: { hl: 51, hw: 21, kg: 2450, wr: .4, eye: .22, acc: 480, top: 740, wb: 60, name: 'Mercedes-AMG GLS', cam: -.1, lat: .44 },
-  Car_bmw: { hl: 46, hw: 20, kg: 1550, wr: .33, eye: -.08, acc: 560, top: 780, wb: 55, name: 'BMW 3 Coupe', cam: -.35, lat: .38 }
+  Car_bmw: { hl: 46, hw: 20, kg: 1550, wr: .33, eye: -.08, acc: 560, top: 780, wb: 55, name: 'BMW 3 Coupe', cam: -.35, lat: .38 },
+  Car_lambo: { hl: 48, hw: 22, kg: 1575, wr: .34, eye: -.2, acc: 760, top: 1040, wb: 54, name: 'Lamborghini Aventador', cam: -.45, lat: .34 }
 });
 function extKinds() {   // build 52: the real models are spread all over the county (the same cars on every client); every one appears many times
   const cnt = {}, set = (c, k) => { const V = VEH[k]; c.kind = k; c.hl = V.hl; c.hw = V.hw; c.im = 1 / V.kg; c.iI = 1 / (V.kg * ((V.hl * 2) ** 2 + (V.hw * 2) ** 2) / 12); cnt[k] = (cnt[k] || 0) + 1; };
@@ -10562,10 +10667,10 @@ function extKinds() {   // build 52: the real models are spread all over the cou
   for (const [i, c] of free) { const r = hashI(Math.round(c.x) * 7919 + Math.round(c.y) * 31 + 13) % 100;
     if (c.kind === 'Car_pickup') { if (r < 45) set(c, 'Car_s10'); }
     else if (c.kind === 'Car_suv' || c.kind === 'Car_van') { if (r < 30) set(c, 'Car_gls'); else if (r < 38) set(c, 'Car_humvee'); }
-    else if (c.kind === 'Car' || c.kind === 'Car_hatch') { if (r < 16) set(c, 'Car_challenger'); else if (r < 34) set(c, 'Car_bmw'); else if (r < 48) set(c, 'Car_police'); } }
+    else if (c.kind === 'Car' || c.kind === 'Car_hatch') { if (r < 16) set(c, 'Car_challenger'); else if (r < 34) set(c, 'Car_bmw'); else if (r < 48) set(c, 'Car_police'); else if (r < 51) set(c, 'Car_lambo'); } }
   // make sure each model turns up at least eight times, wherever the county happened to put sedans and SUVs
-  for (const k of ['Car_s10', 'Car_challenger', 'Car_police', 'Car_gls', 'Car_bmw', 'Car_humvee']) { let j = 0;
-    while ((cnt[k] || 0) < (k === 'Car_humvee' ? 5 : 8) && j < free.length) { const [, c] = free[(j * 37 + k.length * 11) % free.length]; j++; if (EXTV[c.kind]) continue; set(c, k); } }
+  for (const k of ['Car_s10', 'Car_challenger', 'Car_police', 'Car_gls', 'Car_bmw', 'Car_humvee', 'Car_lambo']) { let j = 0;
+    while ((cnt[k] || 0) < (k === 'Car_humvee' || k === 'Car_lambo' ? 5 : 8) && j < free.length) { const [, c] = free[(j * 37 + k.length * 11) % free.length]; j++; if (EXTV[c.kind]) continue; set(c, k); } }
   window.__extCnt = cnt;
 }
 function buildExtCar(col, kind) {   // same shape of object as buildGlbCar makes, from the converted model
@@ -11319,7 +11424,7 @@ giveNearest = function () { if (!NET.on) { toast('Giving works online, next to a
    bus shelters, benches, news boxes, a phone booth, a police roadblock on the way in, a billboard, and relief camps in three towns.
    Town props are instanced per town (a handful of draw calls each) and culled by town; the big ones block like walls. */
 let HPG = null, HKG = null, HKFAIL = false; const HPPROTO = {};
-function hpSrc(name) { return (HPG && HPG.scene.getObjectByName(name)) || (HKG && HKG.scene.getObjectByName(name)) || null; }
+function hpSrc(name) { return (HPG && HPG.scene.getObjectByName(name)) || (HKG && HKG.scene.getObjectByName(name)) || (K3G && K3G.scene.getObjectByName(name)) || null; }
 function hpPrep(g) { g.scene.traverse(o => { if (!o.isMesh) return; const m = o.material; o.castShadow = true; o.receiveShadow = true; m.metalness = Math.min(m.metalness, .35); m.roughness = Math.max(m.roughness, .4);
     if (/HV_glass/.test(m.name)) { m.transparent = true; m.opacity = .35; m.depthWrite = false; m.side = THREE.DoubleSide; }
     if (/HV_(canvas|tarp|wire|net|tentW|galv)/.test(m.name) || o.geometry.attributes.position.count < 400) m.side = THREE.DoubleSide; if (/HV_bulb/.test(m.name)) { m.emissiveIntensity = 2; } }); }
@@ -11375,6 +11480,14 @@ function havenDress(B) {
   for (const [x, y] of [[gx - 180, 3650], [gx + 180, 3420], [R.x0 + 300, 3900], [gx + 420, 3700]]) { const at = firstFree('HP_burnbarrel', near(x, y, 160), 0, 16, 16, true, 1); if (at) { const fl = new THREE.Mesh(new THREE.ConeGeometry(.22, .6, 6), HM().fire || new THREE.MeshBasicMaterial({ color: 0xff8a3a })); fl.position.set(hx(at[0]), 1.15, hz(at[1])); P_.add(fl); HV.glow.push(fl); const gl = glowS(0xff8a3a, 1.8); gl.position.set(hx(at[0]), 1.3, hz(at[1])); P_.add(gl); HV.glow.push(gl); } }
   firstFree('HP_scrap', near(gx + 420, R.y0 + 360, 420), 0, 70, 60, true, 1.2); firstFree('HP_tires', near(gx + 520, R.y0 + 380, 420), 0, 60, 30, true, 1.2);
   if ((B.workshop | 0) >= 2) firstFree('HP_scrap', near(gx + 560, R.y0 + 420, 420), Math.PI / 2, 70, 60, true, 1.2);
+  // build 64: military outpost and breakers' yard pieces: floodlights and more HESCO at the gate, a generator by the power yard, ammo and cases, stripped cars and parts by the workshop
+  if (K3G) { put('MK_flood', gx - 130, R.y0 + 70, Math.PI, 40, 40, true, false, 5); put('MK_flood', gx + 130, R.y0 + 70, Math.PI, 40, 40, true, false, 5);
+    for (const sd of [-1, 1]) for (let k = 0; k < 3; k++) put('MK_hesco', gx + sd * (262 + k * 37), R.y0 - 40, 0, 36, 36, true, true, 1.6);
+    for (const sd of [-1, 1]) put('MK_sandbags', gx + sd * 175, R.y0 + 130, 0, 48, 10, true, false, .5);
+    firstFree('MK_gen', near(gx + 120, R.y1 - 260, 300), 0, 36, 22, true, 1.3); firstFree('MK_case', near(gx - 300, 3480, 260), 0, 24, 16, true, .5); firstFree('MK_ammo', near(gx - 300, 3480, 260), .4, 20, 12, false);
+    firstFree('MK_barrier_w', near(gx, R.y0 - 380, 200), 0, 56, 20, true, 1.4); firstFree('MK_cot', near(gx - 520, R.y0 + 300, 260), 0, 16, 32, false);
+    const ws = near(gx + 460, R.y0 + 330, 460); firstFree('JK_shell', ws, .4, 70, 70, true, 1.2); firstFree('JK_frame', ws, 1.2, 40, 70, true, 1); for (const n of ['JK_tire', 'JK_tire2', 'JK_seat', 'JK_motor', 'JK_bumper', 'JK_battery']) firstFree(n, ws, (n.length % 4) * .7, 22, 22, false);
+    if ((B.garage | 0) >= 1) { const gs = near(R.x0 + 650, R.y1 - 420, 260); firstFree('JK_bench', gs, 0, 30, 40, false); firstFree('JK_door', gs, .7, 16, 26, false); firstFree('JK_grill', gs, 0, 40, 14, false); } }
   // lamps along the paths (they light up with power), a signpost at the crossroads
   put('HP_signpost', gx + 115, 3640, 0, 10, 10, false); if ((B.power | 0) >= 1) for (let i = 0; i < 4; i++) { put('HP_lampm', gx - 110, R.y0 + 300 + i * 280, 0, 12, 12, false); put('HP_lampm', R.x0 + 300 + i * 500, 3460, 0, 12, 12, false); }
 }
@@ -11385,7 +11498,8 @@ function townDress() {
   const list = {}; TPROPS.dbg = []; const add = (name, x, y, ry, y0) => { (list[name] = list[name] || []).push([x, y, ry || 0, y0 || 0]); TPROPS.dbg.push({ n: name, x: Math.round(x), y: Math.round(y) }); };
   const onRoad = (x, y, m) => roads.some(q => x > q.x - m && x < q.x + q.w + m && y > q.y - m && y < q.y + q.h + m);
   const inHouse = (x, y, m) => houses.some(q => x > q.x - m && x < q.x + q.w + m && y > q.y - m && y < q.y + q.h + m);
-  const ok = (x, y, r) => !isWater(x, y) && !inHouse(x, y, r) && spotFree(x, y, 0, r) && !(x > HVR.x0 - 300 && x < HVR.x1 + 300 && y > HVR.y0 - 500 && y < HVR.y1 + 300);
+  const doorF = doors.map(d => [d.o === 'h' ? d.cx : d.cx + d.out * 40, d.o === 'h' ? d.cy + d.out * 40 : d.cy]);   // build 64: keep every doorstep clear
+  const ok = (x, y, r) => !isWater(x, y) && !inHouse(x, y, r) && spotFree(x, y, 0, r) && !(x > HVR.x0 - 300 && x < HVR.x1 + 300 && y > HVR.y0 - 500 && y < HVR.y1 + 300) && !doorF.some(([dx, dy]) => Math.abs(dx - x) < 60 + r && Math.abs(dy - y) < 60 + r);
   const block = (x, y, w, h, hgt) => intColAdd({ x: x - w / 2, y: y - h / 2, w, h }, TPROPS.rec);
   let seed = 59; const rnd_ = () => (seed = (seed * 16807) % 2147483647) / 2147483647, pk = a => a[Math.floor(rnd_() * a.length)];
   const BILL = [['EVACUATE', 'ROUTE 9 · EAST', '#c8281e'], ['STAY INDOORS', 'HELP IS COMING', '#1f3a5a'], ['HALDEN BIOMEDICAL', 'A HEALTHIER TOMORROW', '#2a6a5a'], ['BOIL ALL WATER', 'BY ORDER OF THE COUNTY', '#6a4a1a']];
@@ -11419,7 +11533,28 @@ function townDress() {
       if (best) { const { q, hor } = best, dir = best.f ? -1 : 1, pos = t => hor ? [best.x + dir * t, q.y + q.h / 2] : [q.x + q.w / 2, best.y + dir * t];
         const wdt = hor ? q.h : q.w; [[60, -1], [170, 1]].forEach(([t, s_]) => { const [ax, ay] = pos(t), off = s_ * (wdt / 2 - 33), x = hor ? ax : ax + off, y = hor ? ay + off : ay; if (spotFree(x, y, 0, 20)) { add('HP_jersey', x, y, hor ? Math.PI / 2 : 0); block(x, y, hor ? 14 : 62, hor ? 62 : 14); } });
         { const [bx, by] = pos(260), off = (wdt / 2 - 40), x = hor ? bx : bx - off, y = hor ? by - off : by; if (spotFree(x, y, 0, 20)) add('HP_sawhorse', x, y, hor ? Math.PI / 2 : 0); }
-        const [cx, cy] = pos(100), nx = hor ? cx : cx + (wdt / 2 + 70), ny = hor ? cy + (wdt / 2 + 70) : cy; if (ok(nx, ny, 50)) { add('HP_nest', nx, ny, hor ? 0 : Math.PI / 2); block(nx, ny, 60, 56); } } }
+        const [cx, cy] = pos(100), nx = hor ? cx : cx + (wdt / 2 + 70), ny = hor ? cy + (wdt / 2 + 70) : cy; if (ok(nx, ny, 50)) { add('HP_nest', nx, ny, hor ? 0 : Math.PI / 2); block(nx, ny, 60, 56); }
+        // build 64: the roadblock became a quarantine checkpoint (military outpost kit): HESCO line, sandbags, floodlight tower, generator, ammo and cases, wide barriers
+        if (K3G) { const side = (t, off) => { const [ax, ay] = pos(t); return hor ? [ax, ay + off] : [ax + off, ay]; }, ry0 = hor ? 0 : Math.PI / 2, O = wdt / 2 + 70;
+          for (let k = 0; k < 4; k++) { const [x, y] = side(150 + k * 36, -O); if (ok(x, y, 22)) { add('MK_hesco', x, y, ry0); block(x, y, 36, 36); } }
+          { const [x, y] = side(40, O + 40); if (ok(x, y, 30)) { add('MK_flood', x, y, ry0 + Math.PI); block(x, y, 40, 40); } }
+          { const [x, y] = side(170, O + 30); if (ok(x, y, 26)) { add('MK_gen', x, y, ry0); block(x, y, hor ? 36 : 22, hor ? 22 : 36); } }
+          { const [x, y] = side(210, O + 20); if (ok(x, y, 18)) { add('MK_case', x, y, ry0 + .3); add('MK_ammo', x, y, ry0 + .3, .49); block(x, y, 24, 24); } }
+          { const [x, y] = side(100, O - 34); if (ok(x, y, 24)) { add('MK_sandbags', x, y, ry0); add('MK_sandbags', x, y, ry0, .46); block(x, y, hor ? 48 : 10, hor ? 10 : 48); } }
+          { const [x, y] = side(320, 0); if (spotFree(x, y, 0, 30)) { add('MK_barrier_w', x, y, hor ? Math.PI / 2 : 0); block(x, y, hor ? 20 : 56, hor ? 56 : 20); } } } } }
+    // build 64: scrap from the breakers' yard pack in side yards: stripped shells and frames, tyres, seats, bumpers, engines
+    if (K3G) { for (let i = 0, n = 0; i < 160 && n < Math.round(7 * big); i++) { const h = pk(houses.filter(q => q.kind === 'house' && Math.hypot(q.x + q.w / 2 - T.x, q.y + q.h / 2 - T.y) < T.r) || []); if (!h) break;
+        const sd = rnd_() < .5, x = sd ? (rnd_() < .5 ? h.x - 60 : h.x + h.w + 60) : h.x + h.w * (.2 + rnd_() * .6), y = sd ? h.y + h.h * (.2 + rnd_() * .6) : (rnd_() < .5 ? h.y - 60 : h.y + h.h + 60);
+        const big_ = n % 3 === 0, nm = big_ ? pk(['JK_shell', 'JK_frame', 'JK_chassis']) : pk(['JK_tire', 'JK_seat', 'JK_bumper', 'JK_motor', 'JK_bench', 'JK_battery', 'JK_fenders', 'JK_grill']);
+        if (!ok(x, y, big_ ? 50 : 18) || onRoad(x, y, big_ ? 50 : 20) || inHouse(x, y, big_ ? 45 : 16)) continue; const ry = rnd_() * 6.283;
+        if (nm === 'JK_tire') { add('JK_tire', x, y, ry, 0); add('JK_tire2', x + 3, y - 2, ry + 1, 0); } else add(nm, x, y, ry);
+        if (big_) block(x, y, 46, 46); n++; } }
+    // build 64: a few boarded-up houses from the Family House Collection on empty lots facing the road
+    if (K3G) { const FHD = { FH_h1: [246, 164], FH_h2: [177, 170], FH_h3: [178, 129], FH_h4: [141, 153], FH_h5: [128, 145], FH_h6: [121, 134] };
+      for (let i = 0, n = 0; i < 90 && n < (big > 1 ? 3 : 2); i++) { const q = pk(tr), side = rnd_() < .5 ? -1 : 1, nm = pk(Object.keys(FHD)), [fw, fd] = FHD[nm], hor = q.w > q.h, p = along(q, .15 + rnd_() * .7, side, fd / 2 + 70);
+        if (!inT(p) || (p[0] > CITY.x0 - 400 && p[0] < CITY.x1 + 400 && p[1] > CITY.y0 - 400 && p[1] < CITY.y1 + 400)) continue; const rx = hor ? fw : fd, rz = hor ? fd : fw; let clear = true;
+        for (let dx = -rx / 2; dx <= rx / 2 && clear; dx += 40) for (let dy = -rz / 2; dy <= rz / 2 && clear; dy += 40) if (!ok(p[0] + dx, p[1] + dy, 30) || onRoad(p[0] + dx, p[1] + dy, 25) || inHouse(p[0] + dx, p[1] + dy, 60)) clear = false;
+        if (!clear) continue; const ry = hor ? (side < 0 ? Math.PI : 0) : (side < 0 ? -Math.PI / 2 : Math.PI / 2); add(nm, p[0], p[1], ry); block(p[0], p[1], rx, rz); (TPROPS.boarded = TPROPS.boarded || []).push({ x: p[0], y: p[1], w: rx, h: rz }); n++; } }
     // a billboard on the edge of town, facing the road
     for (let i = 0; i < 30; i++) { const q = pk(tr), side = rnd_() < .5 ? -1 : 1, p = along(q, rnd_() < .5 ? .05 : .95, side, 120); if (!ok(p[0], p[1], 70) || onRoad(p[0], p[1], 40)) continue; const ry = p[2] + (side > 0 ? Math.PI : 0);
       add('HP_billboard', p[0], p[1], ry); for (const s of [-1, 1]) block(p[0] + Math.cos(ry) * s * 48, p[1] - Math.sin(ry) * s * 48, 10, 10); TPROPS.bills = TPROPS.bills || []; TPROPS.bills.push({ x: p[0], y: p[1], ry, b: BILL[(TOWNS.indexOf(T)) % BILL.length] }); break; }
@@ -11430,11 +11565,17 @@ function townDress() {
         if (hpSrc('HK_container40')) { add('HK_container40', x + 230, y + 10, 0); block(x + 230, y + 10, 60, 236); } else { add('HP_container_b', x + 230, y + 10, Math.PI / 2); block(x + 230, y + 10, 52, 125); } add('HK_boxes', x + 150, y - 120, .3); add('HP_drums', x + 160, y + 170, 0); add('HP_pallets', x - 230, y + 170, 0);
         for (let k = -3; k <= 3; k++) if (k) add('HP_sawhorse', x + k * 60, y - 220, 0); add('HP_lampm', x - 260, y - 200, 0); add('HP_lampm', x + 260, y - 200, 0); add('HP_signpost', x, y - 260, 0); break; } }
   }
+  // build 64: a wall lantern either side of every house's front door
+  if (K3G && typeof doors !== 'undefined') for (const d of doors) { const H = houses[d.hi]; if (!H || H.kind !== 'house') continue; const hor = d.o === 'h', o = d.out || 1, gap = 32;
+    for (const sd of [-1, 1]) { const a = sd * (gap / 2 + 9), x = hor ? d.cx + a : d.cx + o * 4, y = hor ? d.cy + o * 4 : d.cy + a, ry = hor ? (o > 0 ? 0 : Math.PI) : (o > 0 ? Math.PI / 2 : -Math.PI / 2); add('BK_lantern', x, y, ry, 1.55); } }
+  // build 64: air-conditioning condensers on the downtown roofs
+  if (K3G) for (const t of towers) { if (t.plaza) continue; const top = t.fl * 3.4 + 1.2, n = 2 + (t.x + t.y) % 4; for (let k = 0; k < n; k++) { const x = t.x + t.w * (.2 + .6 * ((k * 37 + t.x) % 100) / 100), y = t.y + t.h * (.25 + .5 * ((k * 53 + t.y) % 100) / 100); add('BK_ac', x, y, (k % 4) * Math.PI / 2, top + .1); } }
   // instancing: one InstancedMesh per prop part per town, culled with the town
   const groupsByTown = new Map();
-  for (const name in list) { const parts = hpProto(name); if (!parts) continue; const L = list[name];
-    for (const part of parts) { const mats = L.map(([x, y, ry, y0]) => new THREE.Matrix4().compose(new THREE.Vector3(x * S3, y0, y * S3), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), ry), new THREE.Vector3(1, 1, 1)).multiply(part.local));
-      const im = new THREE.InstancedMesh(part.geo, part.mat, mats.length); mats.forEach((m4, i) => im.setMatrixAt(i, m4)); im.castShadow = /burnt|container|tent|billboard|busstop|nest|jersey|rack|forklift/.test(name); im.receiveShadow = true;
+  for (const name in list) { const parts = hpProto(name); if (!parts) continue; const LL = list[name], cells = new Map();   // build 64: instance per 75 m cell, so props far away are not drawn
+    for (const it of LL) { const k = Math.floor(it[0] / 1500) * 1000 + Math.floor(it[1] / 1500); if (!cells.has(k)) cells.set(k, []); cells.get(k).push(it); }
+    for (const L of cells.values()) for (const part of parts) { const mats = L.map(([x, y, ry, y0]) => new THREE.Matrix4().compose(new THREE.Vector3(x * S3, y0, y * S3), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), ry), new THREE.Vector3(1, 1, 1)).multiply(part.local));
+      const im = new THREE.InstancedMesh(part.geo, part.mat, mats.length); mats.forEach((m4, i) => im.setMatrixAt(i, m4)); im.castShadow = /burnt|container|tent|billboard|busstop|nest|jersey|rack|forklift|MK_hesco|MK_flood|MK_gen|FH_|JK_shell|JK_frame/.test(name); im.receiveShadow = true;
       let cx = 0, cz = 0; for (const [x, y] of L) { cx += x * S3; cz += y * S3; } cx /= L.length; cz /= L.length; let r = 0; for (const [x, y] of L) r = Math.max(r, Math.hypot(x * S3 - cx, y * S3 - cz)); im.frustumCulled = false; im.userData.cull = { x: cx, z: cz, r: r + 12 };
       world3.add(im); TPROPS.groups.push(im); } }
   // the billboards' faces
@@ -11447,6 +11588,7 @@ function townPropsTick() { if (!TPROPS.groups.length || !camera) return; const c
   for (const o of TPROPS.groups) { const c = o.userData.cull; o.visible = Math.hypot(c.x - cx, c.z - cz) - c.r < far; } }
 loadGlbJson('props.json').then(g => { hpPrep(g); HPG = g; if (HV.b && world3 && typeof havenBuild === 'function' && NET.on) havenBuild(HV.b); }).catch(e => console.warn('props', e));
 // pieces from two CC0 BlendSwap packs (tools/kit2_blend.py): forklift, pallet jack, barrel, loaded pallet racking, boxes, a 40 ft container
+loadGlbJson('kit3.json').then(g => { hpPrep(g); g.scene.traverse(o => { if (o.isMesh && /^FH_/.test(o.material.name)) { o.material.metalness = 0; o.material.roughness = .9; } }); K3G = g; if (HPG && HV.b && world3 && typeof havenBuild === 'function' && NET.on) havenBuild(HV.b); }).catch(e => { console.warn('kit3', e); K3FAIL = true; });
 loadGlbJson('kit2.json').then(g => { hpPrep(g); HKG = g; if (HPG && HV.b && world3 && typeof havenBuild === 'function' && NET.on) havenBuild(HV.b); }).catch(e => { console.warn('kit2', e); HKFAIL = true; });
 /* ---------- the online loop: never pause, catch up slow frames ---------- */
 function netOnlineStep(raw, paused) {
