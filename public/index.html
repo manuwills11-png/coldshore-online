@@ -173,7 +173,7 @@ html body #bagui .givebar{background:rgba(8,9,10,.97)}
 `; document.head.appendChild(st);
 })();
 function uiK(k) { return '<kbd class="u-k">' + k + '</kbd>'; }
-function uiBar(items) { return '<div class="u-bar">' + items.map(([k, t, m]) => '<span' + (m ? ' data-m="' + m + '"' : '') + '>' + k.map(uiK).join('') + ' ' + t + '</span>').join('') + '<span class="r">PROTOTYPE BUILD 64</span></div>'; }
+function uiBar(items) { return '<div class="u-bar">' + items.map(([k, t, m]) => '<span' + (m ? ' data-m="' + m + '"' : '') + '>' + k.map(uiK).join('') + ' ' + t + '</span>').join('') + '<span class="r">PROTOTYPE BUILD 65</span></div>'; }
 function uiMainItems() {
   const ready = assetsReady.kit && assetsReady.trees && assetsReady.car && assetsReady.furn && assetsReady.people && assetsReady.wtex;
   const SV = lvlLoad(), hasSv = SV.last !== null && SV.levels[SV.last];
@@ -215,7 +215,7 @@ function renderTitle() {
   } else if (titleMode === 'credits') {
     h += '<div class="u-scr"><div class="u-head"><div class="step">ABOUT</div><h2>Credits</h2></div><div class="u-cred"><p>ColdShore prototype. Characters, zombies, vehicles, buildings, trees and animation built procedurally in Blender. Engine: three.js. Voices: your browser&#39;s speech engine.</p><h4>Models</h4><p style="font-size:13px">From BlendSwap, reduced for the browser: M1 Humvee by panko10 (CC-BY); Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0); Ford Crown Victoria Police Interceptor 2005 (CC-BY 3.0); Mercedes-AMG GLS (CC0); BMW 3 Series Coupe by mikepan (CC-BY-SA 3.0); Trees &amp; Bushes pack by Painkiller5555; Dodge Challenger 1970 R/T; Low Quality Weapon Pack (CC0); Warehouse by argonius (CC0); Lamborghini Aventador (For games) by shadewar (CC-BY); Victorian Style House by MrChimp2313 (CC0); military_outpost_kit_1.0, Buildings_kit_1.0 and The_Breakers_yard_1.0 by Britdawgmasterfunk (CC0); Living/TV Room Study by mbarros (CC0); Family House Collection by tastyfish (CC0).</p></div><div class="u-row2"><span class="u-btn" data-m="back">Back</span></div></div>' + uiBar([[['Esc'], 'Back', 'back']]);
   }
-  if (titleMode === 'press') h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 64</div>';
+  if (titleMode === 'press') h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 65</div>';
   titleEl.innerHTML = h; titleEl.classList.add('on');
   titleEl.querySelectorAll('[data-m]').forEach(a => a.onclick = () => { const m = a.dataset.m; if (m === 'bgback') { titleMode = 'bg'; beep(520, .04, 'triangle', .03); renderTitle(); return; } titleAction(m); });
   titleEl.querySelectorAll('.u-menu a[data-i]').forEach(a => a.onmouseenter = () => { if (UI61.sel === +a.dataset.i) return; UI61.sel = +a.dataset.i; beep(880, .015, 'sine', .012); renderTitle(); });
@@ -651,6 +651,7 @@ function vcKey(m) {
 }
 function vcMat(m, k) { let c = VCM.get(k); if (!c) { c = m.clone(); c.color = new THREE.Color(1, 1, 1); c.vertexColors = true; c.name = 'VC:' + (m.name || ''); VCM.set(k, c); } return c; }
 const _vcN = new THREE.Vector3();
+const MERGE_CELL = 120;   // build 65: 120 m chunks (was 60): about half the draw calls for the static county, same geometry
 function mergeStatic(group, noVC) {
   group.updateMatrixWorld(true);
   const buckets = new Map();
@@ -659,7 +660,7 @@ function mergeStatic(group, noVC) {
     const src = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
     src.applyMatrix4(o.matrixWorld);
     const mat = o.material, vk = noVC ? null : vcKey(mat);
-    const key = (vk || mat.uuid) + '|' + Math.floor(o.matrixWorld.elements[12] / 60) + '|' + Math.floor(o.matrixWorld.elements[14] / 60);
+    const key = (vk || mat.uuid) + '|' + Math.floor(o.matrixWorld.elements[12] / MERGE_CELL) + '|' + Math.floor(o.matrixWorld.elements[14] / MERGE_CELL);
     let b = buckets.get(key); if (!b) { b = []; b.mat = vk ? vcMat(mat, vk) : mat; b.vc = !!vk; b.keepC = !vk && mat.vertexColors; buckets.set(key, b); }
     if (vk) { src.userData.col = mat.color; } b.push(src);
   });
@@ -683,6 +684,12 @@ function mergeStatic(group, noVC) {
   });
   return out;
 }
+/* build 65: pack a merged group's normals into signed bytes and its vertex colours into bytes (normalized attributes): 26 bytes a
+   vertex instead of 44, in JavaScript memory until the chunk is uploaded and on the GPU after. Only for final merged output. */
+function packGeo(group) { group.traverse(o => { if (!o.isMesh) return; const g = o.geometry, n = g.attributes.normal, c = g.attributes.color;
+  if (n && n.array instanceof Float32Array) { const a = n.array, q = new Int8Array(a.length); for (let i = 0; i < a.length; i++) q[i] = Math.max(-127, Math.min(127, Math.round(a[i] * 127))); g.setAttribute('normal', new THREE.BufferAttribute(q, 3, true)); }
+  if (c && c.array instanceof Float32Array && c.itemSize === 3) { const a = c.array; let ok = true; for (let i = 0; i < a.length; i++) if (a[i] > 1.001 || a[i] < 0) { ok = false; break; }
+    if (ok) { const q = new Uint8Array(a.length); for (let i = 0; i < a.length; i++) q[i] = Math.round(a[i] * 255); g.setAttribute('color', new THREE.BufferAttribute(q, 3, true)); } } }); return group; }
 /* merge a small prefab (a door leaf, a car body) into one mesh per material, keeping the same material objects */
 function geoFlat(g, M4) {   // copy any geometry (indexed or not, interleaved or not) to flat arrays, transformed
   const P_ = g.attributes.position, N_ = g.attributes.normal, U_ = g.attributes.uv, C_ = g.attributes.color, ix = g.index, n = ix ? ix.count : P_.count;
@@ -2038,7 +2045,7 @@ function buildWorld3D() {
     if (p.two) { const seg2 = (ya, yb) => yb - ya < 2 ? 0 : sg.add(tbox(.2, 3, (yb - ya) * S3, PP, p.px * S3, 4.6, (ya + yb) / 2 * S3, 2)); seg2(p.y0, p.cy - p.g / 2); seg2(p.cy + p.g / 2, p.y1); sg.add(tbox(.2, .7, p.g * S3, PP, p.px * S3, 5.75, p.cy * S3, 2)); }
   }
   // doors: header, posts, ajar leaf, porch
-  const doorG = new THREE.Group(); world3.add(doorG);
+  const doorG = new THREE.Group(); doorG.userData.dyn = 1; world3.add(doorG);
   for (const d of doors) {
     const hor = d.o === 'h', cxd = d.cx * S3, czd = d.cy * S3, gap = 32 * S3, dox = hor ? 0 : d.out, doz = hor ? d.out : 0;
     const pos = (a, b) => hor ? [cxd + a, czd + b] : [cxd + b, czd + a];
@@ -2150,15 +2157,15 @@ function buildWorld3D() {
   }
   world3.updateMatrixWorld(true);
   townSigns();
-  const merged = mergeStatic(sg); world3.remove(sg); world3.add(merged); buildLamps();
+  const merged = packGeo(mergeStatic(sg)); world3.remove(sg); world3.add(merged); buildLamps();
   // build 49: the merged county is never read back on the CPU, so once a chunk is on the GPU its arrays go (about 0.8 GB of memory, and the long GC pauses that came with it)
   merged.traverse(o => { if (!o.isMesh) return; const g = o.geometry; g.computeBoundingSphere(); g.computeBoundingBox(); for (const k in g.attributes) g.attributes[k].onUpload(function () { this.array = null; }); });
-  merged.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.geometry.computeBoundingSphere(); const bs = o.geometry.boundingSphere; if (bs.radius < 150) cullList.push({ o, c: bs.center.clone(), r: bs.radius }); } });
+  merged.traverse(o => { if (o.isMesh) { o.geometry.computeBoundingBox(); const bb_ = o.geometry.boundingBox; o.castShadow = bb_.max.y - bb_.min.y > .35 || bb_.min.y > .3; o.receiveShadow = true; o.geometry.computeBoundingSphere();   /* build 65: flat things on the ground (roads, kerbs, floors, rugs) cast no visible shadow; skip them in the shadow passes */ const bs = o.geometry.boundingSphere; if (bs.radius < 150) cullList.push({ o, c: bs.center.clone(), r: bs.radius }); } });
   if (TREEG) placeTrees(); else { treeFBm = mergeStatic(treeFB); treeFBm.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); world3.add(treeFBm); }
 
   for (const c of crates) {
     c.ins = c.ins || houses.some(h => c.x > h.x && c.x < h.x + h.w && c.y > h.y && c.y < h.y + h.h);   // build 64: indoors it is a cardboard box
-    const m = c.ins ? new THREE.Mesh(GEO.cbox || (GEO.cbox = new THREE.BoxGeometry(.74, .5, .58)), cboxMat(false)) : new THREE.Mesh(GEO.crate || (GEO.crate = new THREE.BoxGeometry(1.15, 1.0, 1.15)), M.crate); m.position.set(c.x * S3, c.ins ? .25 + (c.fy !== undefined ? c.fy : (c.lv | 0) * 3.1) : 0.5, c.y * S3); m.rotation.y = rnd(-0.3, 0.3); c.m = m; m.castShadow = true; m.receiveShadow = true; world3.add(m); cullList.push({ o: m, c: m.position, r: 1, s: 1 }); colC(c.x, c.y, 11, { lv: c.lv | 0 });   // build 63: a crate downstairs no longer blocks the top of the stairs
+    const m = c.ins ? new THREE.Mesh(GEO.cbox || (GEO.cbox = new THREE.BoxGeometry(.74, .5, .58)), cboxMat(false)) : new THREE.Mesh(GEO.crate || (GEO.crate = new THREE.BoxGeometry(1.15, 1.0, 1.15)), M.crate); m.position.set(c.x * S3, c.ins ? .25 + (c.fy !== undefined ? c.fy : (c.lv | 0) * 3.1) : 0.5, c.y * S3); m.rotation.y = rnd(-0.3, 0.3); c.m = m; m.castShadow = true; m.receiveShadow = true; if (c.ins) m.layers.set(3); world3.add(m); cullList.push({ o: m, c: m.position, r: 1, s: 1 }); colC(c.x, c.y, 11, { lv: c.lv | 0 });   // build 63: a crate downstairs no longer blocks the top of the stairs
   }
   for (const c of cars) { c.m = buildCarMesh(c.col, false, c.kind); c.m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); world3.add(c.m); }
   const bm = new THREE.MeshBasicMaterial({ color: 0xf0d25a, transparent: true, opacity: 0.14, side: THREE.DoubleSide, fog: false, depthWrite: false }); NIGHTM.push([bm, .14, .9]);
@@ -2442,7 +2449,7 @@ function addItem(it) {
   toast('+' + it.n + ' ' + names[it.k]);
 }
 function openCrate(c) {
-  c.open = true; crateShut(c);
+  c.open = true; crateShut(c); thaw(c.m);
   c.items.forEach(addItem);
   if (Math.random() < Math.min(0.6, S.forage * 0.07) + .15 * pk('scav')) { addItem(rollItem()); toast('Sharp eyes: extra find'); } gainXP(6, 'LOOT');
   if (typeof dropWeapon === 'function' && Math.random() < weaponDropChance('crate')) { const a = Math.atan2(P.y - c.y, P.x - c.x); dropWeapon(c.x + Math.cos(a) * 22, c.y + Math.sin(a) * 22, rollWeapon('crate'), c.lv || P.lv || 0); toast('Something heavier is in here.'); }
@@ -4130,8 +4137,9 @@ function syncScene(dt) {
   for (const c of cars) {
     { const u_ = c.m.userData; if (u_.lo) { const ex = c.x - P.x, ey = c.y - P.y, d2 = ex * ex + ey * ey, far = d2 > 600 * 600 && c !== driving && !npcs.some(n => n.car === c), gone = d2 > 2900 * 2900 && !cine;
         c.m.visible = !gone; if (!gone && u_.far !== far) { u_.far = far; u_.lo.visible = far; for (const o of u_.hi) o.visible = !far; } } }
-    { const R_ = carR(c); c.m.position.set(R_[0] * S3, 0, R_[1] * S3); c.m.rotation.order = 'YXZ'; c.m.rotation.y = -R_[2]; }
-    { const acc = dt > 0 ? (c.v - (c.pv === undefined ? c.v : c.pv)) / dt * S3 : 0; c.pv = c.v; const tr = c === driving ? clamp(-c.w * c.v * S3 * .006, -.055, .055) : 0, tp = c === driving ? clamp(acc * .0045, -.04, .03) : 0; c.rollS = (c.rollS || 0) + (tr - (c.rollS || 0)) * Math.min(1, dt * 4); c.pitchS = (c.pitchS || 0) + (tp - (c.pitchS || 0)) * Math.min(1, dt * 5); c.m.rotation.x = c.rollS; c.m.rotation.z = c.pitchS; if (vehOf(c).moto) { c.lean = (c.lean || 0) + ((c === driving ? -c.steer * clamp(Math.abs(c.v) / 260, 0, 1) * .42 : .22) - (c.lean || 0)) * Math.min(1, dt * 5); c.m.rotation.x = c.lean; } } const cu = c.m.userData; c.m.visible = cu.glb || c !== driving;
+    { const R_ = carR(c); c.m.position.set(R_[0] * S3, 0, R_[1] * S3); c.m.rotation.order = 'YXZ'; c.m.rotation.y = -R_[2];
+      if (c.m.userData.frozen) { const sg_ = R_[0] * 1.3 + R_[1] * 2.7 + R_[2] * 9.1 + (c.v || 0) + (c.steer || 0) * 5 + (c.rollS || 0) * 17 + (c.pitchS || 0) * 19 + (c.spin || 0) * 3; if (sg_ !== c._fs) { c._fs = sg_; thaw(c.m); } } }
+    { const acc = dt > 0 ? (c.v - (c.pv === undefined ? c.v : c.pv)) / dt * S3 : 0; c.pv = c.v; const tr = c === driving ? clamp(-c.w * c.v * S3 * .006, -.055, .055) : 0, tp = c === driving ? clamp(acc * .0045, -.04, .03) : 0; c.rollS = (c.rollS || 0) + (tr - (c.rollS || 0)) * Math.min(1, dt * 4); c.pitchS = (c.pitchS || 0) + (tp - (c.pitchS || 0)) * Math.min(1, dt * 5); c.m.rotation.x = c.rollS; c.m.rotation.z = c.pitchS; if (vehOf(c).moto) { c.lean = (c.lean || 0) + ((c === driving ? -c.steer * clamp(Math.abs(c.v) / 260, 0, 1) * .42 : .22) - (c.lean || 0)) * Math.min(1, dt * 5); c.m.rotation.x = c.lean; } } const cu = c.m.userData; if (!cu.glb) c.m.visible = c !== driving;   /* build 65: this used to switch every car back on each frame, so the distance cut-off never worked and all 139 cars were drawn */
     if (cu.glb) { c.spin = (c.spin || 0) + c.v * S3 * dt / vehOf(c).wr; cu.wheels.forEach((w, i) => { if (!w) return; w.rotation.z = -c.spin; w.rotation.y = i < 2 ? c.steer * 0.45 : 0; }); if (cu.steer) cu.steer.quaternion.copy(cu.steerQ).multiply(_sq.setFromAxisAngle(AXY, -c.steer * (vehOf(c).moto ? .45 : 2.4))); if (c === driving) dashTick(c, cu, dt); }
   }
   for (const z of zombies) {
@@ -4643,7 +4651,39 @@ function setQuality(n, auto) {
   moon.castShadow = quality >= 1; flashlight.castShadow = quality >= 2; if (bloomPass) bloomPass.enabled = quality >= 2;
   if (auto && toasts) toast('Framerate low: graphics set to ' + ['LOW', 'MEDIUM', 'HIGH'][quality]);
 }
+/* ======================= BUILD 65: SMOOTHER FRAMES ======================= */
+/* 1. Frozen matrices. three.js recomputes every object's world matrix every frame; the county is ~40,000 objects and almost all of
+   them never move (about 6 ms a frame). Anything that has sat still for two checks is frozen: its subtree is skipped until something
+   asks to move it (thaw), and a rolling check thaws for good anything that moves without asking (so nothing can get stuck).
+   Characters (anything skinned), Haven (gate, animals, fires) and door leaves are never frozen; cars, crates and kicked props thaw when they move.
+   2. Moonlight shadows skip what the roof already shadows: furniture inside houses, indoor loot boxes and wall lanterns (layer 3, still lit
+   and still shadowed by the flashlight). */
+const FRZ = { on: true, t: 0, cand: new Map(), roots: [], i: 0, moved: 0 };
+const _umw = THREE.Object3D.prototype.updateMatrixWorld;
+function _frzUMW(force) { if (this.userData.thaw) { this.userData.thaw = 0; _umw.call(this, true); this.userData.fsum = frzSum(this); } }
+function frzSum(o) { let s = 0, k = 0; o.traverse(c => { const p = c.position, q = c.quaternion, z = c.scale; k++; s += (p.x * 1.31 + p.y * 2.17 + p.z * 3.71 + q.x * 5.1 + q.y * 7.3 + q.z * 11.9 + q.w * 13.1 + z.x + z.y * 1.7 + z.z * 2.3) * (1 + (k % 7) * .013); }); return s; }
+function frzDyn(o) { if (o.userData.dyn || (typeof HV !== 'undefined' && HV.rec && o === HV.rec.g) || /^hv/.test(o.name)) return true; let sk = false; o.traverse(c => { if (c.isSkinnedMesh || c.isLight || c.isSprite || c.isPoints) sk = true; }); return sk; }
+function freeze(o) { if (!FRZ.on || o.userData.frozen) return; _umw.call(o, true); o.updateMatrixWorld = _frzUMW; o.userData.frozen = 1; o.userData.fsum = frzSum(o); FRZ.roots.push(o); }
+function thaw(o) { if (o && o.userData.frozen) o.userData.thaw = 1; }
+function unfreeze(o) { if (!o || !o.userData.frozen) return; delete o.updateMatrixWorld; o.userData.frozen = 0; o.userData.dyn = 1; }
+function frzTick(dt) {
+  if (!FRZ.on || !world3 || state !== 'play') return;
+  // every second: anything that has held still since the last look gets frozen
+  FRZ.t -= dt; if (FRZ.t <= 0) { FRZ.t = 1; const seen = new Map();
+    for (const o of world3.children) { if (o.userData.frozen || o.userData.dyn || !o.parent) continue; const prev = FRZ.cand.get(o), sum = frzSum(o);
+      if (prev !== undefined && Math.abs(prev - sum) < 1e-6) { if (!frzDyn(o)) freeze(o); else o.userData.dyn = 1; } else seen.set(o, sum); }
+    FRZ.cand = seen; FRZ.roots = FRZ.roots.filter(o => o.parent && o.userData.frozen); }
+  // the rolling check: a frozen thing that moved without asking is thawed for good
+  const R = FRZ.roots, n = Math.min(R.length, 400); for (let k = 0; k < n; k++) { if (FRZ.i >= R.length) FRZ.i = 0; const o = R[FRZ.i++]; if (!o.userData.frozen || o.userData.thaw) continue; if (Math.abs(frzSum(o) - o.userData.fsum) > 1e-6) { unfreeze(o); FRZ.moved++; if (FRZ.log) FRZ.log.push(o.name || o.type); } }
+}
+function noMoonShadow(o) { if (!o) return; o.traverse(m => { if (m.isMesh) m.layers.set(3); }); }
+camera.layers.enable(3); flashlight.shadow.camera.layers.enable(3);
 function renderFrame(dt) {
+  frzTick(dt);
+  // 3. Shadows on a machine that is falling behind: when frames take longer than 18 ms on foot, the shadow maps are redrawn every other
+  //    frame instead of dropping to MEDIUM (no flashlight shadows, no bloom). At normal frame rates, and always while driving, every frame.
+  FRZ.ft = (FRZ.ft || 1 / 60) * .92 + Math.min(.1, dt) * .08; renderer.shadowMap.autoUpdate = false; FRZ.sf = ((FRZ.sf || 0) + 1) % 2;
+  renderer.shadowMap.needsUpdate = FRZ.ft < .018 || !!driving || FRZ.sf === 0;
   if (!TPROPS.done && HPG && (HKG || HKFAIL) && (K3G || K3FAIL) && state === 'play') { try { townDress(); } catch (e) { console.warn('town props', e); TPROPS.done = true; } } townPropsTick(); vicTick();
   if (quality >= 1 && composer) {
     const u = finalPass.uniforms; u.time.value = elapsed; u.hurt.value = Math.min(1, flash * 3); u.low.value = (P && P.hp < 35) ? 1 : 0; u.res.value.set(VW, VH);
@@ -5830,7 +5870,7 @@ function npcScav(n, dt, dp) {
     n.a = Math.atan2(t.y - n.y, t.x - n.x); n.scavT = (n.scavT || 0) + dt; if (Math.random() < dt * 4) sfx('rummage', t.x, t.y);
     if (n.scavT > 1.6) {
       let got = 0;
-      if (t.items) { for (let i = t.items.length - 1; i >= 0; i--) if (AMMOK.has(t.items[i].k)) { got += t.items[i].n; t.items.splice(i, 1); } if (!t.items.length) { t.open = true; if (t.m) crateShut(t); } }
+      if (t.items) { for (let i = t.items.length - 1; i >= 0; i--) if (AMMOK.has(t.items[i].k)) { got += t.items[i].n; t.items.splice(i, 1); } if (!t.items.length) { t.open = true; if (t.m) { crateShut(t); thaw(t.m); } } }
       else if (t.def && t.def.table) { const c = iaContents(t, t.def.table); for (let i = c.length - 1; i >= 0; i--) if (c[i].item && AMMOK.has(c[i].item.k)) { got += c[i].item.n; c.splice(i, 1); } if (got) t.npcTook = n.ch; if (!c.length) t.looted = true; }
       t.npcChecked = true; got = Math.min(got, n.ammoMax - n.ammo); n.ammo += got; n.scav = null; n.scavT = 0;
       bark(n.ch, pick(got ? NFOUND : NEMPTY), true); if (got) toast(CAST[n.ch].name + ' found ' + got + ' rounds.');
@@ -6021,7 +6061,7 @@ function interiorStream(cx, cz, all) {
   const want = []; for (const h of houses) { if (!h.fg) continue; const d = Math.hypot(h.x + h.w / 2 - px, h.y + h.h / 2 - pz); h._sd = d; if (d < 3000 && !h.fgOn) want.push(h); else if (d > 4200 && h.fgOn) { world3.remove(h.fgM); h.fgOn = false; } }
   want.sort((a, b) => a._sd - b._sd);
   for (const h of want) { if (budget <= 0 && h._sd > 700) break;
-    if (!h.fgM) { h.fgM = mergeStatic(h.fg); h.fgM.matrixAutoUpdate = false; h.fgM.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.matrixAutoUpdate = false; } }); budget--; }
+    if (!h.fgM) { h.fgM = packGeo(mergeStatic(h.fg)); h.fgM.matrixAutoUpdate = false; h.fgM.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.matrixAutoUpdate = false; } }); noMoonShadow(h.fgM); budget--; }
     world3.add(h.fgM); h.fgOn = true; }
   for (const h of houses) { if (!h.fg) continue; const d = h._sd;
     if (h.fgOn) { if (!h._dl) h._dl = doors.filter(dr => houses[dr.hi] === h);   // furniture: up close, or through an open door you are facing
@@ -7131,7 +7171,7 @@ function updateFlying(dt) {
   for (let i = flying.length - 1; i >= 0; i--) {
     const p = flying[i], f = p.fly, m = p.m; f.t += dt;
     m.position.x += f.vx * dt; m.position.z += f.vz * dt; m.position.y += f.vy * dt; f.vy -= 9.8 * dt;
-    m.rotation.x += f.wx * dt; m.rotation.z += f.wz * dt;
+    m.rotation.x += f.wx * dt; m.rotation.z += f.wz * dt; thaw(m);
     const fl = f.y0 + .15;
     if (m.position.y < fl) { m.position.y = fl; if (f.vy < -1.5) { f.vy = -f.vy * .3; f.vx *= .55; f.vz *= .55; f.wx *= .5; f.wz *= .5; propSound(p.snd, Math.abs(f.vy) * 3); } else { f.vy = 0; f.vx *= .85; f.vz *= .85; f.wx *= .7; f.wz *= .7; } }
     if (f.t > 3.5) flying.splice(i, 1);
@@ -10684,6 +10724,7 @@ function buildExtCar(col, kind) {   // same shape of object as buildGlbCar makes
     else if (n === 'C_blue' || n === 'C_red') { o.material = o.material.clone(); (u.siren = u.siren || []).push(o.material); } });
   u.wheels = ['FL', 'FR', 'RL', 'RR'].map(k => g.getObjectByName(kind + '_Wheel_' + k)); u.wipers = [];
   if (kind === 'Car_gls') { const tm = buildExtCar.tire || (buildExtCar.tire = new THREE.MeshStandardMaterial({ color: 0x1a1a1b, roughness: .8, metalness: .35 })); for (const w of u.wheels) if (w) w.traverse(o => { if (o.isMesh && o.material.name === 'X_paint') o.material = tm; }); }
+  carBatch(out);   // build 65: one mesh per material (shared per model) and a far version, like the other cars; the real models used to be 18 to 53 meshes each, drawn at any distance
   if (kind === 'Car_humvee') humveeTurret(out, 1.98, -.35);
   return out;
 }
@@ -11572,12 +11613,12 @@ function townDress() {
   if (K3G) for (const t of towers) { if (t.plaza) continue; const top = t.fl * 3.4 + 1.2, n = 2 + (t.x + t.y) % 4; for (let k = 0; k < n; k++) { const x = t.x + t.w * (.2 + .6 * ((k * 37 + t.x) % 100) / 100), y = t.y + t.h * (.25 + .5 * ((k * 53 + t.y) % 100) / 100); add('BK_ac', x, y, (k % 4) * Math.PI / 2, top + .1); } }
   // instancing: one InstancedMesh per prop part per town, culled with the town
   const groupsByTown = new Map();
-  for (const name in list) { const parts = hpProto(name); if (!parts) continue; const LL = list[name], cells = new Map();   // build 64: instance per 75 m cell, so props far away are not drawn
-    for (const it of LL) { const k = Math.floor(it[0] / 1500) * 1000 + Math.floor(it[1] / 1500); if (!cells.has(k)) cells.set(k, []); cells.get(k).push(it); }
+  for (const name in list) { const parts = hpProto(name); if (!parts) continue; const LL = list[name], cells = new Map();   // build 64/65: instance per 400 m cell, so props far away are not drawn without multiplying draw calls
+    for (const it of LL) { const k = Math.floor(it[0] / 8000) * 1000 + Math.floor(it[1] / 8000); if (!cells.has(k)) cells.set(k, []); cells.get(k).push(it); }
     for (const L of cells.values()) for (const part of parts) { const mats = L.map(([x, y, ry, y0]) => new THREE.Matrix4().compose(new THREE.Vector3(x * S3, y0, y * S3), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), ry), new THREE.Vector3(1, 1, 1)).multiply(part.local));
       const im = new THREE.InstancedMesh(part.geo, part.mat, mats.length); mats.forEach((m4, i) => im.setMatrixAt(i, m4)); im.castShadow = /burnt|container|tent|billboard|busstop|nest|jersey|rack|forklift|MK_hesco|MK_flood|MK_gen|FH_|JK_shell|JK_frame/.test(name); im.receiveShadow = true;
       let cx = 0, cz = 0; for (const [x, y] of L) { cx += x * S3; cz += y * S3; } cx /= L.length; cz /= L.length; let r = 0; for (const [x, y] of L) r = Math.max(r, Math.hypot(x * S3 - cx, y * S3 - cz)); im.frustumCulled = false; im.userData.cull = { x: cx, z: cz, r: r + 12 };
-      world3.add(im); TPROPS.groups.push(im); } }
+      if (name === 'BK_lantern') noMoonShadow(im); world3.add(im); TPROPS.groups.push(im); } }
   // the billboards' faces
   for (const B of TPROPS.bills || []) { const cv = document.createElement('canvas'); cv.width = 512; cv.height = 240; const c = cv.getContext('2d'); c.fillStyle = B.b[2]; c.fillRect(0, 0, 512, 240); c.fillStyle = '#f4efe2'; c.font = 'bold 64px Georgia'; c.textAlign = 'center'; c.fillText(B.b[0], 256, 112); c.font = 'bold 30px Arial'; c.fillText(B.b[1], 256, 176);
     for (let k = 0; k < 40; k++) { c.fillStyle = 'rgba(30,20,10,' + (Math.random() * .25) + ')'; c.fillRect(Math.random() * 512, Math.random() * 240, Math.random() * 60, Math.random() * 6); }

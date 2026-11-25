@@ -165,6 +165,26 @@ Supplies: **scrap, food, fuel, meds, ammo**. Missions pay them out. The farm mak
 | **Garage** | Tougher vehicles for convoys. | — |
 | **Radio** | Unlocks story chapters and towns farther away. | Level 2 needs Power 1, level 4 needs Power 3 |
 
+### Build 65: smoother frames
+
+These numbers were measured in the browser at HIGH quality, in a town street.
+- **Frozen matrices.** three.js recomputed the world matrix of all ~40,000 objects every frame, which took about 6.6 ms. Anything that has held still for two checks is now frozen and skipped until it moves, which brings that down to about 1.5 ms.
+  - Cars, opened crates and kicked props thaw themselves when they move.
+  - Characters, Haven, door leaves and anything with a light or sprite are never frozen.
+  - A rolling check thaws, for good, anything that moves without asking. None turned up in an operation or a two-player session.
+- **Cars at a distance.** A line that hid the first-person car body was switching every car back on each frame, so all 139 cars were drawn at any distance. The far cut-off works now. The real-model cars (Humvee, S-10, Crown Vic, GLS, BMW, Challenger, Lamborghini) are batched into one mesh per material with a far version, like the other cars: 18 to 53 meshes each became 7 to 16.
+- **Draw calls.** Down from about 1,550 to about 1,050 a frame at HIGH:
+  - The static county is merged into 120 m chunks instead of 60 m.
+  - Flat things on the ground (roads, kerbs, floors, rugs) no longer cast shadows they can't show.
+  - Moonlight shadows skip furniture inside houses, indoor loot and wall lanterns, which the roof already shadows. The flashlight still shadows them.
+  - Town props are instanced per 400 m cell.
+- **Shadows on slower machines.** When frames take longer than 18 ms on foot, the shadow maps redraw every other frame instead of the game dropping to MEDIUM. At normal frame rates, and always while driving, they redraw every frame.
+- **Memory.** Merged static geometry stores normals and vertex colours as bytes. The geometry waiting in memory to be drawn fell from 785 MB to 473 MB, and the same saving applies on the GPU.
+- **Online check.** Re-tested with two clients over a simulated 70 to 110 ms connection:
+  - The world is identical on both clients: cars, trees, loot, walls, props, furniture and the Hartwell house.
+  - A teammate's rendered car is 55 ms behind on screen (1.1 m on average while weaving at 25 m/s), and a teammate on foot 35 ms.
+  - Riding along, giving weapons and operation 1 all work.
+
 ## Weapons and the armory
 
 Guns are scarce. You start with a pistol. The workshop issues the standard guns, and everything else has to be found.
