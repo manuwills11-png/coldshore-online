@@ -173,7 +173,7 @@ html body #bagui .givebar{background:rgba(8,9,10,.97)}
 `; document.head.appendChild(st);
 })();
 function uiK(k) { return '<kbd class="u-k">' + k + '</kbd>'; }
-function uiBar(items) { return '<div class="u-bar">' + items.map(([k, t, m]) => '<span' + (m ? ' data-m="' + m + '"' : '') + '>' + k.map(uiK).join('') + ' ' + t + '</span>').join('') + '<span class="r">PROTOTYPE BUILD 65</span></div>'; }
+function uiBar(items) { return '<div class="u-bar">' + items.map(([k, t, m]) => '<span' + (m ? ' data-m="' + m + '"' : '') + '>' + k.map(uiK).join('') + ' ' + t + '</span>').join('') + '<span class="r">PROTOTYPE BUILD 66</span></div>'; }
 function uiMainItems() {
   const ready = assetsReady.kit && assetsReady.trees && assetsReady.car && assetsReady.furn && assetsReady.people && assetsReady.wtex;
   const SV = lvlLoad(), hasSv = SV.last !== null && SV.levels[SV.last];
@@ -215,7 +215,7 @@ function renderTitle() {
   } else if (titleMode === 'credits') {
     h += '<div class="u-scr"><div class="u-head"><div class="step">ABOUT</div><h2>Credits</h2></div><div class="u-cred"><p>ColdShore prototype. Characters, zombies, vehicles, buildings, trees and animation built procedurally in Blender. Engine: three.js. Voices: your browser&#39;s speech engine.</p><h4>Models</h4><p style="font-size:13px">From BlendSwap, reduced for the browser: M1 Humvee by panko10 (CC-BY); Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0); Ford Crown Victoria Police Interceptor 2005 (CC-BY 3.0); Mercedes-AMG GLS (CC0); BMW 3 Series Coupe by mikepan (CC-BY-SA 3.0); Trees &amp; Bushes pack by Painkiller5555; Dodge Challenger 1970 R/T; Low Quality Weapon Pack (CC0); Warehouse by argonius (CC0); Lamborghini Aventador (For games) by shadewar (CC-BY); Victorian Style House by MrChimp2313 (CC0); military_outpost_kit_1.0, Buildings_kit_1.0 and The_Breakers_yard_1.0 by Britdawgmasterfunk (CC0); Living/TV Room Study by mbarros (CC0); Family House Collection by tastyfish (CC0).</p></div><div class="u-row2"><span class="u-btn" data-m="back">Back</span></div></div>' + uiBar([[['Esc'], 'Back', 'back']]);
   }
-  if (titleMode === 'press') h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 65</div>';
+  if (titleMode === 'press') h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 66</div>';
   titleEl.innerHTML = h; titleEl.classList.add('on');
   titleEl.querySelectorAll('[data-m]').forEach(a => a.onclick = () => { const m = a.dataset.m; if (m === 'bgback') { titleMode = 'bg'; beep(520, .04, 'triangle', .03); renderTitle(); return; } titleAction(m); });
   titleEl.querySelectorAll('.u-menu a[data-i]').forEach(a => a.onmouseenter = () => { if (UI61.sel === +a.dataset.i) return; UI61.sel = +a.dataset.i; beep(880, .015, 'sine', .012); renderTitle(); });
@@ -232,7 +232,7 @@ function uiControlsHTML() {
     ['Items', [['Tab', 'Backpack: weapons, items, ammo, crafting, perks'], ['H', 'Use a bandage'], ['G / K', 'Throw a pipe bomb / molotov'], ['B / N', 'Craft a bandage / ammo']]],
     ['World', [['E', 'Interact; hold to hotwire, search or help a downed friend'], ['M', 'County map; click to pin a place'], ['J', 'Journal'], ['C', 'Squad orders: follow / hold / hold fire']]],
     ['Vehicles', [['E', 'Get in or out (park inside Haven&#39;s car park to keep it)'], ['Space', 'Handbrake'], ['C', 'Chase / driver camera'], ['H L X R K', 'Horn, lights, wipers, radio, siren']]],
-    ['Online', [['P', 'Ping where you are looking'], ['E on a friend', 'Give from your backpack'], ['E on a Humvee', 'Man the roof gun']]]];
+    ['Online', [['P', 'Ping where you are looking'], ['E on a friend', 'Give from your backpack'], ['E on a Humvee', 'Man the roof gun']]], ['Performance', [['F3', 'Frame rate, ping and hitch overlay'], ['Shift F3', 'Copy a performance report']]]];
   return G.map(([t, rows]) => '<h4>' + t + '</h4>' + rows.map(([k, d]) => '<div><span>' + d + '</span><span>' + k.split(' ').filter(Boolean).map(x => x === '/' || x === '-' ? '<span style="color:#5f645f">' + x + '</span>' : uiK(x)).join('') + '</span></div>').join('')).join('');
 }
 function uiSettingsHTML() {
@@ -4678,7 +4678,37 @@ function frzTick(dt) {
 }
 function noMoonShadow(o) { if (!o) return; o.traverse(m => { if (m.isMesh) m.layers.set(3); }); }
 camera.layers.enable(3); flashlight.shadow.camera.layers.enable(3);
+/* ======================= BUILD 66: PERFORMANCE OVERLAY (F3) =======================
+   F3 shows frame rate, frame time (average and the worst in the last second), draw calls, triangles, ping, memory, quality and frozen objects.
+   Any spike over 60 ms (and 2.5x the usual frame) is logged with where you were (console and the overlay). Shift+F3 copies a report to the clipboard to paste back. */
+const PERF = { on: false, el: null, fr: [], t: 0, calls: 0, tris: 0, hitches: [], worst: 0, start: performance.now() };
+function perfWhere() { let best = null, bd = 1e9; for (const T of TOWNS || []) { const d = Math.hypot(P.x - T.x, P.y - T.y); if (d < bd) { bd = d; best = T; } }
+  const inV = typeof VIC !== 'undefined' && VIC.c && Math.hypot(P.x - VIC.c.cx, P.y - VIC.c.cy) < 400; const hv = typeof HVR !== 'undefined' && P.x > HVR.x0 && P.x < HVR.x1 && P.y > HVR.y0 && P.y < HVR.y1;
+  return (hv ? 'Haven' : inV ? 'Hartwell house' : best && bd < best.r * 1.3 ? best.n : 'open county') + (driving ? ' (driving)' : '') + (INT.cur ? ' (inside)' : '') + ' @' + Math.round(P.x) + ',' + Math.round(P.y); }
+function perfFrame(dt) {
+  const ms = dt * 1000; PERF.fr.push(ms); if (ms > PERF.worst) PERF.worst = ms;
+  const base = PERF.avg || ms; PERF.avg = base * .95 + Math.min(ms, base * 3) * .05;   // a hitch is a spike: over 60 ms and well above the usual frame
+  if (ms > 60 && ms > base * 2.5 && state === 'play' && performance.now() - PERF.start > 8000) { const h = { at: new Date().toLocaleTimeString(), ms: Math.round(ms), where: perfWhere(), calls: PERF.calls }; PERF.hitches.push(h); if (PERF.hitches.length > 30) PERF.hitches.shift(); console.warn('[perf] hitch', h.ms + ' ms', h.where); }
+  PERF.t += dt; if (PERF.t < .25) return; PERF.t = 0; if (!PERF.on) { PERF.fr.length = 0; PERF.worst = 0; return; }
+  if (!PERF.el) { const d = document.createElement('div'); d.id = 'perf66'; d.style.cssText = 'position:fixed;left:10px;top:120px;z-index:60;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;color:#dfe6e3;background:rgba(8,10,12,.78);padding:8px 10px;border-radius:6px;pointer-events:none;white-space:pre;min-width:230px'; document.body.appendChild(d); PERF.el = d; }
+  const f = PERF.fr, avg = f.reduce((a, b) => a + b, 0) / Math.max(1, f.length), fps = 1000 / Math.max(1, avg), col = fps >= 55 ? '#7fdc8a' : fps >= 30 ? '#f2c94c' : '#ff6b5a';
+  const mem = performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1e6) + ' MB' : 'n/a', ping = NET.on ? (NET.rttLast !== undefined ? Math.round(NET.rttLast) + ' ms' : '…') : 'offline';
+  const last = PERF.hitches[PERF.hitches.length - 1];
+  PERF.el.innerHTML = '<b style="color:' + col + '">' + fps.toFixed(0) + ' FPS</b>   ' + avg.toFixed(1) + ' ms (worst ' + PERF.worst.toFixed(0) + ')\n' +
+    'draw calls ' + PERF.calls + '   tris ' + (PERF.tris / 1000).toFixed(0) + 'k\n' + 'ping ' + ping + (NET.on ? '   players ' + (1 + (NET.RP ? NET.RP.size : 0)) : '') + '\n' +
+    'memory ' + mem + '   quality ' + ['LOW', 'MEDIUM', 'HIGH'][quality] + '\n' + 'frozen ' + (FRZ.roots ? FRZ.roots.length : 0) + '   hitches ' + PERF.hitches.length + '\n' + perfWhere() +
+    (last ? '\n<span style="color:#ff9a8a">last hitch ' + last.ms + ' ms ' + last.at + '\n  ' + last.where + '</span>' : '') + '\n<span style="color:#8a9490">Shift+F3 copies a report</span>';
+  f.length = 0; PERF.worst = 0;
+}
+function perfReport() {
+  const f = PERF.el ? PERF.el.textContent : ''; let gl = ''; try { const g = renderer.getContext(), x = g.getExtension('WEBGL_debug_renderer_info'); gl = x ? g.getParameter(x.UNMASKED_RENDERER_WEBGL) : g.getParameter(g.RENDERER); } catch (e) {}
+  return ['ColdShore ' + (document.title || '') + ' perf report', 'GPU: ' + gl, 'Screen: ' + innerWidth + 'x' + innerHeight + ' @' + (window.devicePixelRatio || 1), 'Now: ' + f.replace(/Shift\+F3 copies a report/, ''),
+    'Hitches (spikes over 60 ms):', ...PERF.hitches.map(h => '  ' + h.at + '  ' + h.ms + ' ms  ' + h.calls + ' calls  ' + h.where)].join('\n'); }
+addEventListener('keydown', e => { if (e.code !== 'F3') return; e.preventDefault();
+  if (e.shiftKey) { const r = perfReport(); try { navigator.clipboard.writeText(r).then(() => toast('Performance report copied. Paste it to Claude.'), () => { console.log(r); toast('Report printed to the console (clipboard blocked).'); }); } catch (er) { console.log(r); } return; }
+  PERF.on = !PERF.on; if (PERF.el) PERF.el.style.display = PERF.on ? 'block' : 'none'; PERF.t = 1; });
 function renderFrame(dt) {
+  perfFrame(PERF.raw > 0 && PERF.raw < 5000 ? PERF.raw / 1000 : dt); renderer.info.autoReset = false; renderer.info.reset();
   frzTick(dt);
   // 3. Shadows on a machine that is falling behind: when frames take longer than 18 ms on foot, the shadow maps are redrawn every other
   //    frame instead of dropping to MEDIUM (no flashlight shadows, no bloom). At normal frame rates, and always while driving, every frame.
@@ -4689,6 +4719,7 @@ function renderFrame(dt) {
     const u = finalPass.uniforms; u.time.value = elapsed; u.hurt.value = Math.min(1, flash * 3); u.low.value = (P && P.hp < 35) ? 1 : 0; u.res.value.set(VW, VH);
     composer.render(dt);
   } else renderer.render(scene, camera);
+  PERF.calls = renderer.info.render.calls; PERF.tris = renderer.info.render.triangles; renderer.info.autoReset = true;
 }
 
 /* ---------- Story, notes, endings ---------- */
@@ -8824,7 +8855,7 @@ function netSend(o) { if (NET.ws && NET.ws.readyState === 1) NET.ws.send(JSON.st
 /* build 63: one clock for everyone. The server's time is learned from round trips (the fastest ones are trusted most), so every
    position carries the moment it was true, and each screen moves people and cars forward to where they are now, not where they were. */
 const srvNow = () => performance.now() + (NET.soff || 0);
-function netClkOn(m) { const now = performance.now(), rtt = now - m.c; if (!(rtt >= 0) || rtt > 5000) return; const off = m.s - (m.c + rtt / 2);
+function netClkOn(m) { const now = performance.now(), rtt = now - m.c; if (!(rtt >= 0) || rtt > 5000) return; NET.rttLast = NET.rttLast === undefined ? rtt : NET.rttLast * .7 + rtt * .3; const off = m.s - (m.c + rtt / 2);
   NET.clk = NET.clk || []; NET.clk.push([rtt, off, now]); while (NET.clk.length > 12) NET.clk.shift();
   const best = NET.clk.slice().sort((a, b) => a[0] - b[0]).slice(0, 4); const o = best.reduce((t, q) => t + q[1], 0) / best.length;
   NET.soff = NET.soff === undefined ? o : NET.soff + (o - NET.soff) * .3; NET.rtt = best[0][0]; NET.clkOk = NET.clk.length >= 3; }
@@ -12037,7 +12068,7 @@ window.__cs2 = { ev: c => eval(c), CAMP: () => CAMP, campGo: L => { story.ending
 /* ---------- Loop ---------- */
 let last = performance.now(), fpsAcc = 0, fpsN = 0, slowS = 0;
 function frame(now) {
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  PERF.raw = now - last; const dt = Math.min(0.05, (now - last) / 1000); last = now;
   const paused = state === 'play' && !HV.mode && ((wasLocked && !locked && !lockFailed) || !!reading || mapOpen || !!PR.menu || BAG.open);
   if (state === 'play' && NET.on && !HV.mode && !NET_BG) netOnlineStep((now - (frame.lt || now)) / 1000 || dt, paused); else if (state === 'play' && !paused) update(dt); frame.lt = now;
   if (state === 'cut') cineUpdate(dt);

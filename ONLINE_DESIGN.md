@@ -185,6 +185,18 @@ These numbers were measured in the browser at HIGH quality, in a town street.
   - A teammate's rendered car is 55 ms behind on screen (1.1 m on average while weaving at 25 m/s), and a teammate on foot 35 ms.
   - Riding along, giving weapons and operation 1 all work.
 
+### Build 66: performance overlay
+
+Press F3 in game for:
+- frame rate, and frame time (average and the worst frame in the last second)
+- draw calls and triangles
+- ping and number of players
+- memory and quality level
+- frozen objects
+- where you are: town, Haven or the Hartwell house, plus coordinates
+
+Spikes over 60 ms that are well above the usual frame are logged to the console with the place. Shift+F3 copies a report to the clipboard: GPU name, screen size, current numbers and the last 30 spikes.
+
 ## Weapons and the armory
 
 Guns are scarce. You start with a pistol. The workshop issues the standard guns, and everything else has to be found.
