@@ -197,6 +197,30 @@ Press F3 in game for:
 
 Spikes over 60 ms that are well above the usual frame are logged to the console with the place. Shift+F3 copies a report to the clipboard: GPU name, screen size, current numbers and the last 30 spikes.
 
+### Build 67: loading, real guns, busy towns, repairs
+
+**Loading.** The game used to request every model at once as base64 JSON (about 158 MB). The few files the menu needs arrived last, and after 15 seconds the game gave up waiting and started with stand-in models: box cars, no furniture, plain trees. That is why things seemed to go missing. Now:
+- One queue downloads four files at a time in order of need: world and menu first, then the starting weapons and the town props, then voices and the rarer cars.
+- Models are gzipped binary (`.glbz`, `.jsz`), about 60% smaller. The old `.json` files remain as a fallback.
+- Every file is stored in the browser's Cache Storage under its content hash (`ASSETH` in index.html, written by `tools/pack_assets.py`). A second visit loads from disk, and an update downloads only the files that changed.
+- The stand-in timeout is now 2 minutes instead of 15 seconds.
+
+**Real guns.** Four textured BlendSwap models, converted by `tools/realgun_blend.py` into `wpn_real.json`:
+- **Beretta M9** by MazenYasser (CC-BY): the starting pistol, plus the Glock, P226, USP and 1911.
+- **Remington 870** by Britdawgmasterfunk (CC0): the pump shotgun, the 870 and the SPAS.
+- **Weathered AKM** by LonesomeDucky (CC0): the AK and the Galil.
+- **AR48s** by 5thElement (CC0): the carbine, AR-15, SCAR, G36, QBZ and HK53.
+
+The SMGs, snipers, revolver and LMG still use the old untextured prototype pack.
+
+**Towns are populated.** A town gets 15 zombies (26 downtown) as you arrive: walkers, feeding groups and small packs, never inside houses. Each town is restocked at most every 5 minutes and fills less the more of it you have cleared.
+
+Online, the county outside Haven is no longer empty between operations. The server names a Haven host (`hhost`): the first player who is not on an operation. That player simulates zombies outside Haven, and `zs`, `zdead`, `hit`, `spawnreq` and `pdmg` are relayed among the players at Haven.
+
+**Repairs.** "Change the tyre" and "Repair the engine" are offered at any damage; it used to be only below 60%. The prompt shows the engine percentage. A repair is sent to everyone (`carfix`), and the flat-tyre state now travels with the car.
+
+**Mercedes GLS.** The converted mesh itself is lumpy, with dented panels baked in. Smoothing its normals and subdividing it didn't fix that, so it is unchanged. It needs a different source model.
+
 ## Weapons and the armory
 
 Guns are scarce. You start with a pistol. The workshop issues the standard guns, and everything else has to be found.
@@ -251,7 +275,7 @@ Each player earns XP and kills for their own profile. The crew earns supplies, c
 
 ## Asset credits
 
-Models are from BlendSwap and were reduced for the browser: M1 Humvee by panko10 (CC-BY), Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0), Ford Crown Victoria Police Interceptor 2005 (CC-BY 3.0; the Highway Patrol livery isn't the uploader's), Mercedes-AMG GLS (CC0), BMW 3 Series Coupe by mikepan (CC-BY-SA 3.0), Trees & Bushes pack by Painkiller5555, Dodge Challenger 1970 R/T (license not stated on the upload; check before release), Low Quality Weapon Pack (CC0). Haven's structures are built in Blender by tools/haven_blend.py. Build 59 adds props.json, also built in Blender (tools/props_blend.py, 34 props): in Haven a mess hall, gate lookouts, HESCO walls and a jersey chicane, a container yard, a water tower, woodpiles, lean-tos, outhouses, burn barrels, picnic tables, shelving, scrap and lamps; in every county town burnt-out cars, rubbish, rubble, abandoned luggage, carts, bus shelters, benches, news boxes, phone booths, a police roadblock, a billboard, and relief camps in Millbrook, Fairhaven and Seaview. Build 60 adds kit2.json from the BlendSwap "Warehouse" pack by argonius (CC0), cut down in tools/kit2_blend.py: a forklift, a pallet jack, loaded pallet racking, stacked boxes, barrels and a 40 ft container, used in Haven's store yard and in loading corners behind the bigger buildings in every town. The "Low Poly Street Props" pack was tried and left out because its textures don't survive the conversion.
+Models are from BlendSwap and were reduced for the browser: M1 Humvee by panko10 (CC-BY), Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0), Ford Crown Victoria Police Interceptor 2005 (CC-BY 3.0; the Highway Patrol livery isn't the uploader's), Mercedes-AMG GLS (CC0), BMW 3 Series Coupe by mikepan (CC-BY-SA 3.0), Trees & Bushes pack by Painkiller5555, Dodge Challenger 1970 R/T (license not stated on the upload; check before release), Low Quality Weapon Pack (CC0). Build 67: Beretta M9 pistol by MazenYasser (CC-BY), Weathered AKM rifle by LonesomeDucky (CC0), Automatic Rifle AR48s by 5thElement (CC0), Remington 870 shotgun by Britdawgmasterfunk (CC0). Haven's structures are built in Blender by tools/haven_blend.py. Build 59 adds props.json, also built in Blender (tools/props_blend.py, 34 props): in Haven a mess hall, gate lookouts, HESCO walls and a jersey chicane, a container yard, a water tower, woodpiles, lean-tos, outhouses, burn barrels, picnic tables, shelving, scrap and lamps; in every county town burnt-out cars, rubbish, rubble, abandoned luggage, carts, bus shelters, benches, news boxes, phone booths, a police roadblock, a billboard, and relief camps in Millbrook, Fairhaven and Seaview. Build 60 adds kit2.json from the BlendSwap "Warehouse" pack by argonius (CC0), cut down in tools/kit2_blend.py: a forklift, a pallet jack, loaded pallet racking, stacked boxes, barrels and a 40 ft container, used in Haven's store yard and in loading corners behind the bigger buildings in every town. The "Low Poly Street Props" pack was tried and left out because its textures don't survive the conversion.
 
 Build 64 adds seven more BlendSwap downloads:
 - **Lamborghini Aventador (For games)** by shadewar (CC-BY), converted by convert_vehicle.py into veh_lambo.json. It is a rare drivable car, with five in the county.

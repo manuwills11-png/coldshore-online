@@ -173,7 +173,7 @@ html body #bagui .givebar{background:rgba(8,9,10,.97)}
 `; document.head.appendChild(st);
 })();
 function uiK(k) { return '<kbd class="u-k">' + k + '</kbd>'; }
-function uiBar(items) { return '<div class="u-bar">' + items.map(([k, t, m]) => '<span' + (m ? ' data-m="' + m + '"' : '') + '>' + k.map(uiK).join('') + ' ' + t + '</span>').join('') + '<span class="r">PROTOTYPE BUILD 66</span></div>'; }
+function uiBar(items) { return '<div class="u-bar">' + items.map(([k, t, m]) => '<span' + (m ? ' data-m="' + m + '"' : '') + '>' + k.map(uiK).join('') + ' ' + t + '</span>').join('') + '<span class="r">PROTOTYPE BUILD 67</span></div>'; }
 function uiMainItems() {
   const ready = assetsReady.kit && assetsReady.trees && assetsReady.car && assetsReady.furn && assetsReady.people && assetsReady.wtex;
   const SV = lvlLoad(), hasSv = SV.last !== null && SV.levels[SV.last];
@@ -213,9 +213,9 @@ function renderTitle() {
   } else if (titleMode === 'settings') {
     h += '<div class="u-scr"><div class="u-head"><div class="step">OPTIONS</div><h2>Settings</h2></div><div class="u-set">' + uiSettingsHTML() + '</div><div class="u-row2"><span class="u-btn" data-m="back">Back</span></div></div>' + uiBar([[['Esc'], 'Back', 'back']]);
   } else if (titleMode === 'credits') {
-    h += '<div class="u-scr"><div class="u-head"><div class="step">ABOUT</div><h2>Credits</h2></div><div class="u-cred"><p>ColdShore prototype. Characters, zombies, vehicles, buildings, trees and animation built procedurally in Blender. Engine: three.js. Voices: your browser&#39;s speech engine.</p><h4>Models</h4><p style="font-size:13px">From BlendSwap, reduced for the browser: M1 Humvee by panko10 (CC-BY); Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0); Ford Crown Victoria Police Interceptor 2005 (CC-BY 3.0); Mercedes-AMG GLS (CC0); BMW 3 Series Coupe by mikepan (CC-BY-SA 3.0); Trees &amp; Bushes pack by Painkiller5555; Dodge Challenger 1970 R/T; Low Quality Weapon Pack (CC0); Warehouse by argonius (CC0); Lamborghini Aventador (For games) by shadewar (CC-BY); Victorian Style House by MrChimp2313 (CC0); military_outpost_kit_1.0, Buildings_kit_1.0 and The_Breakers_yard_1.0 by Britdawgmasterfunk (CC0); Living/TV Room Study by mbarros (CC0); Family House Collection by tastyfish (CC0).</p></div><div class="u-row2"><span class="u-btn" data-m="back">Back</span></div></div>' + uiBar([[['Esc'], 'Back', 'back']]);
+    h += '<div class="u-scr"><div class="u-head"><div class="step">ABOUT</div><h2>Credits</h2></div><div class="u-cred"><p>ColdShore prototype. Characters, zombies, vehicles, buildings, trees and animation built procedurally in Blender. Engine: three.js. Voices: your browser&#39;s speech engine.</p><h4>Models</h4><p style="font-size:13px">From BlendSwap, reduced for the browser: M1 Humvee by panko10 (CC-BY); Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0); Ford Crown Victoria Police Interceptor 2005 (CC-BY 3.0); Mercedes-AMG GLS (CC0); BMW 3 Series Coupe by mikepan (CC-BY-SA 3.0); Trees &amp; Bushes pack by Painkiller5555; Dodge Challenger 1970 R/T; Low Quality Weapon Pack (CC0); Warehouse by argonius (CC0); Beretta M9 pistol by MazenYasser (CC-BY); Weathered AKM rifle by LonesomeDucky (CC0); Automatic Rifle AR48s by 5thElement (CC0); Remington 870 shotgun by Britdawgmasterfunk (CC0); Lamborghini Aventador (For games) by shadewar (CC-BY); Victorian Style House by MrChimp2313 (CC0); military_outpost_kit_1.0, Buildings_kit_1.0 and The_Breakers_yard_1.0 by Britdawgmasterfunk (CC0); Living/TV Room Study by mbarros (CC0); Family House Collection by tastyfish (CC0).</p></div><div class="u-row2"><span class="u-btn" data-m="back">Back</span></div></div>' + uiBar([[['Esc'], 'Back', 'back']]);
   }
-  if (titleMode === 'press') h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 66</div>';
+  if (titleMode === 'press') h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 67</div>';
   titleEl.innerHTML = h; titleEl.classList.add('on');
   titleEl.querySelectorAll('[data-m]').forEach(a => a.onclick = () => { const m = a.dataset.m; if (m === 'bgback') { titleMode = 'bg'; beep(520, .04, 'triangle', .03); renderTitle(); return; } titleAction(m); });
   titleEl.querySelectorAll('.u-menu a[data-i]').forEach(a => a.onmouseenter = () => { if (UI61.sel === +a.dataset.i) return; UI61.sel = +a.dataset.i; beep(880, .015, 'sine', .012); renderTitle(); });
@@ -1312,9 +1312,41 @@ function updateDoors(dt) {
   }
 }
 
+/* ======================= BUILD 67: ASSET LOADER =======================
+   Every model used to be requested at once as base64 JSON (~158 MB), so the few the menu needs arrived last, and after 15 s the
+   game gave up and started with stand-ins (box cars, no furniture: "stuff went missing"). Now:
+   1. one queue, four downloads at a time, in order of need: world and menu first, then the starting rigs, then voices and extras;
+   2. files are gzipped binary (.glbz/.jsz, ~60% smaller), with the old .json kept as a fallback;
+   3. everything is kept in the browser's Cache Storage under its content hash, so a second visit loads from disk and an update
+      only downloads the files that actually changed. */
+var ASSETH = {"car.json":"de202c84c5","car.glbz":"90d1660374","furn.json":"9103be15cf","furn.glbz":"3afc78adb3","haven.json":"7564616314","haven.glbz":"ea85b68678","kit.json":"8b3041e6f6","kit.glbz":"5a26f2762a","kit2.json":"2598bf05ac","kit2.glbz":"0a95e4abdf","kit3.json":"95a53895a2","kit3.glbz":"49e98cc799","people_DAR.json":"1bc3757c51","people_DAR.glbz":"a75934ce6b","people_DIAZ.json":"ef2f4c8cef","people_DIAZ.glbz":"2d2ac7f891","people_ELI.json":"4bd2d0ab8c","people_ELI.glbz":"6a33cafcd9","people_HART.json":"ff8c90c57f","people_HART.glbz":"c7cd7ef5f7","people_JUN.json":"2b4bee12cf","people_JUN.glbz":"e93edc8488","people_MARI.json":"1c554e5dfa","people_MARI.glbz":"e8576b1efc","people_MIA.json":"58978973fd","people_MIA.glbz":"da9265f6a7","people_NAD.json":"d825b1f3bf","people_NAD.glbz":"02f6a05b69","people_OZZ.json":"6244327123","people_OZZ.glbz":"195ce20f04","people_PF1.json":"7c78363045","people_PF1.glbz":"1a8d39358b","people_PF2.json":"d899a7b46d","people_PF2.glbz":"a0cbefe37d","people_PM1.json":"452ed2354c","people_PM1.glbz":"bf7d412379","people_PM2.json":"d804315865","people_PM2.glbz":"7a7a689a66","people_REY.json":"a615f8a5f6","people_REY.glbz":"f36f29645a","people_SAM.json":"3c80a6404c","people_SAM.glbz":"fbf558e662","people_VOS.json":"97aed8aec8","people_VOS.glbz":"c6fe4edf90","props.json":"668467e66e","props.glbz":"69f6a8530f","trees.json":"edc7a89f5a","trees.glbz":"0efc51e6e7","trees2.json":"97c69aa00f","trees2.glbz":"5f91fde5c7","veh_bmw.json":"bd4ff0fe4c","veh_bmw.glbz":"fcd7d0d575","veh_challenger.json":"e4d3bb5ad9","veh_challenger.glbz":"1bd2278761","veh_gls.json":"1f39e1dce0","veh_gls.glbz":"a4eec64437","veh_humvee.json":"2f332a2849","veh_humvee.glbz":"deb264e188","veh_lambo.json":"30a7895872","veh_lambo.glbz":"921902e1f4","veh_police.json":"adab7d9e26","veh_police.glbz":"88ef141430","veh_s10.json":"b1917c586d","veh_s10.glbz":"d0a25743e5","vic.json":"09fe068343","vic.glbz":"ec3b0eb3d3","viewmodel.json":"cba15ae9d1","viewmodel.glbz":"bc0b113568","vm_hunting.json":"2a8edc1a81","vm_hunting.glbz":"469a38735e","vm_machete.json":"a162fd8211","vm_machete.glbz":"dbe6acc17c","vm_rifle.json":"92fe061546","vm_rifle.glbz":"11b6dae2be","vm_shotgun.json":"e7bc7957da","vm_shotgun.glbz":"64fa13f304","vm_smg.json":"32e0d810a2","vm_smg.glbz":"70c42bd73f","vo.json":"b5eaaa8231","vo.jsz":"71a1f3e318","vo2.json":"63c5e23760","vo2.jsz":"1254310dcf","vo3.json":"ee42540fb6","vo3.jsz":"5ffa24d04d","vo4.json":"7722ed3af1","vo4.jsz":"789dac2650","vo5.json":"3bed93614c","vo5.jsz":"1b8de4fefb","vo_PF1.json":"c10f94c472","vo_PF1.jsz":"cb2d4c5386","vo_PF2.json":"a76aa571a5","vo_PF2.jsz":"eb11ca57bb","vo_PM1.json":"818110ff3e","vo_PM1.jsz":"532c7927e9","vo_PM2.json":"9780ccb594","vo_PM2.jsz":"8fb5644024","world.json":"1d820fa276","world.jsz":"448ff09ba1","wpn_real.json":"3dd23178c8","wpn_real.glbz":"8aa25fec1f","wpn_weapons.json":"7110002b5c","wpn_weapons.glbz":"ff08a1a051","zombie_ZA.json":"b8f10fc0b6","zombie_ZA.glbz":"d98b5ceeca","zombie_ZB.json":"2d7e5da28c","zombie_ZB.glbz":"5fb3099824","zombie_ZC.json":"ccc105d8be","zombie_ZC.glbz":"f5e72698e9","zombie_ZD.json":"f10970b5b3","zombie_ZD.glbz":"ef39cbe24c"};
+var AQ = { q: [], live: 0, max: 4, done: 0, total: 0, bytes: 0, seq: 0 };
+var ACACHE = null; try { if (window.caches && isSecureContext) ACACHE = caches.open('coldshore-assets').catch(() => null); } catch (e) { ACACHE = null; }
+function aqPump() { AQ.q.sort((a, b) => a.p - b.p || a.n - b.n); while (AQ.live < AQ.max && AQ.q.length) { const j = AQ.q.shift(); AQ.live++; j.go().then(j.res, j.rej).finally(() => { AQ.live--; AQ.done++; aqPump(); }); } }
+function aqAdd(p, go) { AQ.total++; return new Promise((res, rej) => { AQ.q.push({ p, n: AQ.seq++, go, res, rej }); aqPump(); }); }
+async function gunz(buf) { const u = new Uint8Array(buf); if (u[0] !== 0x1f || u[1] !== 0x8b || typeof DecompressionStream === 'undefined') return u; return new Uint8Array(await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer()); }
+async function aqGet(file) {   // bytes of a file: Cache Storage first, then the network (and remember it)
+  const h = ASSETH[file], key = file + (h ? '?h=' + h : ''); let c = null; try { c = ACACHE ? await ACACHE : null; } catch (e) { c = null; }
+  if (c && h) { try { const r = await c.match(key); if (r) return await r.arrayBuffer(); } catch (e) {} }
+  const r = await fetch(key); if (!r.ok) throw new Error(file + ' ' + r.status); const b = await r.arrayBuffer(); AQ.bytes += b.byteLength;
+  if (c && h) { try { c.put(key, new Response(b.slice(0))); } catch (e) {} } return b;
+}
+function b64u8(s) { const bin = atob(s), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+function assetBytes(name, p) {   // the GLB bytes of a model; name without extension
+  return aqAdd(p === undefined ? 2 : p, async () => {
+    if (ASSETH[name + '.glbz']) { try { const u = await gunz(await aqGet(name + '.glbz')); if (u[0] === 0x67 && u[1] === 0x6c) return u; } catch (e) { console.warn('glbz', name, e); } }
+    const j = JSON.parse(new TextDecoder().decode(await gunz(await aqGet(name + '.json')))); return b64u8(j.glb); });
+}
+function assetJSON(name, p) { return aqAdd(p === undefined ? 2 : p, async () => {
+  if (ASSETH[name + '.jsz']) { try { return JSON.parse(new TextDecoder().decode(await gunz(await aqGet(name + '.jsz')))); } catch (e) { console.warn('jsz', name, e); } }
+  return JSON.parse(new TextDecoder().decode(await gunz(await aqGet(name + '.json')))); }); }
+function assetLoad(name, p) { return assetBytes(name, p).then(u => new Promise((res, rej) => new THREE.GLTFLoader().parse(u.buffer.byteLength === u.byteLength ? u.buffer : u.slice().buffer, '', res, rej))); }
+const APRI = { kit: 0, trees: 0, trees2: 0, car: 0, furn: 0, world: 0, viewmodel: 0, zombie_ZA: 0, zombie_ZB: 1, zombie_ZC: 1, zombie_ZD: 1, kit2: 1, kit3: 1, props: 1, vic: 1, vm_rifle: 1, vm_shotgun: 1, vm_machete: 1, wpn_real: 1, wpn_weapons: 2, vm_smg: 2, vm_hunting: 2, haven: 2, vo: 2 };
+function apri(name) { if (name in APRI) return APRI[name]; if (/^people_(ELI|REY|JUN|DAR|SAM|VOS|NAD|OZZ)$/.test(name)) return 0; if (/^people_|^vo/.test(name)) return 3; if (/^veh_/.test(name)) return 2; return 2; }
+
 /* ---------- Meshes: cars, zombies ---------- */
 let CARG = null; const wreckMats = new Map(); let deadLamp = null;
-fetch('car.json').then(r => r.json()).then(j => { const bin = atob(j.glb), buf = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+assetBytes('car', 0).then(buf => {
   new THREE.GLTFLoader().parse(buf.buffer, '', g => { CARG = g; if (typeof assetsReady !== 'undefined') { assetsReady.car = true; refreshMenu(); } }, e => { console.warn('car failed', e); assetsReady.car = true; refreshMenu(); }); }).catch(e => { console.warn('car fetch failed', e); assetsReady.car = true; refreshMenu(); });
 const CARKINDS = ['Car', 'Car_hatch', 'Car_suv', 'Car_pickup', 'Car_van'];
 function buildGlbCar(col, wreck, kind) {
@@ -1399,12 +1431,7 @@ const ZV = [];
 })();
 const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff3a1a }), mouthMat = LM({ color: 0x2a0606 }), shoeMat = LM({ color: 0x1c1a18 });
 let ZGLTF = null, ZG = [];
-function loadGlbJson(file) {
-  return fetch(file).then(r => r.json()).then(j => new Promise((res, rej) => {
-    const bin = atob(j.glb), buf = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-    new THREE.GLTFLoader().parse(buf.buffer, '', res, rej);
-  }));
-}
+function loadGlbJson(file) { const n = file.replace(/\.json$/, ''); return assetLoad(n, apri(n)); }
 function polishCharacter(g) {   // hair cards alpha-tested, eyes glossy, everything double-sided where it is thin
   g.scene.traverse(o => {
     if (!o.isMesh || !o.material) return;
@@ -2364,7 +2391,7 @@ function spawnZombie(initial, ax, ay) {
     }
   } while ((dist({ x, y }, P) < 520 || isWater(x, y)) && ++t < 50);
   if (isWater(x, y)) return;
-  if (NET.on && !NET.mission && !NET.force) return;   // Haven between operations is quiet
+  if (NET.on && !NET.mission && !NET.force && nearHaven(x, y)) return;   // Haven between operations is quiet (build 67: only Haven; the county outside is not)
   if (NET.on && !NET.host && !NET.mk) { NET.req.push([Math.round(x), Math.round(y)]); return; }   // online: only the sim host makes zombies
   const DF = typeof campDiff === 'function' ? campDiff() : 1, runner = Math.random() < Math.min(.45, 0.15 + .025 * (DF - 1));
   const z = { x, y, r: 12, hp: runner ? 2 : 3, max: runner ? 2 : 3, sp: runner ? 105 : rnd(48, 62), run: runner,
@@ -4069,7 +4096,7 @@ function update(dt) {
   for (let i = zombies.length - 1; i >= 0; i--) {
     const z = zombies[i];
     if (!isFinite(z.x) || !isFinite(z.y)) { if (z.m) world3.remove(z.m); zombies.splice(i, 1); continue; }   // build 39: never keep a zombie that is nowhere
-    if (z.hp <= 0) { if (z.pinT) grabRelease(z); if (NET.on) { if (z.puppet) netPuppetDied(z); else if (NET.host && z.nid) { NET.dead.push([z.nid, z.lastBy || (z.byP ? NET.pid : null), z.elite ? 1 : 0]); NET.byNid.delete(z.nid); } } zombies.splice(i, 1); kills++; zKilled(z); if (z.spec === 'bloater') bloaterBurst(z); if (z.hunt && NET.on && NET.host) huntDied(z); dying.push({ m: z.m, t: 0, x: z.x, y: z.y, corpse: { x: z.x, y: z.y, kind: 'corpse', def: IAK.corpse, r: 18 } }); if (z.m.userData.glb) { if (z.crawl || z.down > 0) { z.down = 0; z.crawl = 1; zPose(z, 0); dying[dying.length - 1].still = 1; } else setAnim(z.m.userData, 'Death', 1, 0.08); } splat(z.x, z.y); continue; }
+    if (z.hp <= 0) { townPopKill(z); if (z.pinT) grabRelease(z); if (NET.on) { if (z.puppet) netPuppetDied(z); else if (NET.host && z.nid) { NET.dead.push([z.nid, z.lastBy || (z.byP ? NET.pid : null), z.elite ? 1 : 0]); NET.byNid.delete(z.nid); } } zombies.splice(i, 1); kills++; zKilled(z); if (z.spec === 'bloater') bloaterBurst(z); if (z.hunt && NET.on && NET.host) huntDied(z); dying.push({ m: z.m, t: 0, x: z.x, y: z.y, corpse: { x: z.x, y: z.y, kind: 'corpse', def: IAK.corpse, r: 18 } }); if (z.m.userData.glb) { if (z.crawl || z.down > 0) { z.down = 0; z.crawl = 1; zPose(z, 0); dying[dying.length - 1].still = 1; } else setAnim(z.m.userData, 'Death', 1, 0.08); } splat(z.x, z.y); continue; }
     if (z.puppet) { netPuppetTick(z, dt); continue; }
     const T_ = NET.on && NET.host ? netTarget(z) : P;
     z.cd = Math.max(0, z.cd - dt); z.atkT = Math.max(0, (z.atkT || 0) - dt); z.hitT = Math.max(0, (z.hitT || 0) - dt); z.alertT = Math.max(0, (z.alertT || 0) - dt);
@@ -4109,7 +4136,7 @@ function update(dt) {
     const a = zombies[i], b = zombies[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy), m = a.r + b.r;
     if (d < m && d > 0.01) { const p = (m - d) / 2; a.x -= dx / d * p; a.y -= dy / d * p; b.x += dx / d * p; b.y += dy / d * p; }
   }
-  spawnT -= dt; if (INT.cur) spawnT = Math.max(spawnT, 1);
+  townPopTick(dt); spawnT -= dt; if (INT.cur) spawnT = Math.max(spawnT, 1);
   if (spawnT <= 0) { const T_ = townAt(P.x, P.y); spawnT = (T_ ? (T_.city ? 1.4 : 2.2) : 3.2) * (1 - .3 * TOD.N); if (zombies.length < (T_ && T_.city ? 54 : 46) + Math.min(20, 2 * ((typeof campDiff === 'function' ? campDiff() : 1) - 1))) spawnZombie(false); }
   for (let i = zombies.length - 1; i >= 0; i--) { const z = zombies[i]; if (z.state !== 'chase' && (NET.on ? netFar(z, 6500) : Math.abs(z.x - P.x) + Math.abs(z.y - P.y) > 6500)) { world3.remove(z.m); zombies.splice(i, 1); } }
 
@@ -5158,7 +5185,7 @@ function setupVM(g, id) {
   VM = id === curW ? v : prev;
   if (id === curW) vmDraw();
 }
-[['pistol', 'viewmodel.json'], ['shotgun', 'vm_shotgun.json'], ['rifle', 'vm_rifle.json'], ['smg', 'vm_smg.json'], ['hunting', 'vm_hunting.json'], ['machete', 'vm_machete.json']].forEach(([id, f]) => loadGlbJson(f).then(g => setupVM(g, id)).catch(e => console.warn('viewmodel failed', id, e)));
+[['pistol', 'viewmodel.json'], ['shotgun', 'vm_shotgun.json'], ['rifle', 'vm_rifle.json'], ['smg', 'vm_smg.json'], ['hunting', 'vm_hunting.json'], ['machete', 'vm_machete.json']].forEach(([id, f]) => loadGlbJson(f).then(g => realStarter(g, id).catch(() => {}).then(() => setupVM(g, id))).catch(e => console.warn('viewmodel failed', id, e)));
 function switchWeapon(id) {
   if (!P || !P.wp || id === curW || driving) return;
   if (!P.wp[id] || !P.wp[id].has) { toast('No ' + (WLBL[id] || id).toLowerCase() + ' yet'); return; }
@@ -5321,13 +5348,12 @@ function townSigns() {
 }
 /* ---------- Blender house kit ---------- */
 let KIT = null; const assetsReady = { kit: false, trees: false, car: false, furn: false, wtex: false };
-fetch('kit.json').then(r => r.json()).then(j => {
-  const bin = atob(j.glb), buf = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+assetBytes('kit', 0).then(buf => {
   new THREE.GLTFLoader().parse(buf.buffer, '', g => { const k = {}; g.scene.children.forEach(c => { k[c.name] = c; c.traverse(o => { if (o.isMesh && /glass/i.test(o.material.name)) { o.material.envMap = VMENV; o.material.envMapIntensity = 0.6; o.material.side = THREE.DoubleSide; } }); }); KIT = k; assetsReady.kit = true; refreshMenu(); }, e => { console.warn('kit failed', e); assetsReady.kit = true; refreshMenu(); });
 }).catch(e => { console.warn('kit fetch failed', e); assetsReady.kit = true; refreshMenu(); });
-setTimeout(() => { assetsReady.kit = assetsReady.trees = assetsReady.car = assetsReady.wtex = true; refreshMenu(); }, 15000);
+setTimeout(() => { assetsReady.kit = assetsReady.trees = assetsReady.car = assetsReady.wtex = true; refreshMenu(); }, 120000);   // build 67: was 15 s, which started slow connections on stand-in models
 const kitMatCache = {};
-fetch('furn.json').then(r => r.json()).then(j => { const bin = atob(j.glb), buf = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+assetBytes('furn', 0).then(buf => {
   new THREE.GLTFLoader().parse(buf.buffer, '', g => { const k = {}; g.scene.children.forEach(c => { k[c.name] = c; c.traverse(o => { if (o.isMesh) prepFurnMat(o); }); }); FURK = k; assetsReady.furn = true; refreshMenu(); }, e => { console.warn('furn failed', e); assetsReady.furn = true; refreshMenu(); }); }).catch(e => { console.warn('furn fetch failed', e); assetsReady.furn = true; refreshMenu(); });
 function kitMat(n) { if (kitMatCache[n] !== undefined) return kitMatCache[n]; let f = null; if (KIT) for (const k in KIT) KIT[k].traverse(o => { if (!f && o.isMesh && o.material.name === n) f = o.material; }); return (kitMatCache[n] = f); }
 function kitPut(name, x, z, ox, oz, y, sc) { const src = KIT && KIT[name]; if (!src) return null; const o = src.clone(true); o.position.set(x, y || 0, z); o.rotation.y = Math.atan2(-ox, -oz); if (sc) o.scale.copy(sc); sg.add(o); return o; }
@@ -5357,8 +5383,7 @@ function coverageMips(tex) {
 /* ---------- Blender trees (instanced) ---------- */
 let TREEG = null, treeFB = null, treeFBm = null, bushPos = [], TREEG2 = null;
 const TREE2P = loadGlbJson('trees2.json').then(g => { g.scene.traverse(o => { if (o.isMesh) { o.material.side = THREE.DoubleSide; o.material.roughness = .85; o.material.metalness = 0; o.castShadow = true; o.receiveShadow = true; } }); TREEG2 = g; }).catch(e => console.warn('trees2', e));
-fetch('trees.json').then(r => r.json()).then(j => {
-  const bin = atob(j.glb), buf = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+assetBytes('trees', 0).then(buf => {
   new THREE.GLTFLoader().parse(buf.buffer, '', g => Promise.race([TREE2P, new Promise(r => setTimeout(r, 20000))]).then(() => { TREEG = g; assetsReady.trees = true; refreshMenu(); if (world3 && treeFBm) { world3.remove(treeFBm); treeFBm = null; placeTrees(); } }), e => console.warn('trees failed', e));
 }).catch(e => console.warn('trees fetch failed', e));
 function treeProto(name) {
@@ -5464,7 +5489,7 @@ function placeTrees() {
 }
 /* ---------- Blender-baked world textures ---------- */
 function loadWorldTextures() {
-  fetch('world.json').then(r => r.json()).then(d => {
+  assetJSON('world', 0).then(d => {
     const tex = (k, rx, ry) => { const t = new THREE.Texture(); const im = new Image(); im.onload = () => { t.image = im; t.needsUpdate = true; }; im.src = d[k]; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); t.repeat.set(rx || 1, ry || 1); return t; };
     const set = (m, n, ns, rx, ry, extra) => { if (!m) return; m.map = tex(n + '_c', rx, ry); m.normalMap = tex(n + '_n', rx, ry); m.normalScale.set(ns, ns); m.bumpMap = null; m.color.set(0xffffff); if (extra) Object.assign(m, extra); m.needsUpdate = true; };
     set(M.wall, 'siding', 1.6, 1, 1, { roughness: 0.85 }); set(M.roof, 'roof', 1.6, 1, 1, { roughness: 0.9 }); set(M.brick, 'brick', 1.4, 1, 1);
@@ -5586,8 +5611,8 @@ let VO = null, curSrc = null, voAn = null, voData = null, voHiss = null;
 const VOB = new Map();
 const VOF = [];
 function voMerge() { VO = Object.assign({}, ...VOF.filter(Boolean)); }
-['vo.json', 'vo2.json', 'vo3.json', 'vo4.json', 'vo5.json'].forEach((f, i) => fetch(f).then(r => r.json()).then(j => { VOF[i] = j; voMerge(); }).catch(() => {}));
-const VOLOOK = {}; function loadYouVoice(id) { id = id || 'PM1'; if (VOLOOK[id]) return; VOLOOK[id] = 1; fetch('vo_' + id + '.json').then(r => r.json()).then(j => { VOF[10] = Object.assign(VOF[10] || {}, j); voMerge(); }).catch(() => {}); }
+['vo', 'vo2', 'vo3', 'vo4', 'vo5'].forEach((f, i) => assetJSON(f, i ? 3 : 2).then(j => { VOF[i] = j; voMerge(); }).catch(() => {}));
+const VOLOOK = {}; function loadYouVoice(id) { id = id || 'PM1'; if (VOLOOK[id]) return; VOLOOK[id] = 1; assetJSON('vo_' + id, 1).then(j => { VOF[10] = Object.assign(VOF[10] || {}, j); voMerge(); }).catch(() => {}); }
 function voBuffer(key) {
   if (VOB.has(key)) return VOB.get(key);
   if (!VO || !VO[key] || !actx) return Promise.resolve(null);
@@ -8822,16 +8847,47 @@ function myTruckEnsure() {
   t.m = buildCarMesh(t.col, false, t.kind); t.m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); world3.add(t.m); cars.push(t);
 }
 const carFixCost = c => c.flat ? 2 : c.hp <= 0 ? 4 : 2;   // build 53: every car can be fixed, even one that has died on you (it costs more)
-IAK.carfix = D_(it => (it.c.flat ? 'Change the tyre' : it.c.hp <= 0 ? 'Rebuild the engine' : 'Patch up the engine') + (inv.scrap >= carFixCost(it.c) ? '  (' + carFixCost(it.c) + ' scrap)' : '  (needs ' + carFixCost(it.c) + ' scrap)'), 'hold', it => {
+IAK.carfix = D_(it => (it.c.flat ? 'Change the tyre' + (it.c.hp < 98 ? ' (engine ' + Math.max(0, Math.round(it.c.hp)) + '% next)' : '') : it.c.hp <= 0 ? 'Rebuild the engine' : 'Repair the engine (' + Math.max(0, Math.round(it.c.hp)) + '%)') + (inv.scrap >= carFixCost(it.c) ? '  (' + carFixCost(it.c) + ' scrap)' : '  (needs ' + carFixCost(it.c) + ' scrap)'), 'hold', it => {
   const c = it.c, k = carFixCost(c); if (inv.scrap < k) { toast('You need ' + k + ' scrap.'); return; } inv.scrap -= k; c.stall = 0;
   if (c.flat) { c.flat = 0; c.flatS = 0; toast('Tyre changed.'); } else { c.hp = Math.min(100, Math.max(0, c.hp) + 35 + (bgKey === 'mechanic' ? 20 : 0)); toast('Engine ' + (c.hp <= 55 ? 'rebuilt' : 'patched') + '. ' + Math.round(c.hp) + '%'); }
-  if (c.myTruck) { story.truckHp = c.hp; story.truckFlat = c.flat; } beep(500, .1, 'triangle', .05); }, { time: 3.2 });
+  if (c.myTruck) { story.truckHp = c.hp; story.truckFlat = c.flat; } if (NET.on) netSend({ t: 'carfix', c: [carNid(c), Math.round(c.hp), c.flat ? 1 : 0] }); beep(500, .1, 'triangle', .05); }, { time: 3.2 });
 function carFixConsider(consider) {
-  if (driving) return; for (const c of cars) { if (c.wreck || !(c.flat || c.hp < 60)) continue; const reach = (c.hl || 40) + 30; if (Math.abs(c.x - P.x) > reach || Math.abs(c.y - P.y) > reach) continue;
+  if (driving) return; for (const c of cars) { if (c.wreck || !(c.flat || c.hp < 98)) continue; const reach = (c.hl || 40) + 30; if (Math.abs(c.x - P.x) > reach || Math.abs(c.y - P.y) > reach) continue;
     // stand anywhere along the car: the work point is the nearest spot on its body
     const ca = Math.cos(c.a), sa = Math.sin(c.a), lx = (P.x - c.x) * ca + (P.y - c.y) * sa, ly = -(P.x - c.x) * sa + (P.y - c.y) * ca, px = clamp(lx, -(c.hl || 40), c.hl || 40), py = clamp(ly, -(c.hw || 18), c.hw || 18);
     consider({ x: c.x + px * ca - py * sa, y: c.y + px * sa + py * ca, kind: 'carfix', def: IAK.carfix, r: 40, c, _tmp: 1 }); }
 }
+/* ======================= BUILD 67: TOWNS ARE NOT EMPTY =======================
+   Zombies used to trickle in one every 2-3 s around you, so you could drive through a town and see nobody, and the cap filled up with
+   the ones shut inside houses. Now a town is populated as you arrive (60-160 m out): a few walkers in the streets, groups feeding,
+   a pack in an alley. Each town is re-stocked at most every 5 minutes and remembers how many you have cleared. Online, the host does
+   this for every player, outside Haven. */
+const TPOP = new Map();
+function nearHaven(x, y) { return typeof HVR !== 'undefined' && x > HVR.x0 - 700 && x < HVR.x1 + 700 && y > HVR.y0 - 700 && y < HVR.y1 + 700; }
+function inAnyHouse(x, y) { for (const h of houses) if (x > h.x - 8 && x < h.x + h.w + 8 && y > h.y - 8 && y < h.y + h.h + 8) return true; return false; }
+function townPopTick(dt) {
+  if (NET.on && !NET.host) return; TPOP.t = (TPOP.t || 0) - dt; if (TPOP.t > 0 || !TOWNS) return; TPOP.t = 2;
+  const ps = [P]; if (NET.on) for (const r of NET.RP.values()) if (r.s && !r.s.down && isFinite(r.s.x)) ps.push(r.s);
+  for (const T of TOWNS) {
+    const near = ps.find(q => Math.hypot(q.x - T.x, q.y - T.y) < T.r + 1400); if (!near) continue;
+    const st = TPOP.get(T.n) || { at: -1e9, cleared: 0 }; if (elapsed - st.at < 300) continue;
+    if (NET.on && nearHaven(T.x, T.y)) continue;
+    st.at = elapsed; TPOP.set(T.n, st);
+    const cap = (T.city ? 74 : 64) + Math.min(16, 2 * ((typeof campDiff === 'function' ? campDiff() : 1) - 1)); let want = Math.min((T.city ? 26 : 15) - Math.min(8, st.cleared >> 2), cap - zombies.length); if (want <= 0) continue;
+    const spot = () => { for (let k = 0; k < 30; k++) { const a = Math.random() * 6.283, d = Math.sqrt(Math.random()) * T.r * .85, x = T.x + Math.cos(a) * d, y = T.y + Math.sin(a) * d;
+        if (x < 60 || y < 60 || x > WX - 60 || y > WY - 60 || isWater(x, y) || inAnyHouse(x, y)) continue; if (ps.some(q => Math.hypot(q.x - x, q.y - y) < 1150)) continue; return [x, y]; } return null; };
+    const n0 = zombies.length; let grp = null, gk = 0;
+    NET.force = !!NET.on; try {
+      while (want > 0) { if (!grp || gk <= 0) { grp = spot(); gk = Math.random() < .35 ? 3 + (Math.random() * 3 | 0) : 1; if (!grp) break; }
+        const b = zombies.length; spawnZombie(true, grp[0] + rnd(-40, 40), grp[1] + rnd(-40, 40)); gk--; want--;
+        if (zombies.length === b) continue; const z = zombies[zombies.length - 1]; z.tpop = T.n; if (inAnyHouse(z.x, z.y)) { world3.remove(z.m); zombies.pop(); if (NET.on && z.nid) NET.byNid.delete(z.nid); continue; }
+        if (gk >= 2 && !z.run) { z.feed = true; z.pause = true; z.wt = 1e9; } }
+    } finally { NET.force = false; }
+    if (zombies.length > n0 && !T._toldPop && !NET.on && Math.random() < .5) { T._toldPop = 1; }
+  }
+}
+function townPopKill(z) { if (!z || !z.tpop) return; const st = TPOP.get(z.tpop); if (st) st.cleared++; }
+
 /* roadblocks on outland roads: wrecks and barricades across half the lane */
 function roadblocks(rec, g, cx, cy) {
   const h = hashI(cx * 131 + cy * 7); if (h % 3 !== 0 || (cx === FORTC.cx && cy === FORTC.cy) || (SITES && SITES[cx + ',' + cy])) return;
@@ -8908,6 +8964,7 @@ function netMsg(m) {
     case 'do': if (NET.host) netDirective(m.d, m.threat); break;
     case 'revived': if (NET.down) { NET.down = false; P.hp = 45; toast(m.by + ' got you back up.'); } break;
     case 'car': netRemoteCar(m.c, m.pid); break;
+    case 'carfix': { const c = carByNid(m.c && m.c[0]); if (c) { c.hp = +m.c[1] || c.hp; c.flat = m.c[2] ? (c.flat || 1) : 0; if (!c.flat) c.flatS = 0; c.stall = 0; } break; }
     case 'ping': pingAdd(m.x, m.y, m.name || 'Teammate', false, m.pid); break;
     case 'given': giveGot(m); break;
     case 'mission.end': netMissionEnd(m); break;
@@ -9024,6 +9081,7 @@ function netResetWorld(M) {
 /* ---------- host role ---------- */
 function netSetHost(pid, reason) {
   const was = NET.host; NET.hostPid = pid; NET.host = pid === NET.pid;
+  if (!Array.isArray(zombies)) return;   // build 67: the Haven host can be named before the world exists
   if (NET.host && !was) {
     // take over: puppets become real zombies (host migration), keep their ids
     let mx = NET.zid; for (const z of zombies) { if (z.puppet) { z.puppet = false; z.state = 'chase'; z.wt = 1; } if (z.nid) mx = Math.max(mx, z.nid); } NET.zid = mx + 1000;
@@ -9179,7 +9237,7 @@ function netTick(dt) {
   const moving_ = driving || SEAT.car || Math.hypot(NET.vx || 0, NET.vy || 0) > 8 || Math.abs(yaw - (NET.lyaw || 0)) > .02;
   NET.stT -= dt; if (NET.stT <= 0 && (NET.mission || NET.worldReady)) { NET.stT = moving_ ? 1 / 30 : 1 / 10; NET.lyaw = yaw; const ts = Math.round(srvNow());
     netSend({ t: 'st', s: { x: Math.round(P.x), y: Math.round(P.y), vx: Math.round(driving ? 0 : NET.vx || 0), vy: Math.round(driving ? 0 : NET.vy || 0), lv: P.lv | 0, lvf: +(P.lvf || 0).toFixed(2), yaw: +yaw.toFixed(3), pitch: +pitch.toFixed(3), hp: Math.round(P.hp), down: NET.down, use: !!keys.KeyE, aim: adsK > .5, w: curW, drv: driving ? carNid(driving) : -1, seat: SEAT.car ? carNid(SEAT.car) : -1, sk: SEAT.kind || undefined, ta: SEAT.kind === 'gun' ? SEAT.aim : undefined, ts, sv: 1 } });
-    if (driving) { const c = driving; netSend({ t: 'car', c: [carNid(c), Math.round(c.x), Math.round(c.y), +c.a.toFixed(3), ts, Math.round(c.vx || 0), Math.round(c.vy || 0), +(c.w || 0).toFixed(3), c.kind, c.col | 0, Math.round(c.fuel || 0), Math.round(c.hp || 0), (c.lights ? 1 : 0) | (c.siren ? 2 : 0), 1] }); } }
+    if (driving) { const c = driving; netSend({ t: 'car', c: [carNid(c), Math.round(c.x), Math.round(c.y), +c.a.toFixed(3), ts, Math.round(c.vx || 0), Math.round(c.vy || 0), +(c.w || 0).toFixed(3), c.kind, c.col | 0, Math.round(c.fuel || 0), Math.round(c.hp || 0), (c.lights ? 1 : 0) | (c.siren ? 2 : 0), 1, c.flat ? 1 : 0] }); } }
   // non-host: report damage on puppets and zombie spawn requests
   if (!NET.host) { for (const z of zombies) if (z.puppet && z.nid && z.hp < z.nhp - 1e-6) { NET.hits.push([z.nid, +(z.nhp - z.hp).toFixed(2), z.lastHead ? 1 : 0]); z.nhp = z.hp; z.nhpT = t; }
     for (let i = zombies.length - 1; i >= 0; i--) if (zombies[i].gone) { world3.remove(zombies[i].m); NET.byNid.delete(zombies[i].nid); zombies.splice(i, 1); }
@@ -9843,22 +9901,21 @@ function vmHandOnly(mesh) {   // cut the old gun out of the rig's right-hand mes
 }
 function setupArsenalVM(id) {
   const A = ARSENAL[id];
-  return loadGlbJson(A.file).then(gl => {
+  return loadGlbJson(A.file).then(gl => { vmAttach(gl, WMODEL[id](), A.base === 'machete' ? V(-.004, id === 'katana' ? .085 : .07, -.006) : V(-.004, .01, .012)); setupVM(gl, id); });
+}
+// put a gun model into a rig's right hand: cut the old gun out of the glove, hide the old magazine and slide, move muzzle and sights to the new gun
+function vmAttach(gl, M_, off) {
     const root = gl.scene, gun = root.getObjectByName('Gun'), vmGun = root.getObjectByName('VM_Gun');
-    // the glove's grip point, in gun space, is where the new weapon's handle goes
     gun.updateMatrixWorld(true); vmGun.updateMatrix();
     const hand = vmHandOnly(vmGun); vmGun.geometry = hand;
     let gx = 0, gy = 0, gz = 0, n = 0; { const p = hand.attributes.position, ix = hand.index.array, v = new THREE.Vector3(); const seen = new Set(); for (const i of ix) { if (seen.has(i)) continue; seen.add(i); v.fromBufferAttribute(p, i); if (v.x > .05) continue; v.applyMatrix4(vmGun.matrix); gx += v.x; gy += v.y; gz += v.z; n++; } }
     const grip = new THREE.Vector3(gx / n, gy / n, gz / n);
     for (const nm of ['VM_Mag', 'VM_Slide']) { const o = root.getObjectByName(nm); if (o) o.visible = false; }
-    const M_ = WMODEL[id](), off = A.base === 'machete' ? V(-.004, id === 'katana' ? .085 : .07, -.006) : V(-.004, .01, .012);
     M_.g.position.copy(grip).add(off); gun.add(M_.g);
     M_.g.traverse(o => { if (o.isMesh) { o.castShadow = false; o.frustumCulled = false; } });
     const put = (nm, p) => { const o = root.getObjectByName(nm); if (o && p) o.position.copy(p).add(M_.g.position); };
     put('Muzzle', M_.muzzle); if (M_.sightR) { put('SightR', M_.sightR); put('SightF', M_.sightF); put('SightU', M_.sightR.clone().add(V(0, 0, .1))); }
     if (M_.noFlash) { const mz = root.getObjectByName('Muzzle'); if (mz) mz.userData.noFlash = 1; }
-    setupVM(gl, id);
-  });
 }
 const ARS_LOAD = {};   // rigs load the first time you own the weapon, so nine extra models never sit in memory for nothing
 function arsenalNeed(id) { if (!ARSENAL[id] || ARS_LOAD[id]) return; ARS_LOAD[id] = 1; setupArsenalVM(id).then(() => { if (curW === id) { VM = VMS[id]; VM.root.visible = true; vmDraw(); } }).catch(e => { ARS_LOAD[id] = 0; console.warn('arsenal vm', id, e); }); }
@@ -10829,6 +10886,30 @@ WORDER.push('scar', 'g36', 'mp5sd', 'uzi', 'svd', 'm14', 'spas');
 Object.assign(AMMO_OF, { scar: 'rifleammo', g36: 'rifleammo', m14: 'rifleammo', svd: 'huntammo', mp5sd: 'ammo', uzi: 'ammo', spas: 'shells' });
 for (const id in ARSENAL) if (ARSENAL[id].pack) { const [nm, len, o] = ARSENAL[id].pack, pf = WMODEL[id]; WMODEL[id] = () => packGun(nm, len, o) || (pf ? pf() : { g: new THREE.Group(), muzzle: V(0, len * .6, .03) }); }
 { const s0 = setupArsenalVM; setupArsenalVM = id => ARSENAL[id] && ARSENAL[id].pack ? WPACKP.then(() => s0(id)) : s0(id); }
+/* ======================= BUILD 67: REAL GUNS =======================
+   Four properly textured models (BlendSwap, see credits) replace the flat grey prototype pack for the guns you hold most:
+   Beretta M9 for every 9 mm / .45 handgun, Remington 870 for the pump shotguns, the weathered AKM for the AK family, the AR48 for the
+   5.56 rifles. Each model is barrel +X, top +Z in the file; REAL turns that into the pack's convention (length +Y, top +Z). */
+let WREAL = null; const WREALP = assetLoad('wpn_real', 2).then(g => { g.scene.traverse(o => { if (!o.isMesh) return; const m = o.material;
+    if (/AR48/.test(m.name)) m.normalMap = null;   // that model's file wires its height map in as a normal map
+    if (typeof VMENV !== 'undefined' && VMENV) { m.envMap = VMENV; m.envMapIntensity = .9; } m.needsUpdate = true; }); WREAL = g; return g; }).catch(e => { console.warn('real guns', e); return null; });
+const REALOF = { W_Glock_27: 'R_m9', W_P226: 'R_m9', W_USP: 'R_m9', W_Colt_1911: 'R_m9', W_R870: 'R_r870', W_SPAS_12: 'R_r870', W_Scar_H: 'R_ar', W_G36C: 'R_ar', W_LE6920: 'R_ar', W_QBZ97B: 'R_ar', W_HK53: 'R_ar', W_Galil_SR: 'R_akm' };
+const _REALBASIS = new THREE.Matrix4().makeBasis(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(1, 0, 0));
+function realMesh(name, len) {
+  if (!WREAL) return null; const src = WREAL.scene.getObjectByName(name); if (!src) return null;
+  const m = src.clone(true); m.position.set(0, 0, 0); m.rotation.set(0, 0, 0); m.scale.set(1, 1, 1);
+  const w = new THREE.Group(); w.matrixAutoUpdate = false; w.matrix.copy(_REALBASIS); w.add(m); w.updateMatrixWorld(true);
+  const bb0 = new THREE.Box3().setFromObject(w), L = Math.max(bb0.max.y - bb0.min.y, .01), s = len / L;
+  const g = new THREE.Group(); g.add(w); g.scale.setScalar(s); w.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  g.userData.bb = { minY: bb0.min.y * s, maxY: bb0.max.y * s, minZ: bb0.min.z * s, maxZ: bb0.max.z * s }; g.userData.real = 1;
+  const out = new THREE.Group(); out.add(g); out.userData.bb = g.userData.bb; return out;   // packGun moves the outer group
+}
+{ const wp0 = wpackMesh; wpackMesh = (name, len, col) => (REALOF[name] || /^R_/.test(name)) && WREAL ? realMesh(REALOF[name] || name, len) || wp0(name, len, col) : wp0(name, len, col); }
+ARSENAL.ak.pack = ['R_akm', .88, { grip: .45, gz: .4 }]; { const pf = WMODEL.ak; WMODEL.ak = () => packGun('R_akm', .88, { grip: .45, gz: .4 }) || (pf ? pf() : { g: new THREE.Group(), muzzle: V(0, .5, .03) }); }
+{ const s1 = setupArsenalVM; setupArsenalVM = id => ARSENAL[id] && ARSENAL[id].pack ? WREALP.then(() => s1(id)) : s1(id); }
+// the three starting guns (their rigs are loaded at boot) get the real models too
+const REALSTART = { pistol: ['R_m9', .217, { grip: .2, gz: .25, mz: .03 }], shotgun: ['R_r870', .92, { grip: .3 }], rifle: ['R_ar', .9, { grip: .42 }] };
+function realStarter(g, id) { const R = REALSTART[id]; if (!R) return Promise.resolve(); return WREALP.then(() => { const M_ = packGun(R[0], R[1], R[2]); if (M_) vmAttach(g, M_, V(-.004, .01, .012)); }); }
 { const a0 = arsenalSound; arsenalSound = function (kind) { if (kind === 'sup' && actx) { const t = actx.currentTime; nb(t, .05, 'bandpass', 900, 2, .7, .03, 0, .15); nb(t, .12, 'lowpass', 600, .7, .5, .06, 0, .2); click(2400, .25); return true; } if (kind === 'rifle' && actx) { const t = actx.currentTime; nb(t, .04, 'highpass', 2600, .8, 1.2, .02, 0, .5); nb(t, .2, 'lowpass', 1700, .9, 1.3, .07, 300, .9); nb(t + .004, .35, 'lowpass', 420, .7, .9, .12, 0, .8); return true; } return a0(kind); }; }
 
 /* ======================= BUILD 46: A HECK OF A LOT OF LEVELS =======================
@@ -11076,7 +11157,7 @@ function netRemoteCar(c, pid) {
   if (c[13] && c[8] && VEH[c[8]] && (c[8] !== car.kind || (c[9] | 0) !== (car.col | 0))) {   // build 63: their car is the truth: same model, same colour on every screen
     car.kind = c[8]; car.col = c[9] | 0; const V = VEH[car.kind]; car.hl = V.hl; car.hw = V.hw; car.im = 1 / V.kg; car.iI = 1 / (V.kg * ((V.hl * 2) ** 2 + (V.hw * 2) ** 2) / 12);
     if (car.m) { world3.remove(car.m); } car.m = buildCarMesh(car.col, false, car.kind); car.m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); car.m.position.set(car.x * S3, 0, car.y * S3); car.m.rotation.y = -car.a; world3.add(car.m); }
-  car.state = 'ready'; car.rdrv = pid; car.rdT = performance.now(); if (c[10] !== undefined) car.fuel = c[10]; if (c[11]) car.hp = Math.min(car.hp, c[11]) || c[11];
+  car.state = 'ready'; car.rdrv = pid; car.rdT = performance.now(); if (c[10] !== undefined) car.fuel = c[10]; if (c[11]) car.hp = c[11]; if (c[14] !== undefined) car.flat = c[14] ? (car.flat || 1) : 0;
   if (c[13]) { const sn = { t: c[4], rt: performance.now(), x: c[1], y: c[2], a: c[3], vx: c[5] || 0, vy: c[6] || 0, w: c[7] || 0 }; if (!car.sn || sn.t >= car.sn.t) car.sn = sn; car.nbuf = null; return; }
   const t = netClock(car, c[4]); if (car.nbuf && car.nbuf.length && t <= car.nbuf[car.nbuf.length - 1].t) car.nbuf.pop();
   car.nbuf = car.nbuf || []; car.nbuf.push({ t, x: c[1], y: c[2], a: c[3] }); if (car.nbuf.length > 8) car.nbuf.shift(); car.netT = t; car.vx = car.vy = 0; car.v = 0; }

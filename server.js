@@ -319,7 +319,15 @@ function bcast(room, o, except) { const s = JSON.stringify(o); for (const p of r
 function squadOf(room, M) { return [...M.squad].map(pid => room.players.get(pid)).filter(Boolean); }
 function bop(room, M, o, except) { const s = JSON.stringify(o); for (const p of squadOf(room, M)) if (p !== except && p.ws.readyState === 1) p.ws.send(s); }   // to one squad only
 function bhaven(room, o, except) { const s = JSON.stringify(o); for (const p of room.players.values()) if (!p.op && p !== except && p.ws.readyState === 1) p.ws.send(s); }   // to everyone at Haven
-function crewUpdate(room) { const c = DB.crews[room.code]; if (c) bcast(room, { t: 'crew', crew: crewView(c, room) }); }
+function crewUpdate(room) { const c = DB.crews[room.code]; if (c) bcast(room, { t: 'crew', crew: crewView(c, room) }); hHostFix(room); }
+// build 67: someone at Haven runs the zombies of the open county between operations (the first player not on an operation); each
+// player at Haven is told once, and again after coming back from an operation
+function hHostFix(room) {
+  const at = [...room.players.values()].filter(q => !q.op); if (!room.hTold) room.hTold = new Set();
+  if (!at.length) { room.hhost = null; return; }
+  if (!at.find(q => q.pid === room.hhost)) { room.hhost = at[0].pid; room.hTold.clear(); }
+  for (const q of at) if (!room.hTold.has(q.pid)) { room.hTold.add(q.pid); send(q, { t: 'host', pid: room.hhost, reason: 'roam' }); }
+}
 function pickHost(room, M) {   // the lowest-latency player in the squad runs the zombies
   const ps = squadOf(room, M).filter(p => p.loaded); if (!ps.length) return null; ps.sort((a, b) => (a.rtt || 999) - (b.rtt || 999)); return ps[0]; }
 function setHost(room, M, p, reason) { M.host = p ? p.pid : null; bop(room, M, { t: 'host', pid: M.host, reason: reason || '' }); }
@@ -656,6 +664,7 @@ function joinRoom(p, c) {
 }
 function joinOp(room, p, M) {
   if (!M || M.ended || p.op) return; if (M.squad.size >= MAX_SQUAD) return send(p, { t: 'err', m: 'That squad is full.' });
+  if (room.hTold) room.hTold.delete(p.pid);
   M.squad.add(p.pid); M.names[p.pid] = p.name; p.op = M.id; p.loaded = false; p.down = false; p.ready = false;
   send(p, { t: 'mission.load', m: publicMission(M), seed: M.seed, armory: armoryOf(p) }); crewUpdate(room);
 }
@@ -691,11 +700,16 @@ function handle(p, m) {
       const s = m.s; if (!s || !isFinite(s.x) || !isFinite(s.y)) return; if (s.down && !p.down && M) M.downs++; p.st = s; p.down = !!s.down;
       if (M) bop(room, M, { t: 'ps', pid: p.pid, s }, p); else bhaven(room, { t: 'ps', pid: p.pid, s }, p); return; }
     case 'shot': if (M) bop(room, M, { t: 'shot', pid: p.pid, a: m.a, b: m.b, w: m.w }, p); else bhaven(room, { t: 'shot', pid: p.pid, a: m.a, b: m.b, w: m.w }, p); return;
-    case 'zs': if (M && p.pid === M.host) { const o = JSON.stringify({ t: 'zs', z: m.z, tm: m.tm }); for (const q of squadOf(room, M)) if (q !== p && q.ws.readyState === 1 && q.ws.bufferedAmount < 96 * 1024) q.ws.send(o); } return;   // build 63: a slow link skips a zombie frame rather than delaying everyone's positions
-    case 'hit': if (M) { const h = room.players.get(M.host); if (h && h !== p) send(h, { t: 'hit', pid: p.pid, h: m.h }); } return;
-    case 'zdead': if (M && p.pid === M.host) { for (const [nid, by, el] of (m.list || [])) { if (by) M.kills[by] = (M.kills[by] || 0) + 1; if (el) M.elites++; } bop(room, M, { t: 'zdead', list: m.list }, p); } return;
-    case 'pdmg': if (M && p.pid === M.host) { for (const [pid, n] of (m.list || [])) { const q = room.players.get(pid); if (q && q.op === M.id) send(q, { t: 'pdmg', n }); } } return;
-    case 'spawnreq': if (M) { const h = room.players.get(M.host); if (h && h !== p) send(h, { t: 'spawnreq', list: (m.list || []).slice(0, 12) }); } return;
+    case 'zs': if (!M && p.pid === room.hhost) { const o = JSON.stringify({ t: 'zs', z: m.z, tm: m.tm }); for (const q of room.players.values()) if (!q.op && q !== p && q.ws.readyState === 1 && q.ws.bufferedAmount < 96 * 1024) q.ws.send(o); return; }
+      if (M && p.pid === M.host) { const o = JSON.stringify({ t: 'zs', z: m.z, tm: m.tm }); for (const q of squadOf(room, M)) if (q !== p && q.ws.readyState === 1 && q.ws.bufferedAmount < 96 * 1024) q.ws.send(o); } return;   // build 63: a slow link skips a zombie frame rather than delaying everyone's positions
+    case 'hit': if (!M) { const h = room.players.get(room.hhost); if (h && h !== p && !h.op) send(h, { t: 'hit', pid: p.pid, h: m.h }); return; }
+      if (M) { const h = room.players.get(M.host); if (h && h !== p) send(h, { t: 'hit', pid: p.pid, h: m.h }); } return;
+    case 'zdead': if (!M && p.pid === room.hhost) { bhaven(room, { t: 'zdead', list: m.list }, p); return; }
+      if (M && p.pid === M.host) { for (const [nid, by, el] of (m.list || [])) { if (by) M.kills[by] = (M.kills[by] || 0) + 1; if (el) M.elites++; } bop(room, M, { t: 'zdead', list: m.list }, p); } return;
+    case 'pdmg': if (!M && p.pid === room.hhost) { for (const [pid, n] of (m.list || [])) { const q = room.players.get(pid); if (q && !q.op) send(q, { t: 'pdmg', n }); } return; }
+      if (M && p.pid === M.host) { for (const [pid, n] of (m.list || [])) { const q = room.players.get(pid); if (q && q.op === M.id) send(q, { t: 'pdmg', n }); } } return;
+    case 'spawnreq': if (!M) { const h = room.players.get(room.hhost); if (h && h !== p && !h.op) send(h, { t: 'spawnreq', list: (m.list || []).slice(0, 12) }); return; }
+      if (M) { const h = room.players.get(M.host); if (h && h !== p) send(h, { t: 'spawnreq', list: (m.list || []).slice(0, 12) }); } return;
     case 'left': if (M && p.pid === M.host) M.left = m.n | 0; return;
     case 'claim': { if (!M) return; const s = M.stages[M.stage]; if (!s || (s.k !== 'collect' && s.k !== 'build')) return; const pts = stagePts(M, s); const i = m.i | 0, pt = pts[i]; if (!pt || M.claims[i] || i >= s.n) return; if (!p.st || dist(p.st, pt) > 90) return;
       if (s.lure && M.lureT <= 0 && M.pts.lure && dist(p.st, M.pts.lure) > 400) { /* looting while the horde is not baited is allowed: it is just much harder */ }
@@ -717,6 +731,7 @@ function handle(p, m) {
     case 'bk': if (M && p.pid === M.host) { const i = m.i | 0; M.bars = M.bars.filter(b => b.i !== i); bop(room, M, { t: 'bk', i }, p); } return;
     case 'revive': if (M) { const q = room.players.get(m.pid); if (q && q.op === M.id && q.down && p.st && q.st && dist(p.st, q.st) < 80) { send(q, { t: 'revived', by: p.name }); bop(room, M, { t: 'chat', name: '', m: p.name + ' picked up ' + q.name + '.' }); } } return;
     case 'car': if (M) bop(room, M, { t: 'car', pid: p.pid, c: m.c }, p); else bhaven(room, { t: 'car', pid: p.pid, c: m.c }, p); return;
+    case 'carfix': { const o = { t: 'carfix', pid: p.pid, c: Array.isArray(m.c) ? m.c.slice(0, 3) : null }; if (!o.c) return; if (M) bop(room, M, o, p); else bhaven(room, o, p); return; }   // build 67: a repaired car is repaired for everyone
     case 'clk': send(p, { t: 'clk', c: m.c, s: now() }); return;   // build 63: clock sync, so everyone can tell how old a position is
     case 'ping': { if (!isFinite(m.x) || !isFinite(m.y)) return; const o = { t: 'ping', pid: p.pid, name: p.name, x: Math.round(m.x), y: Math.round(m.y) }; if (M) bop(room, M, o, p); else bhaven(room, o, p); return; }
     case 'wpt': { if (m.clear || !isFinite(m.x) || !isFinite(m.y)) p.wpt = null; else p.wpt = { x: Math.round(m.x), y: Math.round(m.y), label: m.label ? String(m.label).slice(0, 40) : null }; crewUpdate(room); return; }
