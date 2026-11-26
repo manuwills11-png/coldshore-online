@@ -697,7 +697,7 @@ function handle(p, m) {
     case 'loaded': if (M) { p.loaded = true; if (squadOf(room, M).every(q => q.loaded)) goMission(room, M); if (M.go) { send(p, { t: 'mission.go' }); send(p, { t: 'host', pid: M.host }); if (M.stage >= 0) send(p, stageMsg(M, M.stages[M.stage])); } } return;
     case 'pts': if (M && p.pid === M.host) setPoints(room, M, m.pts || {}); return;
     case 'st': {   // player state, ~15 Hz: squads only see their own squad, everyone at Haven sees each other
-      const s = m.s; if (!s || !isFinite(s.x) || !isFinite(s.y)) return; if (s.down && !p.down && M) M.downs++; p.st = s; p.down = !!s.down;
+      const s = m.s; if (!s || !isFinite(s.x) || !isFinite(s.y)) return; if (s.down && !p.down && M) M.downs++; if (process.env.CS_TEST && !!s.down !== !!p.down) console.log('DOWNCHG', p.name, s.down, s.x, s.y); p.st = s; p.down = !!s.down; if (!M && !s.down) p.dead = false;
       if (M) bop(room, M, { t: 'ps', pid: p.pid, s }, p); else bhaven(room, { t: 'ps', pid: p.pid, s }, p); return; }
     case 'shot': if (M) bop(room, M, { t: 'shot', pid: p.pid, a: m.a, b: m.b, w: m.w }, p); else bhaven(room, { t: 'shot', pid: p.pid, a: m.a, b: m.b, w: m.w }, p); return;
     case 'zs': if (!M && p.pid === room.hhost) { const o = JSON.stringify({ t: 'zs', z: m.z, tm: m.tm }); for (const q of room.players.values()) if (!q.op && q !== p && q.ws.readyState === 1 && q.ws.bufferedAmount < 96 * 1024) q.ws.send(o); return; }
@@ -729,7 +729,10 @@ function handle(p, m) {
       if (m.dead) { M.elites++; bop(room, M, { t: 'chat', name: '', m: 'It is down. It is finally down.' }); nextStage(room, M); } return; }
     case 'acid': if (M && p.pid === M.host && isFinite(m.x) && isFinite(m.y)) bop(room, M, { t: 'acid', x: Math.round(m.x), y: Math.round(m.y), r: Math.min(140, +m.r || 55), d: Math.min(12, +m.d || 7), x0: isFinite(m.x0) ? Math.round(m.x0) : undefined, y0: isFinite(m.y0) ? Math.round(m.y0) : undefined, g: m.g === 2 ? 2 : m.g ? 1 : 0 }, p); return;
     case 'bk': if (M && p.pid === M.host) { const i = m.i | 0; M.bars = M.bars.filter(b => b.i !== i); bop(room, M, { t: 'bk', i }, p); } return;
-    case 'revive': if (M) { const q = room.players.get(m.pid); if (q && q.op === M.id && q.down && p.st && q.st && dist(p.st, q.st) < 80) { send(q, { t: 'revived', by: p.name }); bop(room, M, { t: 'chat', name: '', m: p.name + ' picked up ' + q.name + '.' }); } } return;
+    case 'dead': {   // build 68: bled out. On an operation you sit it out until the squad is done; at Haven you come back at the gate
+      if (p.dead) return; p.dead = true; p.down = true; const o = { t: 'chat', name: '', m: p.name + ' bled out.' }; if (M) { M.deaths = (M.deaths || 0) + 1; M.bonusLostDead = true; bop(room, M, o); } else bhaven(room, o); return; }
+    case 'revive': if (process.env.CS_TEST) { const q = room.players.get(m.pid); console.log('REVIVE', p.name, m.pid, !!M, q && [q.op, q.down, q.dead, p.down, !!p.st, !!q.st, p.st && q.st && dist(p.st, q.st)], [...room.players.keys()]); } if (!M) { const q = room.players.get(m.pid); if (q && !q.op && q.down && !q.dead && !p.down && p.st && q.st && dist(p.st, q.st) < 80) { send(q, { t: 'revived', by: p.name }); bhaven(room, { t: 'chat', name: '', m: p.name + ' picked up ' + q.name + '.' }); } return; }
+      if (M) { const q = room.players.get(m.pid); if (q && q.op === M.id && q.down && !q.dead && !p.down && p.st && q.st && dist(p.st, q.st) < 80) { send(q, { t: 'revived', by: p.name }); bop(room, M, { t: 'chat', name: '', m: p.name + ' picked up ' + q.name + '.' }); } } return;
     case 'car': if (M) bop(room, M, { t: 'car', pid: p.pid, c: m.c }, p); else bhaven(room, { t: 'car', pid: p.pid, c: m.c }, p); return;
     case 'carfix': { const o = { t: 'carfix', pid: p.pid, c: Array.isArray(m.c) ? m.c.slice(0, 3) : null }; if (!o.c) return; if (M) bop(room, M, o, p); else bhaven(room, o, p); return; }   // build 67: a repaired car is repaired for everyone
     case 'clk': send(p, { t: 'clk', c: m.c, s: now() }); return;   // build 63: clock sync, so everyone can tell how old a position is

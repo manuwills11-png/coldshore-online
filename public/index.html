@@ -173,7 +173,7 @@ html body #bagui .givebar{background:rgba(8,9,10,.97)}
 `; document.head.appendChild(st);
 })();
 function uiK(k) { return '<kbd class="u-k">' + k + '</kbd>'; }
-function uiBar(items) { return '<div class="u-bar">' + items.map(([k, t, m]) => '<span' + (m ? ' data-m="' + m + '"' : '') + '>' + k.map(uiK).join('') + ' ' + t + '</span>').join('') + '<span class="r">PROTOTYPE BUILD 67</span></div>'; }
+function uiBar(items) { return '<div class="u-bar">' + items.map(([k, t, m]) => '<span' + (m ? ' data-m="' + m + '"' : '') + '>' + k.map(uiK).join('') + ' ' + t + '</span>').join('') + '<span class="r">PROTOTYPE BUILD 68</span></div>'; }
 function uiMainItems() {
   const ready = assetsReady.kit && assetsReady.trees && assetsReady.car && assetsReady.furn && assetsReady.people && assetsReady.wtex;
   const SV = lvlLoad(), hasSv = SV.last !== null && SV.levels[SV.last];
@@ -213,9 +213,9 @@ function renderTitle() {
   } else if (titleMode === 'settings') {
     h += '<div class="u-scr"><div class="u-head"><div class="step">OPTIONS</div><h2>Settings</h2></div><div class="u-set">' + uiSettingsHTML() + '</div><div class="u-row2"><span class="u-btn" data-m="back">Back</span></div></div>' + uiBar([[['Esc'], 'Back', 'back']]);
   } else if (titleMode === 'credits') {
-    h += '<div class="u-scr"><div class="u-head"><div class="step">ABOUT</div><h2>Credits</h2></div><div class="u-cred"><p>ColdShore prototype. Characters, zombies, vehicles, buildings, trees and animation built procedurally in Blender. Engine: three.js. Voices: your browser&#39;s speech engine.</p><h4>Models</h4><p style="font-size:13px">From BlendSwap, reduced for the browser: M1 Humvee by panko10 (CC-BY); Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0); Ford Crown Victoria Police Interceptor 2005 (CC-BY 3.0); Mercedes-AMG GLS (CC0); BMW 3 Series Coupe by mikepan (CC-BY-SA 3.0); Trees &amp; Bushes pack by Painkiller5555; Dodge Challenger 1970 R/T; Low Quality Weapon Pack (CC0); Warehouse by argonius (CC0); Beretta M9 pistol by MazenYasser (CC-BY); Weathered AKM rifle by LonesomeDucky (CC0); Automatic Rifle AR48s by 5thElement (CC0); Remington 870 shotgun by Britdawgmasterfunk (CC0); Lamborghini Aventador (For games) by shadewar (CC-BY); Victorian Style House by MrChimp2313 (CC0); military_outpost_kit_1.0, Buildings_kit_1.0 and The_Breakers_yard_1.0 by Britdawgmasterfunk (CC0); Living/TV Room Study by mbarros (CC0); Family House Collection by tastyfish (CC0).</p></div><div class="u-row2"><span class="u-btn" data-m="back">Back</span></div></div>' + uiBar([[['Esc'], 'Back', 'back']]);
+    h += '<div class="u-scr"><div class="u-head"><div class="step">ABOUT</div><h2>Credits</h2></div><div class="u-cred"><p>ColdShore prototype. Characters, zombies, vehicles, buildings, trees and animation built procedurally in Blender. Engine: three.js. Voices: your browser&#39;s speech engine.</p><h4>Models</h4><p style="font-size:13px">From BlendSwap, reduced for the browser: M1 Humvee by panko10 (CC-BY); Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0); Ford Crown Victoria Police Interceptor 2005 (CC-BY 3.0); BMW 3 Series Coupe by mikepan (CC-BY-SA 3.0); Trees &amp; Bushes pack by Painkiller5555; Dodge Challenger 1970 R/T; Low Quality Weapon Pack (CC0); Warehouse by argonius (CC0); Beretta M9 pistol by MazenYasser (CC-BY); Weathered AKM rifle by LonesomeDucky (CC0); Automatic Rifle AR48s by 5thElement (CC0); Remington 870 shotgun by Britdawgmasterfunk (CC0); LMG and MX4 built from Firearms_kit_1.0 by Britdawgmasterfunk (CC0); Mercedes AMG 63 ML by LYES94 (CC-BY); Lamborghini Aventador (For games) by shadewar (CC-BY); Victorian Style House by MrChimp2313 (CC0); military_outpost_kit_1.0, Buildings_kit_1.0 and The_Breakers_yard_1.0 by Britdawgmasterfunk (CC0); Living/TV Room Study by mbarros (CC0); Family House Collection by tastyfish (CC0).</p></div><div class="u-row2"><span class="u-btn" data-m="back">Back</span></div></div>' + uiBar([[['Esc'], 'Back', 'back']]);
   }
-  if (titleMode === 'press') h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 67</div>';
+  if (titleMode === 'press') h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 68</div>';
   titleEl.innerHTML = h; titleEl.classList.add('on');
   titleEl.querySelectorAll('[data-m]').forEach(a => a.onclick = () => { const m = a.dataset.m; if (m === 'bgback') { titleMode = 'bg'; beep(520, .04, 'triangle', .03); renderTitle(); return; } titleAction(m); });
   titleEl.querySelectorAll('.u-menu a[data-i]').forEach(a => a.onmouseenter = () => { if (UI61.sel === +a.dataset.i) return; UI61.sel = +a.dataset.i; beep(880, .015, 'sine', .012); renderTitle(); });
@@ -1319,7 +1319,7 @@ function updateDoors(dt) {
    2. files are gzipped binary (.glbz/.jsz, ~60% smaller), with the old .json kept as a fallback;
    3. everything is kept in the browser's Cache Storage under its content hash, so a second visit loads from disk and an update
       only downloads the files that actually changed. */
-var ASSETH = {"car.json":"de202c84c5","car.glbz":"90d1660374","furn.json":"9103be15cf","furn.glbz":"3afc78adb3","haven.json":"7564616314","haven.glbz":"ea85b68678","kit.json":"8b3041e6f6","kit.glbz":"5a26f2762a","kit2.json":"2598bf05ac","kit2.glbz":"0a95e4abdf","kit3.json":"95a53895a2","kit3.glbz":"49e98cc799","people_DAR.json":"1bc3757c51","people_DAR.glbz":"a75934ce6b","people_DIAZ.json":"ef2f4c8cef","people_DIAZ.glbz":"2d2ac7f891","people_ELI.json":"4bd2d0ab8c","people_ELI.glbz":"6a33cafcd9","people_HART.json":"ff8c90c57f","people_HART.glbz":"c7cd7ef5f7","people_JUN.json":"2b4bee12cf","people_JUN.glbz":"e93edc8488","people_MARI.json":"1c554e5dfa","people_MARI.glbz":"e8576b1efc","people_MIA.json":"58978973fd","people_MIA.glbz":"da9265f6a7","people_NAD.json":"d825b1f3bf","people_NAD.glbz":"02f6a05b69","people_OZZ.json":"6244327123","people_OZZ.glbz":"195ce20f04","people_PF1.json":"7c78363045","people_PF1.glbz":"1a8d39358b","people_PF2.json":"d899a7b46d","people_PF2.glbz":"a0cbefe37d","people_PM1.json":"452ed2354c","people_PM1.glbz":"bf7d412379","people_PM2.json":"d804315865","people_PM2.glbz":"7a7a689a66","people_REY.json":"a615f8a5f6","people_REY.glbz":"f36f29645a","people_SAM.json":"3c80a6404c","people_SAM.glbz":"fbf558e662","people_VOS.json":"97aed8aec8","people_VOS.glbz":"c6fe4edf90","props.json":"668467e66e","props.glbz":"69f6a8530f","trees.json":"edc7a89f5a","trees.glbz":"0efc51e6e7","trees2.json":"97c69aa00f","trees2.glbz":"5f91fde5c7","veh_bmw.json":"bd4ff0fe4c","veh_bmw.glbz":"fcd7d0d575","veh_challenger.json":"e4d3bb5ad9","veh_challenger.glbz":"1bd2278761","veh_gls.json":"1f39e1dce0","veh_gls.glbz":"a4eec64437","veh_humvee.json":"2f332a2849","veh_humvee.glbz":"deb264e188","veh_lambo.json":"30a7895872","veh_lambo.glbz":"921902e1f4","veh_police.json":"adab7d9e26","veh_police.glbz":"88ef141430","veh_s10.json":"b1917c586d","veh_s10.glbz":"d0a25743e5","vic.json":"09fe068343","vic.glbz":"ec3b0eb3d3","viewmodel.json":"cba15ae9d1","viewmodel.glbz":"bc0b113568","vm_hunting.json":"2a8edc1a81","vm_hunting.glbz":"469a38735e","vm_machete.json":"a162fd8211","vm_machete.glbz":"dbe6acc17c","vm_rifle.json":"92fe061546","vm_rifle.glbz":"11b6dae2be","vm_shotgun.json":"e7bc7957da","vm_shotgun.glbz":"64fa13f304","vm_smg.json":"32e0d810a2","vm_smg.glbz":"70c42bd73f","vo.json":"b5eaaa8231","vo.jsz":"71a1f3e318","vo2.json":"63c5e23760","vo2.jsz":"1254310dcf","vo3.json":"ee42540fb6","vo3.jsz":"5ffa24d04d","vo4.json":"7722ed3af1","vo4.jsz":"789dac2650","vo5.json":"3bed93614c","vo5.jsz":"1b8de4fefb","vo_PF1.json":"c10f94c472","vo_PF1.jsz":"cb2d4c5386","vo_PF2.json":"a76aa571a5","vo_PF2.jsz":"eb11ca57bb","vo_PM1.json":"818110ff3e","vo_PM1.jsz":"532c7927e9","vo_PM2.json":"9780ccb594","vo_PM2.jsz":"8fb5644024","world.json":"1d820fa276","world.jsz":"448ff09ba1","wpn_real.json":"3dd23178c8","wpn_real.glbz":"8aa25fec1f","wpn_weapons.json":"7110002b5c","wpn_weapons.glbz":"ff08a1a051","zombie_ZA.json":"b8f10fc0b6","zombie_ZA.glbz":"d98b5ceeca","zombie_ZB.json":"2d7e5da28c","zombie_ZB.glbz":"5fb3099824","zombie_ZC.json":"ccc105d8be","zombie_ZC.glbz":"f5e72698e9","zombie_ZD.json":"f10970b5b3","zombie_ZD.glbz":"ef39cbe24c"};
+var ASSETH = {"car.json":"de202c84c5","car.glbz":"90d1660374","furn.json":"9103be15cf","furn.glbz":"3afc78adb3","haven.json":"7564616314","haven.glbz":"ea85b68678","kit.json":"8b3041e6f6","kit.glbz":"5a26f2762a","kit2.json":"2598bf05ac","kit2.glbz":"0a95e4abdf","kit3.json":"95a53895a2","kit3.glbz":"49e98cc799","people_DAR.json":"1bc3757c51","people_DAR.glbz":"a75934ce6b","people_DIAZ.json":"ef2f4c8cef","people_DIAZ.glbz":"2d2ac7f891","people_ELI.json":"4bd2d0ab8c","people_ELI.glbz":"6a33cafcd9","people_HART.json":"ff8c90c57f","people_HART.glbz":"c7cd7ef5f7","people_JUN.json":"2b4bee12cf","people_JUN.glbz":"e93edc8488","people_MARI.json":"1c554e5dfa","people_MARI.glbz":"e8576b1efc","people_MIA.json":"58978973fd","people_MIA.glbz":"da9265f6a7","people_NAD.json":"d825b1f3bf","people_NAD.glbz":"02f6a05b69","people_OZZ.json":"6244327123","people_OZZ.glbz":"195ce20f04","people_PF1.json":"7c78363045","people_PF1.glbz":"1a8d39358b","people_PF2.json":"d899a7b46d","people_PF2.glbz":"a0cbefe37d","people_PM1.json":"452ed2354c","people_PM1.glbz":"bf7d412379","people_PM2.json":"d804315865","people_PM2.glbz":"7a7a689a66","people_REY.json":"a615f8a5f6","people_REY.glbz":"f36f29645a","people_SAM.json":"3c80a6404c","people_SAM.glbz":"fbf558e662","people_VOS.json":"97aed8aec8","people_VOS.glbz":"c6fe4edf90","props.json":"668467e66e","props.glbz":"69f6a8530f","trees.json":"edc7a89f5a","trees.glbz":"0efc51e6e7","trees2.json":"97c69aa00f","trees2.glbz":"5f91fde5c7","veh_bmw.json":"bd4ff0fe4c","veh_bmw.glbz":"fcd7d0d575","veh_challenger.json":"e4d3bb5ad9","veh_challenger.glbz":"1bd2278761","veh_gls.json":"490fa6c04e","veh_gls.glbz":"7dc35fed8d","veh_humvee.json":"2f332a2849","veh_humvee.glbz":"deb264e188","veh_lambo.json":"30a7895872","veh_lambo.glbz":"921902e1f4","veh_police.json":"adab7d9e26","veh_police.glbz":"88ef141430","veh_s10.json":"b1917c586d","veh_s10.glbz":"d0a25743e5","vic.json":"09fe068343","vic.glbz":"ec3b0eb3d3","viewmodel.json":"cba15ae9d1","viewmodel.glbz":"bc0b113568","vm_hunting.json":"2a8edc1a81","vm_hunting.glbz":"469a38735e","vm_machete.json":"a162fd8211","vm_machete.glbz":"dbe6acc17c","vm_rifle.json":"92fe061546","vm_rifle.glbz":"11b6dae2be","vm_shotgun.json":"e7bc7957da","vm_shotgun.glbz":"64fa13f304","vm_smg.json":"32e0d810a2","vm_smg.glbz":"70c42bd73f","vo.json":"b5eaaa8231","vo.jsz":"71a1f3e318","vo2.json":"63c5e23760","vo2.jsz":"1254310dcf","vo3.json":"ee42540fb6","vo3.jsz":"5ffa24d04d","vo4.json":"7722ed3af1","vo4.jsz":"789dac2650","vo5.json":"3bed93614c","vo5.jsz":"1b8de4fefb","vo_PF1.json":"c10f94c472","vo_PF1.jsz":"cb2d4c5386","vo_PF2.json":"a76aa571a5","vo_PF2.jsz":"eb11ca57bb","vo_PM1.json":"818110ff3e","vo_PM1.jsz":"532c7927e9","vo_PM2.json":"9780ccb594","vo_PM2.jsz":"8fb5644024","world.json":"1d820fa276","world.jsz":"448ff09ba1","wpn_real.json":"3dd23178c8","wpn_real.glbz":"8aa25fec1f","wpn_real2.json":"ca0790dac0","wpn_real2.glbz":"14ed28eb07","wpn_weapons.json":"7110002b5c","wpn_weapons.glbz":"ff08a1a051","zombie_ZA.json":"b8f10fc0b6","zombie_ZA.glbz":"d98b5ceeca","zombie_ZB.json":"2d7e5da28c","zombie_ZB.glbz":"5fb3099824","zombie_ZC.json":"ccc105d8be","zombie_ZC.glbz":"f5e72698e9","zombie_ZD.json":"f10970b5b3","zombie_ZD.glbz":"ef39cbe24c"};
 var AQ = { q: [], live: 0, max: 4, done: 0, total: 0, bytes: 0, seq: 0 };
 var ACACHE = null; try { if (window.caches && isSecureContext) ACACHE = caches.open('coldshore-assets').catch(() => null); } catch (e) { ACACHE = null; }
 function aqPump() { AQ.q.sort((a, b) => a.p - b.p || a.n - b.n); while (AQ.live < AQ.max && AQ.q.length) { const j = AQ.q.shift(); AQ.live++; j.go().then(j.res, j.rej).finally(() => { AQ.live--; AQ.done++; aqPump(); }); } }
@@ -1341,7 +1341,7 @@ function assetJSON(name, p) { return aqAdd(p === undefined ? 2 : p, async () => 
   if (ASSETH[name + '.jsz']) { try { return JSON.parse(new TextDecoder().decode(await gunz(await aqGet(name + '.jsz')))); } catch (e) { console.warn('jsz', name, e); } }
   return JSON.parse(new TextDecoder().decode(await gunz(await aqGet(name + '.json')))); }); }
 function assetLoad(name, p) { return assetBytes(name, p).then(u => new Promise((res, rej) => new THREE.GLTFLoader().parse(u.buffer.byteLength === u.byteLength ? u.buffer : u.slice().buffer, '', res, rej))); }
-const APRI = { kit: 0, trees: 0, trees2: 0, car: 0, furn: 0, world: 0, viewmodel: 0, zombie_ZA: 0, zombie_ZB: 1, zombie_ZC: 1, zombie_ZD: 1, kit2: 1, kit3: 1, props: 1, vic: 1, vm_rifle: 1, vm_shotgun: 1, vm_machete: 1, wpn_real: 1, wpn_weapons: 2, vm_smg: 2, vm_hunting: 2, haven: 2, vo: 2 };
+const APRI = { wpn_real2: 2, kit: 0, trees: 0, trees2: 0, car: 0, furn: 0, world: 0, viewmodel: 0, zombie_ZA: 0, zombie_ZB: 1, zombie_ZC: 1, zombie_ZD: 1, kit2: 1, kit3: 1, props: 1, vic: 1, vm_rifle: 1, vm_shotgun: 1, vm_machete: 1, wpn_real: 1, wpn_weapons: 2, vm_smg: 2, vm_hunting: 2, haven: 2, vo: 2 };
 function apri(name) { if (name in APRI) return APRI[name]; if (/^people_(ELI|REY|JUN|DAR|SAM|VOS|NAD|OZZ)$/.test(name)) return 0; if (/^people_|^vo/.test(name)) return 3; if (/^veh_/.test(name)) return 2; return 2; }
 
 /* ---------- Meshes: cars, zombies ---------- */
@@ -1451,6 +1451,17 @@ function polishCharacter(g) {   // hair cards alpha-tested, eyes glossy, everyth
   const ids = ['ZA', 'ZB', 'ZC', 'ZD'];
   ids.forEach(id => loadGlbJson('zombie_' + id + '.json').then(g => { polishCharacter(g); g.id = id; ZG.push(g); if (!ZGLTF) ZGLTF = g; upgradeZombies(); }).catch(e => console.warn('zombie model failed', id, e)));
 })();
+/* build 68: zombies were drawn with frustum culling off and all of them cast shadows, so every zombie in the region cost two draws
+   (camera and moon shadow) per mesh every frame, behind you or 300 m away. Now: hidden when outside the view or past the fog,
+   and only those within 35 m cast shadows. */
+const ZCF = { f: new THREE.Frustum(), m: new THREE.Matrix4(), sp: new THREE.Sphere(new THREE.Vector3(), 1.4), fr: -1 };
+function zCull(z, gu) {
+  const fn_ = renderer.info.render.frame; if (ZCF.fr !== fn_) { ZCF.fr = fn_; ZCF.m.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); ZCF.f.setFromProjectionMatrix(ZCF.m); }
+  const ex = z.x - P.x, ey = z.y - P.y, d = Math.hypot(ex, ey) * S3;
+  ZCF.sp.center.set(z.x * S3, z.m.position.y + .9, z.y * S3); const vis = d < 4 || (d < 170 && ZCF.f.intersectsSphere(ZCF.sp));
+  if (z.m.visible !== vis) z.m.visible = vis;
+  const sh = vis && d < 35; if (gu.sh !== sh) { gu.sh = sh; z.m.traverse(o => { if (o.isMesh) o.castShadow = sh; }); }
+}
 function upgradeZombies() {
   if (!ZGLTF || !zombies || !world3) return;
   for (const z of zombies) { if (z.m && z.m.userData.glb) continue; if (z.m) world3.remove(z.m); z.m = buildGlbZombie(z.run); world3.add(z.m); }
@@ -2752,6 +2763,7 @@ addEventListener('mousemove', e => {
 });
 glc.addEventListener('mousedown', e => {
   if (state !== 'play') return;
+  if (NET.on && NET.bled) { NET.specNext = 1; return; }
   if (mapOpen) { mapDown(e); return; }
   initAudio();
   if (e.button === 1) { e.preventDefault(); pingHere(); return; }
@@ -2894,7 +2906,7 @@ function iaNear() {
   };
   for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) { const a = IAG.get((cx + i) * 10000 + cy + j); if (a) for (const it of a) consider(it); }
   carFixConsider(consider);
-  for (const n of npcs) { if (n.isMe || (n.lv | 0) !== (P.lv | 0) || n.mode === 'car' || n.mode === 'down' || !n.m || Math.abs(n.x - P.x) > 90 || Math.abs(n.y - P.y) > 90) continue; consider({ x: n.x, y: n.y, kind: 'npc', def: IAK.npc, r: 16, n, _tmp: 1 }); }
+  for (const n of npcs) { if (n.isMe || (n.lv | 0) !== (P.lv | 0) || n.mode === 'car' || n.mode === 'down' || !n.m || Math.abs(n.x - P.x) > 90 || Math.abs(n.y - P.y) > 90) continue; const it = n._iaIt || (n._iaIt = { kind: 'npc', def: IAK.npc, r: 16, n, _tmp: 1 }); it.x = n.x; it.y = n.y; it.lv = n.lv | 0; consider(it); }
   for (const d of dying) { if (d.x === undefined || d.t < 1.2 || Math.abs(d.x - P.x) > 90 || Math.abs(d.y - P.y) > 90) continue; if (!d.corpse) d.corpse = { x: d.x, y: d.y, kind: 'corpse', def: IAK.corpse, r: 18, d }; if (d.corpse.looted) { /* keep showing as searched */ } consider(d.corpse); }
   return best;
 }
@@ -4174,6 +4186,7 @@ function syncScene(dt) {
     z.m.position.set(z.x * S3, lvH(z), z.y * S3); z.m.rotation.y = -z.ang;
     if (z.m.userData.glb) {
       const gu = z.m.userData, chs = z.state === 'chase';
+      zCull(z, gu);
       let an = 'Idle', ts = 1;
       if (z.crawl || z.down > 0) { an = 'Idle'; ts = .6; } else if (z.hitT > 0) { an = 'HitReact'; ts = 1.2; } else if (z.alertT > 0) { an = 'Alert'; ts = z.run ? 1.6 : 1.1; } else if (z.atkT > 0) an = 'Attack'; else if (z.moving) { if (chs && z.run) { an = 'Run'; ts = 1.25; } else { an = 'Shamble'; ts = chs ? 1.8 : 0.7; } } else if (z.feed) an = 'Feed';
       if (an === 'HitReact' && gu.cur === 'HitReact' && z.hitT > (gu.lastHit || 0) + .05) { gu.acts.HitReact.reset().play(); } gu.lastHit = z.hitT;
@@ -8855,7 +8868,8 @@ function carFixConsider(consider) {
   if (driving) return; for (const c of cars) { if (c.wreck || !(c.flat || c.hp < 98)) continue; const reach = (c.hl || 40) + 30; if (Math.abs(c.x - P.x) > reach || Math.abs(c.y - P.y) > reach) continue;
     // stand anywhere along the car: the work point is the nearest spot on its body
     const ca = Math.cos(c.a), sa = Math.sin(c.a), lx = (P.x - c.x) * ca + (P.y - c.y) * sa, ly = -(P.x - c.x) * sa + (P.y - c.y) * ca, px = clamp(lx, -(c.hl || 40), c.hl || 40), py = clamp(ly, -(c.hw || 18), c.hw || 18);
-    consider({ x: c.x + px * ca - py * sa, y: c.y + px * sa + py * ca, kind: 'carfix', def: IAK.carfix, r: 40, c, _tmp: 1 }); }
+    // build 68: one item per car, kept between frames; a fresh object every frame reset the hold bar to zero (repairs never finished)
+    const it = c._fixIt || (c._fixIt = { kind: 'carfix', def: IAK.carfix, r: 40, c, _tmp: 1 }); it.x = c.x + px * ca - py * sa; it.y = c.y + px * sa + py * ca; it.lv = 0; consider(it); }
 }
 /* ======================= BUILD 67: TOWNS ARE NOT EMPTY =======================
    Zombies used to trickle in one every 2-3 s around you, so you could drive through a town and see nobody, and the cap filled up with
@@ -8866,7 +8880,8 @@ const TPOP = new Map();
 function nearHaven(x, y) { return typeof HVR !== 'undefined' && x > HVR.x0 - 700 && x < HVR.x1 + 700 && y > HVR.y0 - 700 && y < HVR.y1 + 700; }
 function inAnyHouse(x, y) { for (const h of houses) if (x > h.x - 8 && x < h.x + h.w + 8 && y > h.y - 8 && y < h.y + h.h + 8) return true; return false; }
 function townPopTick(dt) {
-  if (NET.on && !NET.host) return; TPOP.t = (TPOP.t || 0) - dt; if (TPOP.t > 0 || !TOWNS) return; TPOP.t = 2;
+  if (NET.on && !NET.host) return; tpopDrain();
+  TPOP.t = (TPOP.t || 0) - dt; if (TPOP.t > 0 || !TOWNS) return; TPOP.t = 2;
   const ps = [P]; if (NET.on) for (const r of NET.RP.values()) if (r.s && !r.s.down && isFinite(r.s.x)) ps.push(r.s);
   for (const T of TOWNS) {
     const near = ps.find(q => Math.hypot(q.x - T.x, q.y - T.y) < T.r + 1400); if (!near) continue;
@@ -8879,13 +8894,15 @@ function townPopTick(dt) {
     const n0 = zombies.length; let grp = null, gk = 0;
     NET.force = !!NET.on; try {
       while (want > 0) { if (!grp || gk <= 0) { grp = spot(); gk = Math.random() < .35 ? 3 + (Math.random() * 3 | 0) : 1; if (!grp) break; }
-        const b = zombies.length; spawnZombie(true, grp[0] + rnd(-40, 40), grp[1] + rnd(-40, 40)); gk--; want--;
-        if (zombies.length === b) continue; const z = zombies[zombies.length - 1]; z.tpop = T.n; if (inAnyHouse(z.x, z.y)) { world3.remove(z.m); zombies.pop(); if (NET.on && z.nid) NET.byNid.delete(z.nid); continue; }
-        if (gk >= 2 && !z.run) { z.feed = true; z.pause = true; z.wt = 1e9; } }
+        (TPOP.q || (TPOP.q = [])).push([grp[0] + rnd(-40, 40), grp[1] + rnd(-40, 40), T.n, gk >= 2]); gk--; want--; }
     } finally { NET.force = false; }
     if (zombies.length > n0 && !T._toldPop && !NET.on && Math.random() < .5) { T._toldPop = 1; }
   }
 }
+// build 68: spawning a whole town at once (each zombie clones a skinned model) froze the game for a moment on arrival; now 2 a frame
+function tpopDrain() { const q = TPOP.q; if (!q || !q.length) return; NET.force = !!NET.on; try { for (let k = 0; k < 2 && q.length; k++) { const [x, y, tn, feed] = q.shift();
+    if (zombies.length >= 90) { q.length = 0; break; } const b = zombies.length; spawnZombie(true, x, y); if (zombies.length === b) continue; const z = zombies[zombies.length - 1]; z.tpop = tn;
+    if (inAnyHouse(z.x, z.y)) { world3.remove(z.m); zombies.pop(); if (NET.on && z.nid) NET.byNid.delete(z.nid); continue; } if (feed && !z.run) { z.feed = true; z.pause = true; z.wt = 1e9; } } } finally { NET.force = false; } }
 function townPopKill(z) { if (!z || !z.tpop) return; const st = TPOP.get(z.tpop); if (st) st.cleared++; }
 
 /* roadblocks on outland roads: wrecks and barricades across half the lane */
@@ -8962,7 +8979,7 @@ function netMsg(m) {
     case 'pdmg': if (!NET.down) hurt(m.n); break;
     case 'spawnreq': if (NET.host) for (const r of m.list) netSpawnAt(r[0], r[1]); break;
     case 'do': if (NET.host) netDirective(m.d, m.threat); break;
-    case 'revived': if (NET.down) { NET.down = false; P.hp = 45; toast(m.by + ' got you back up.'); } break;
+    case 'revived': if (NET.down && !NET.bled) { NET.down = false; P.hp = 45; P.dx = undefined; toast(m.by + ' got you back up.'); } break;
     case 'car': netRemoteCar(m.c, m.pid); break;
     case 'carfix': { const c = carByNid(m.c && m.c[0]); if (c) { c.hp = +m.c[1] || c.hp; c.flat = m.c[2] ? (c.flat || 1) : 0; if (!c.flat) c.flatS = 0; c.stall = 0; } break; }
     case 'ping': pingAdd(m.x, m.y, m.name || 'Teammate', false, m.pid); break;
@@ -9143,7 +9160,7 @@ function netDirective(d, threat) {
 function netApplyHits(pid, list) { for (const [nid, dmg, head] of list || []) { const z = NET.byNid.get(nid); if (!z || z.hp <= 0) continue; z.hp -= Math.min(30, +dmg || 0); z.lastBy = pid; z.lastHead = !!head; z.state = 'chase'; z.hitT = .35; z.stag = Math.max(z.stag || 0, .2); blood(z.x, z.y, 1, 4); } }
 // zombies chase whoever is nearest: you, or a teammate
 function netTarget(z) {
-  let best = P, bd = dist(z, P) + (driving ? 400 : 0) + (NET.down ? 900 : 0);
+  let best = P, bd = dist(z, P) + (driving ? 400 : 0) + (NET.bled ? 1e9 : NET.down ? 900 : 0);
   const T0 = netTarget0(z, best, bd); if (NET.obj && NET.ohp > 0) { const od = Math.hypot(NET.obj.x - z.x, NET.obj.y - z.y); if ((z.prot && od < 1600) || (od < 230 && T0.d > 150)) { MACHP.x = NET.obj.x; MACHP.y = NET.obj.y; MACHP.iframe = 0; return MACHP; } }
   return T0.t;
 }
@@ -9210,10 +9227,23 @@ function netObj() {   // what the objective panel and the yellow marker show onl
   if (s.k === 'clear' && NET.left !== null) text += ' (' + NET.left + ' left)';
   const t = s.target || P; return { text, x: t.x, y: t.y, sub };
 }
-function netDown() { if (NET.down) return; NET.down = true; NET.downT = 75; P.hp = 0; toast('You are down. A teammate can pick you up (E).'); }
+/* build 68: bleeding out. 45 s for a teammate to pick you up (E for 2 s); 20 s if nobody is within 150 m. Then you are dead:
+   on an operation you watch the squad until it is over and come back with them; at Haven or in the open county you come back at the gate. */
+const BLEED = 45;
+function netDown() { if (NET.down) return; NET.down = true; NET.bled = false; let mate = false; for (const r of NET.RP.values()) if (r.s && !r.s.down && Math.hypot(r.x - P.x, r.y - P.y) < 3000) mate = true;
+  NET.downT = mate ? BLEED : 20; P.hp = 0; P.dx = P.x; P.dy = P.y; if (driving) exitCar(); toast(mate ? 'You are down. A teammate can pick you up (hold E).' : 'You are down and nobody is near.'); }
+function netDie() { if (NET.bled) return; NET.bled = true; NET.downT = 0; netSend({ t: 'dead' }); NET.spec = null;
+  if (NET.mission) toast('You bled out. You rejoin at Haven when the squad finishes.'); else { toast('You bled out.'); NET.respawnT = 4; } }
+function netRespawn() { NET.down = false; NET.bled = false; NET.respawnT = 0; NET.spec = null; P.dx = undefined; P.hp = 100 + 10 * ((NET.crew && NET.crew.b && NET.crew.b.infirmary) || 0); netToHaven(); toast('You wake up at Haven.'); }
+function netSpecTick(dt) {   // dead on an operation: watch a teammate who is still up
+  const live = [...NET.RP.values()].filter(r => r.s && !r.s.down && isFinite(r.x)); if (!live.length) return;
+  if (!NET.spec || !live.includes(NET.spec)) NET.spec = live[0];
+  if (NET.specNext) { NET.specNext = 0; NET.spec = live[(live.indexOf(NET.spec) + 1) % live.length]; }
+  const r = NET.spec, a = isFinite(r.s.yaw) ? r.s.yaw : 0; P.x = r.x - Math.cos(a) * 70; P.y = r.y - Math.sin(a) * 70; P.lv = r.s.lv | 0; P.lvf = r.s.lvf || 0;
+}
 function netEndLocal() { try { coopClear(); } catch (e) {} NET.on = false; NET.host = false; NET.mission = null; NET.stage = null; for (const pid of [...NET.RP.keys()]) netDropRemote(pid); for (const z of zombies) z.puppet = false; }
 function netMissionEnd(m) {
-  NET.results = m; NET.mission = null; NET.stage = null; NET.down = false; P.hp = Math.max(P.hp, 60); coopClear();
+  NET.results = m; NET.mission = null; NET.stage = null; const wasDead = NET.bled; NET.down = false; NET.bled = false; NET.spec = null; P.dx = undefined; P.hp = wasDead ? 100 : Math.max(P.hp, 60); coopClear();
   for (const it of NET.caches || []) it.gone = true; NET.caches = []; if (NET.marker) { world3.remove(NET.marker); NET.marker = null; }
   for (const z of zombies) if (z.m) world3.remove(z.m); zombies.length = 0; NET.byNid.clear();
   for (const pid of [...NET.RP.keys()]) netDropRemote(pid);
@@ -9224,9 +9254,10 @@ function netTick(dt) {
   if (!NET.on || !NET.ws) return; const t = performance.now();
   netRemoteTick(dt); coopTick(dt);
   // downed: stay put, bleed out slowly
-  if (NET.down) { P.hp = 0; if (P.dx === undefined) { P.dx = P.x; P.dy = P.y; } P.x = P.dx; P.y = P.dy; NET.downT -= dt; if (NET.downT <= 0) { NET.downT = 0; } } else if (NET.pinned) { if (P.dx === undefined) { P.dx = P.x; P.dy = P.y; } P.x = P.dx; P.y = P.dy; } else { P.dx = undefined; }
+  if (NET.bled) { P.hp = 0; if (NET.mission) netSpecTick(dt); else if ((NET.respawnT -= dt) <= 0) netRespawn(); }
+  else if (NET.down) { P.hp = 0; if (P.dx === undefined) { P.dx = P.x; P.dy = P.y; } P.x = P.dx; P.y = P.dy; NET.downT -= dt; if (NET.downT <= 0) netDie(); } else if (NET.pinned) { if (P.dx === undefined) { P.dx = P.x; P.dy = P.y; } P.x = P.dx; P.y = P.dy; } else { P.dx = undefined; }
   // revive a teammate: hold E next to them
-  let rv = null; if (!NET.down && !driving) for (const r of NET.RP.values()) if (r.s && r.s.down && Math.hypot(r.x - P.x, r.y - P.y) < 70) rv = r;
+  let rv = null; if (!NET.down && !driving) for (const r of NET.RP.values()) if (r.s && r.s.down && !r.s.dead && Math.hypot(r.x - P.x, r.y - P.y) < 80) rv = r;
   if (rv && keys.KeyE) { NET.reviveT += dt; if (NET.reviveT > 2.2) { NET.reviveT = 0; netSend({ t: 'revive', pid: rv.pid }); } } else NET.reviveT = 0; NET.rv = rv;
   // grab a cache
   NET.nestP = 0; if (NET.stage && (NET.stage.k === 'collect' || NET.stage.k === 'build') && keys.KeyE && !NET.down && !NET.pinned && !NET.carrying) (NET.caches || []).forEach((c, i) => { if (c && !NET.claims[i] && !c.asked && Math.hypot(c.x - P.x, c.y - P.y) < 70) { if (c.nest || c.bar || c.fire) { c.hold = (c.hold || 0) + dt; NET.nestP = Math.min(1, c.hold / (c.bar ? 2 : 2.5)); if (c.bar && c.hold < 2) return; if (Math.random() < dt * 8) havenPuff(c.x * S3 + rnd(-.5, .5), .4, c.y * S3 + rnd(-.5, .5), 0); if (c.hold < 2.5) return; c.hold = 0; } c.asked = true; setTimeout(() => c.asked = false, 1500); netSend({ t: 'claim', i }); } });
@@ -9236,7 +9267,7 @@ function netTick(dt) {
   { const pv = NET.pv || (NET.pv = { x: P.x, y: P.y, t }); const ddt = Math.max(1e-3, (t - pv.t) / 1000); if (ddt > .02) { const k = Math.min(1, ddt * 12); NET.vx = (NET.vx || 0) + ((P.x - pv.x) / ddt - (NET.vx || 0)) * k; NET.vy = (NET.vy || 0) + ((P.y - pv.y) / ddt - (NET.vy || 0)) * k; pv.x = P.x; pv.y = P.y; pv.t = t; if (Math.abs(NET.vx) > 3000 || Math.abs(NET.vy) > 3000) NET.vx = NET.vy = 0; } }
   const moving_ = driving || SEAT.car || Math.hypot(NET.vx || 0, NET.vy || 0) > 8 || Math.abs(yaw - (NET.lyaw || 0)) > .02;
   NET.stT -= dt; if (NET.stT <= 0 && (NET.mission || NET.worldReady)) { NET.stT = moving_ ? 1 / 30 : 1 / 10; NET.lyaw = yaw; const ts = Math.round(srvNow());
-    netSend({ t: 'st', s: { x: Math.round(P.x), y: Math.round(P.y), vx: Math.round(driving ? 0 : NET.vx || 0), vy: Math.round(driving ? 0 : NET.vy || 0), lv: P.lv | 0, lvf: +(P.lvf || 0).toFixed(2), yaw: +yaw.toFixed(3), pitch: +pitch.toFixed(3), hp: Math.round(P.hp), down: NET.down, use: !!keys.KeyE, aim: adsK > .5, w: curW, drv: driving ? carNid(driving) : -1, seat: SEAT.car ? carNid(SEAT.car) : -1, sk: SEAT.kind || undefined, ta: SEAT.kind === 'gun' ? SEAT.aim : undefined, ts, sv: 1 } });
+    netSend({ t: 'st', s: { x: Math.round(NET.bled ? P.dx : P.x), y: Math.round(NET.bled ? P.dy : P.y), vx: Math.round(driving ? 0 : NET.vx || 0), vy: Math.round(driving ? 0 : NET.vy || 0), lv: P.lv | 0, lvf: +(P.lvf || 0).toFixed(2), yaw: +yaw.toFixed(3), pitch: +pitch.toFixed(3), hp: Math.round(P.hp), down: NET.down || !!NET.bled, dead: NET.bled ? 1 : undefined, bt: NET.down && !NET.bled ? Math.ceil(NET.downT) : undefined, use: !!keys.KeyE, aim: adsK > .5, w: curW, drv: driving ? carNid(driving) : -1, seat: SEAT.car ? carNid(SEAT.car) : -1, sk: SEAT.kind || undefined, ta: SEAT.kind === 'gun' ? SEAT.aim : undefined, ts, sv: 1 } });
     if (driving) { const c = driving; netSend({ t: 'car', c: [carNid(c), Math.round(c.x), Math.round(c.y), +c.a.toFixed(3), ts, Math.round(c.vx || 0), Math.round(c.vy || 0), +(c.w || 0).toFixed(3), c.kind, c.col | 0, Math.round(c.fuel || 0), Math.round(c.hp || 0), (c.lights ? 1 : 0) | (c.siren ? 2 : 0), 1, c.flat ? 1 : 0] }); } }
   // non-host: report damage on puppets and zombie spawn requests
   if (!NET.host) { for (const z of zombies) if (z.puppet && z.nid && z.hp < z.nhp - 1e-6) { NET.hits.push([z.nid, +(z.nhp - z.hp).toFixed(2), z.lastHead ? 1 : 0]); z.nhp = z.hp; z.nhpT = t; }
@@ -9684,11 +9715,11 @@ function netHUD() {
   if (!NET.on) return; ctx.save();
   // the crew, top right under the minimap
   let y = 240; font(11, 600); ctx.textAlign = 'right';
-  for (const r of NET.RP.values()) { if (!r.s) continue; const hp = clamp(r.s.hp / 100, 0, 1); ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(VW - 192, y - 12, 170, 20); ctx.fillStyle = r.s.down ? '#ff6a5a' : '#cfe8f0'; ctx.fillText(r.name + (r.s.down ? '  DOWN' : '') + (NET.hostPid === r.pid ? ' ◆' : ''), VW - 28, y + 2); ctx.fillStyle = r.s.down ? '#ff6a5a' : '#7fd08a'; ctx.fillRect(VW - 188, y + 5, 80 * hp, 3); y += 24; }
+  for (const r of NET.RP.values()) { if (!r.s) continue; const hp = clamp(r.s.hp / 100, 0, 1); ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(VW - 192, y - 12, 170, 20); ctx.fillStyle = r.s.down ? '#ff6a5a' : '#cfe8f0'; ctx.fillText(r.name + (r.s.dead ? '  DEAD' : r.s.down ? '  DOWN ' + (r.s.bt ? r.s.bt + 's' : '') : '') + (NET.hostPid === r.pid ? ' ◆' : ''), VW - 28, y + 2); ctx.fillStyle = r.s.down ? '#ff6a5a' : '#7fd08a'; ctx.fillRect(VW - 188, y + 5, 80 * hp, 3); y += 24; }
   ctx.textAlign = 'center';
   if (NET.stage && (NET.stage.k === 'hold' || NET.stage.k === 'crack')) { const w = 260; ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(VW / 2 - w / 2, 70, w, 8); ctx.fillStyle = '#e9c46a'; ctx.fillRect(VW / 2 - w / 2, 70, w * NET.prog, 8); }
   if (NET.rv) { font(15, 600); ctx.fillStyle = '#fff'; ctx.fillText(NET.reviveT > 0 ? 'Picking up ' + NET.rv.name + '…' : 'Hold E to pick up ' + NET.rv.name, VW / 2, VH * .62); }
-  if (NET.down) { ctx.fillStyle = 'rgba(90,0,0,.35)'; ctx.fillRect(0, 0, VW, VH); font(22, 800); ctx.fillStyle = '#ff7a6a'; ctx.fillText('DOWN', VW / 2, VH * .42); font(13, 500); ctx.fillStyle = '#fff'; ctx.fillText('Wait for a teammate to pick you up', VW / 2, VH * .42 + 24); }
+  if (NET.down) { ctx.fillStyle = 'rgba(90,0,0,.35)'; ctx.fillRect(0, 0, VW, VH); font(22, 800); ctx.fillStyle = '#ff7a6a'; ctx.fillText(NET.bled ? 'YOU BLED OUT' : 'DOWN  ' + Math.ceil(NET.downT) + 's', VW / 2, VH * .42); font(13, 500); ctx.fillStyle = '#fff'; ctx.fillText(NET.bled ? (NET.mission ? 'Watching ' + (NET.spec ? NET.spec.name : 'the squad') + ' (click for the next). You rejoin at Haven when the operation ends.' : 'Back to Haven…') : 'Bleeding out. A teammate can pick you up: hold E next to you.', VW / 2, VH * .42 + 24); }
   if (NET.stage && NET.stage.k === 'collect') for (const c of NET.caches || []) if (c && !c.looted && Math.hypot(c.x - P.x, c.y - P.y) < 70) { font(15, 600); ctx.fillStyle = '#ffd08a'; ctx.fillText(c.fire ? (c.hold ? 'Lighting the fire… ' + Math.round(c.hold / 2.5 * 100) + '%' : 'Hold E to light the signal fire') : 'E  Grab the cache', VW / 2, VH * .62); break; }
   if (NET.host) { font(9, 600); ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(160,200,210,.55)'; ctx.fillText('SIM HOST', 22, VH - 8); }
   coopHUD57(); coopHUD();
@@ -10395,7 +10426,7 @@ function havenIA(B) {
   if ((B.power | 0) >= 1) { const gx0 = gx + 60, gy0 = R.y1 - 300; hvIA('hvGen', gx0 - 50, gy0 - 40, gx0 + 50, gy0 + 30); }
   // farm: each field, the coop, the pig pen, the cows
   { const F = B.farm | 0, fx0 = R.x1 - 640, fy0 = R.y0 + 120, fields = Math.max(1, Math.min(4, F + (F ? 1 : 0))), crops = ['corn', 'wheat', 'pumpkins', 'greens'];
-    for (let f = 0; f < fields; f++) { const x = fx0 + (f % 2) * 300, y = fy0 + Math.floor(f / 2) * 330; hvIA('hvHarvest', x, y, x + 260, y + 290, { i: f, crop: crops[f % 4], live: F > 0 }); }
+    for (let f = 0; f < fields; f++) { const x = fx0 + (f % 2) * 300, y = fy0 + Math.floor(f / 2) * 330; if (F > 0) hvIA('hvHarvest', x, y, x + 260, y + 290, { i: f, crop: crops[f % 4], live: true }); }   // build 68: no harvest prompt over bare ground
     const yb = R.y1 - 520; if (F >= 1) hvIA('hvEggs', fx0 + 20, yb + 20, fx0 + 120, yb + 90); if (F >= 2) hvIA('hvPigs', fx0 + 210, yb, fx0 + 410, yb + 180); if (F >= 3) hvIA('hvMilk', fx0 - 40, yb + 200, fx0 + 430, yb + 480); }
   // housing: a nap in a cabin, a look in a tent
   { const n = B.housing ? 2 + 2 * B.housing : 0; for (let i = 0; i < Math.max(2, n); i++) { const col = i % 2, row = Math.floor(i / 2), x = R.x0 + 110 + col * 330, y = R.y0 + 300 + row * 160; if (y + 120 > R.y1 - 60) break;
@@ -10510,7 +10541,7 @@ function netLoadout() {   // the workshop issues guns; anything you have found y
   for (const id of NET.armory || []) if (WPN[id]) { const w = WPN[id]; give(id, w.melee ? 0 : w.cap, w.melee ? 0 : Math.round(w.cap * 1.5)); }
   { const cnt = {}; for (const id of NET.armory || []) cnt[id] = (cnt[id] || 0) + 1; for (const id in cnt) if (P.wp[id]) P.wp[id].n = cnt[id]; }
   INSPECT = null; INSPECT_PEND = null; WBAN = null; if (curW !== 'pistol' && P.wp.pistol) switchWeapon('pistol');
-  if ((B.garage || 0) >= 4 && !cars.some(c => c.kind === 'Car_humvee')) humveeSpawnAt(HVGATE.x + 260, HVGATE.y - 200, 0);   // the garage's legendary: an M1 Humvee with the roof gun, parked outside the gate
+  if ((B.garage || 0) >= 4 && humveeEarned() && !cars.some(c => c.kind === 'Car_humvee' && !c.mil)) humveeSpawnAt(HVGATE.x + 260, HVGATE.y - 200, 0);   // the garage's legendary: an M1 Humvee with the roof gun, parked outside the gate
 }
 function makeElite(z, look) {   // armoured, red-eyed, four times the health; they drop the good stuff
   z.elite = 1; if (!look) { z.hp *= 4.5; z.max = z.hp; z.sp = Math.max(z.sp, 70) * 1.1; } z.r = 14;
@@ -10649,9 +10680,15 @@ CJ(50, 'c50home', { n: 'Iron Horse', d: 'Drive the Humvee home. Use the gun.',
 
 /* ---------- build 53: every real-model car is locked until its own special mission (online: until the Garage reaches its level) ---------- */
 const CARLOCK = { Car_s10: { L: 12, g: 1, n: 'Stepside' }, Car_police: { L: 28, g: 2, n: 'Interceptor' }, Car_challenger: { L: 38, g: 3, n: 'Muscle Memory' }, Car_humvee: { L: 50, g: 4, n: 'Iron Horse' }, Car_gls: { L: 56, g: 5, n: 'Executive Exit' }, Car_bmw: { L: 85, g: 5, n: 'Coupe de Grace' } };
-function carUnlocked(kind) { const K = CARLOCK[kind]; if (!K) return true; if (NET.on) return ((NET.crew && NET.crew.b && NET.crew.b.garage) || 0) >= K.g; if (!story) return false; if (kind === 'Car_humvee' && story.humvee) return true; return !!(story.unlocks && story.unlocks[kind]); }
+/* build 68: Humvees only stand at military sites (the quarantine checkpoints, Haven's garage). They are locked until the mission that
+   earns them: offline the Humvee story job, online the operation Black Box (the airfield). */
+const MILSPOT = [], HUMVEE_OP = 'o7';
+function humveeEarned() { return NET.on ? !!(NET.crew && NET.crew.storyDone && NET.crew.storyDone.includes(HUMVEE_OP)) : !!(story && story.humvee); }
+function milHumvees() { if (!cars || !world3) return; const L = MILSPOT.slice().sort((a, b) => a[3] < b[3] ? -1 : 1); let n = 0;
+  for (const [x, y, a] of L) { if (n >= 6) break; if (cars.some(c => Math.hypot(c.x - x, c.y - y) < 120)) continue; try { const c = humveeSpawnAt(x, y, a); if (c) { c.free = false; c.mil = 1; c.fuel = 35 + (n * 13) % 40; c.hp = 70 + (n * 7) % 25; n++; } } catch (e) { console.warn('humvee', e); } } }
+function carUnlocked(kind) { const K = CARLOCK[kind]; if (!K) return true; if (kind === 'Car_humvee') return humveeEarned(); if (NET.on) return ((NET.crew && NET.crew.b && NET.crew.b.garage) || 0) >= K.g; if (!story) return false; if (kind === 'Car_humvee' && story.humvee) return true; return !!(story.unlocks && story.unlocks[kind]); }
 function carLocked(c) { return !!(c && c.kind === 'Car_humvee' && CARLOCK[c.kind] && !c.free && !carUnlocked(c.kind)); }   // only the Humvee waits for its mission; every other model can be taken wherever you find it
-function carLockMsg(c) { const K = CARLOCK[c.kind], V = VEH[c.kind]; return (V ? V.name : 'This car') + ' is locked. ' + (NET.on ? 'Upgrade the Garage to level ' + K.g + ' to use it.' : 'Unlock it in level ' + LORD(K.L) + ': ' + K.n + '.'); }
+function carLockMsg(c) { const K = CARLOCK[c.kind], V = VEH[c.kind]; if (c.kind === 'Car_humvee') return 'Military Humvee, locked. ' + (NET.on ? 'Finish the operation Black Box to earn the keys.' : 'Unlock it in level ' + LORD(K.L) + ': ' + K.n + '.'); return (V ? V.name : 'This car') + ' is locked. ' + (NET.on ? 'Upgrade the Garage to level ' + K.g + ' to use it.' : 'Unlock it in level ' + LORD(K.L) + ': ' + K.n + '.'); }
 function extSpawnAt(kind, x, y, a, col) { const c = mkCar(x, y, a, 100, col || 0x6b1e1e, kind); c.state = 'ready'; c.free = true; if (kind === 'Car_humvee') c.armorK = .35; carFree(c); c.m = buildCarMesh(c.col, false, kind); c.m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); world3.add(c.m); cars.push(c); return c; }
 function spLot(kind, town) {   // a clear spot in the town for the car, picked once per save
   story.spLot = story.spLot || {}; if (story.spLot[kind]) return story.spLot[kind];
@@ -10665,7 +10702,7 @@ const SPECIALCARS = [
     lines: [['ELI', "A police Interceptor. Lights, siren, push bar. It's like Christmas, if Christmas tried to eat you."], ['REY', "The sally port is locked from inside. Keys will be in the evidence cage."]], keys: 'Find the keys in the evidence cage', got: 'Interceptor keys, tagged UNIT 4.', hold: 75, n: 14 },
   { kind: 'Car_challenger', town: 'FAIRHAVEN', col: 0xc8a030, party: ['ELI'], sub: 'Four hundred horsepower of bad ideas', d: 'Somebody in Fairhaven restored a 1970 Challenger R/T and never got to drive it.',
     lines: [['ELI', "A '70 Challenger. Hemi. Nobody restores a car like that to leave it in a garage."], ['YOU', "Loud, fast and thirsty. Perfect."]], keys: 'The keys are in the house', got: 'A keyring with a little Mopar tag.', hold: 0, n: 16 },
-  { kind: 'Car_gls', town: 'NEW HALDEN', col: 0x2a2f36, party: ['REY', 'ELI'], sub: 'The executive\'s getaway car', d: 'A Mercedes-AMG GLS sits in a New Halden parking garage, fuelled for an evacuation that never came.',
+  { kind: 'Car_gls', town: 'NEW HALDEN', col: 0x2a2f36, party: ['REY', 'ELI'], sub: 'The executive\'s getaway car', d: 'A Mercedes-AMG ML 63 sits in a New Halden parking garage, fuelled for an evacuation that never came.',
     lines: [['REY', "Company car for one of the lab's directors. Full tank, armoured glass, and nobody in it."], ['ELI', "The garage is full of them. The dead, I mean. Not Mercedes."]], keys: 'Find the director\'s key card at the security desk', got: 'A key card and a smart key in a leather pouch.', hold: 110, n: 20 },
   { kind: 'Car_bmw', town: 'GRANITE FALLS', col: 0x1d3f7a, party: ['ELI'], sub: 'A coupe nobody came back for', d: 'A BMW 3 Series coupe waits in a Granite Falls showroom, still on the turntable.',
     lines: [['ELI', "A BMW in the showroom window. Not a scratch on it. Let's change that."]], keys: 'The keys are in the sales office', got: 'Dealer keys, still in the plastic.', hold: 90, n: 18 }];
@@ -10764,13 +10801,13 @@ function demolish(x, y, gas) {   // the set piece: a fireball, a shockwave, and 
 // Each loads once in the background; until a model is ready the game falls back to its own stand-in.
 const EXTG = {}, EXTV = { Car_humvee: 'veh_humvee.json', Car_s10: 'veh_s10.json', Car_challenger: 'veh_challenger.json', Car_police: 'veh_police.json', Car_gls: 'veh_gls.json', Car_bmw: 'veh_bmw.json', Car_lambo: 'veh_lambo.json' };
 const EXTFALL = { Car_humvee: 'Car_suv', Car_s10: 'Car_pickup', Car_challenger: 'Car', Car_police: 'Car', Car_gls: 'Car_suv', Car_bmw: 'Car', Car_lambo: 'Car' };
-const EXTPAINT = { Car_humvee: /^Grey/, Car_s10: /paint/i, Car_challenger: null, Car_police: null, Car_gls: /^BodyPaint$/, Car_bmw: /^BodyPaint$/, Car_lambo: /^X_paint$/ };
+const EXTPAINT = { Car_humvee: /^Grey/, Car_s10: /paint/i, Car_challenger: null, Car_police: null, Car_gls: /^X_paint$/, Car_bmw: /^BodyPaint$/, Car_lambo: /^X_paint$/ };
 const EXTLOOK = {   // build 52: Crown Victoria police, Mercedes GLS, BMW 3 coupe
   Car_police: (m, n) => { const set = (c, r, mt, e) => { m.color.set(c).convertSRGBToLinear(); m.roughness = r; m.metalness = mt; if (e && m.emissive) { m.emissive.set(c).convertSRGBToLinear(); m.emissiveIntensity = e; } };
     if (/Car Paint \(Dark/.test(n)) set(0x0e1013, .35, .55); else if (/Car Paint \(White\)|Police Car Paint/.test(n)) set(0xeeeeea, .35, .4); else if (/Chrome|Mirror/.test(n)) set(0xb9bec3, .25, .9);
     else if (/^Tire/.test(n)) set(0x141414, .92, 0); else if (/Plastic|^Bar$|Bottom|Interior|Rim \(Plastic\)|Material\.0/.test(n)) set(0x1b1d1f, .7, .1); else if (/PL Red/.test(n)) { set(0xff2020, .4, 0, .4); m.name = 'C_red'; } else if (/^Red|Red Light/.test(n)) set(0xd01818, .4, 0, .6);
     else if (/PL Blue/.test(n)) { set(0x2050ff, .4, 0, .4); m.name = 'C_blue'; } else if (/^Blue/.test(n)) set(0x1a4ad8, .4, 0, .6); else if (/Orange|Turn Signal/.test(n)) set(0xe08a1a, .4, 0, .3); else if (/Headlight|Reverse|Clear/.test(n)) set(0xeef2f6, .15, .3, .2); else if (/Ford/.test(n)) set(0x1a3a7a, .4, .5); },
-  Car_gls: (m, n) => { if (/Mat.riau|wire/.test(n)) { m.color.set(/wire/.test(n) ? 0xcfd2d4 : 0x1c1d1f).convertSRGBToLinear(); m.roughness = .6; m.metalness = .3; } },
+  Car_gls: (m, n) => { if (/jantes/i.test(n)) { m.color.set(0xb9bcc0).convertSRGBToLinear(); m.roughness = .3; m.metalness = .9; } },   // build 68: the ML 63 replaces the GLS
   Car_bmw: (m, n) => {},
   Car_lambo: (m, n) => { if (/^Light$/.test(n)) m.name = 'HeadLight'; else if (/Red_Paint/.test(n)) m.name = 'tail'; else if (/Rubber/.test(n)) { m.color.set(0x161617).convertSRGBToLinear(); m.roughness = .9; m.metalness = 0; } else if (/MattePlastic|CarbonFibre|Grill/.test(n)) { m.color.set(0x161718).convertSRGBToLinear(); m.roughness = .55; m.metalness = .2; } }   // build 64: Lamborghini Aventador (For games) by shadewar, CC-BY
 };
@@ -10785,7 +10822,7 @@ Object.assign(VEH, {
   Car_s10: { hl: 52, hw: 20, kg: 1650, wr: .36, eye: .08, acc: 420, top: 640, wb: 60, name: 'Chevy S-10', cam: -.15, lat: .4 },
   Car_challenger: { hl: 48, hw: 19, kg: 1600, wr: .35, eye: -.06, acc: 560, top: 780, wb: 56, name: "'70 Challenger R/T", cam: -.38, lat: .38 },
   Car_police: { hl: 54, hw: 21, kg: 1850, wr: .36, eye: 0, acc: 520, top: 820, wb: 58, name: 'Crown Vic Interceptor', cam: -.3, lat: .4, col: 0xe9e9e4, siren: true },
-  Car_gls: { hl: 51, hw: 21, kg: 2450, wr: .4, eye: .22, acc: 480, top: 740, wb: 60, name: 'Mercedes-AMG GLS', cam: -.1, lat: .44 },
+  Car_gls: { hl: 48, hw: 20, kg: 2300, wr: .4, eye: .22, acc: 500, top: 760, wb: 58, name: 'Mercedes-AMG ML 63', cam: -.1, lat: .44 },
   Car_bmw: { hl: 46, hw: 20, kg: 1550, wr: .33, eye: -.08, acc: 560, top: 780, wb: 55, name: 'BMW 3 Coupe', cam: -.35, lat: .38 },
   Car_lambo: { hl: 48, hw: 22, kg: 1575, wr: .34, eye: -.2, acc: 760, top: 1040, wb: 54, name: 'Lamborghini Aventador', cam: -.45, lat: .34 }
 });
@@ -10794,10 +10831,10 @@ function extKinds() {   // build 52: the real models are spread all over the cou
   const free = []; cars.forEach((c, i) => { if (c.myTruck || c.ozVan || c.state === 'ready' || c.kind === 'Car_bus' || c.kind === 'Car_truck' || c.kind === 'Car_moto') return; free.push([i, c]); });
   for (const [i, c] of free) { const r = hashI(Math.round(c.x) * 7919 + Math.round(c.y) * 31 + 13) % 100;
     if (c.kind === 'Car_pickup') { if (r < 45) set(c, 'Car_s10'); }
-    else if (c.kind === 'Car_suv' || c.kind === 'Car_van') { if (r < 30) set(c, 'Car_gls'); else if (r < 38) set(c, 'Car_humvee'); }
+    else if (c.kind === 'Car_suv' || c.kind === 'Car_van') { if (r < 30) set(c, 'Car_gls'); }   // build 68: no Humvees parked in streets
     else if (c.kind === 'Car' || c.kind === 'Car_hatch') { if (r < 16) set(c, 'Car_challenger'); else if (r < 34) set(c, 'Car_bmw'); else if (r < 48) set(c, 'Car_police'); else if (r < 51) set(c, 'Car_lambo'); } }
   // make sure each model turns up at least eight times, wherever the county happened to put sedans and SUVs
-  for (const k of ['Car_s10', 'Car_challenger', 'Car_police', 'Car_gls', 'Car_bmw', 'Car_humvee', 'Car_lambo']) { let j = 0;
+  for (const k of ['Car_s10', 'Car_challenger', 'Car_police', 'Car_gls', 'Car_bmw', 'Car_lambo']) { let j = 0;
     while ((cnt[k] || 0) < (k === 'Car_humvee' || k === 'Car_lambo' ? 5 : 8) && j < free.length) { const [, c] = free[(j * 37 + k.length * 11) % free.length]; j++; if (EXTV[c.kind]) continue; set(c, k); } }
   window.__extCnt = cnt;
 }
@@ -10890,10 +10927,10 @@ for (const id in ARSENAL) if (ARSENAL[id].pack) { const [nm, len, o] = ARSENAL[i
    Four properly textured models (BlendSwap, see credits) replace the flat grey prototype pack for the guns you hold most:
    Beretta M9 for every 9 mm / .45 handgun, Remington 870 for the pump shotguns, the weathered AKM for the AK family, the AR48 for the
    5.56 rifles. Each model is barrel +X, top +Z in the file; REAL turns that into the pack's convention (length +Y, top +Z). */
-let WREAL = null; const WREALP = assetLoad('wpn_real', 2).then(g => { g.scene.traverse(o => { if (!o.isMesh) return; const m = o.material;
-    if (/AR48/.test(m.name)) m.normalMap = null;   // that model's file wires its height map in as a normal map
+let WREAL = null; const WREALP = Promise.all([assetLoad('wpn_real', 2), assetLoad('wpn_real2', 2).catch(() => null)]).then(([g, g2]) => { if (g2) for (const o of [...g2.scene.children]) g.scene.add(o); /* build 68: LMG and MX4 from the firearms kit */ g.scene.traverse(o => { if (!o.isMesh) return; const m = o.material;
+    if (/AR48/.test(m.name)) m.normalMap = null; if (/^Gun(Steel|Mag)/.test(m.name)) { m.metalness = .85; m.roughness = .42; }   // that model's file wires its height map in as a normal map
     if (typeof VMENV !== 'undefined' && VMENV) { m.envMap = VMENV; m.envMapIntensity = .9; } m.needsUpdate = true; }); WREAL = g; return g; }).catch(e => { console.warn('real guns', e); return null; });
-const REALOF = { W_Glock_27: 'R_m9', W_P226: 'R_m9', W_USP: 'R_m9', W_Colt_1911: 'R_m9', W_R870: 'R_r870', W_SPAS_12: 'R_r870', W_Scar_H: 'R_ar', W_G36C: 'R_ar', W_LE6920: 'R_ar', W_QBZ97B: 'R_ar', W_HK53: 'R_ar', W_Galil_SR: 'R_akm' };
+const REALOF = { W_Glock_27: 'R_m9', W_P226: 'R_m9', W_USP: 'R_m9', W_Colt_1911: 'R_m9', W_R870: 'R_r870', W_SPAS_12: 'R_r870', W_Scar_H: 'R_ar', W_G36C: 'R_ar', W_LE6920: 'R_ar', W_QBZ97B: 'R_ar', W_HK53: 'R_ar', W_Galil_SR: 'R_akm', W_MX4: 'R_mx4', W_QBB_95: 'R_lmg' };
 const _REALBASIS = new THREE.Matrix4().makeBasis(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(1, 0, 0));
 function realMesh(name, len) {
   if (!WREAL) return null; const src = WREAL.scene.getObjectByName(name); if (!src) return null;
@@ -11174,7 +11211,8 @@ function netCarTick(dt) { const now_ = performance.now();
     if (Math.hypot(q.x - car.x, q.y - car.y) > 400) { car.x = q.x; car.y = q.y; car.a = a; } else { const k = Math.min(1, dt * 18); car.x += (q.x - car.x) * k; car.y += (q.y - car.y) * k; let d = a - car.a; d = Math.atan2(Math.sin(d), Math.cos(d)); car.a += d * k; }
     car.vx = car.vy = 0; car.v = 0; } }
 /* ---------- zombie puppets: carry on at the last known speed between packets ---------- */
-function netZSnap(list, tm) {
+function netZSnap(list, tm) { if (!world3 || !Array.isArray(zombies)) return;   // build 68: Haven's zombie host can stream before this client has a world
+
   const seen = new Set(), t = performance.now(), ht = isFinite(tm) ? tm : t;
   for (const e of list) { const [nid, x, y, a, f, hp, sp] = e; seen.add(nid); if (NET.deadSet.has(nid)) continue; let z = NET.byNid.get(nid);
     if (!z || z.hp <= 0 && !z.puppet) { if (z && z.hp <= 0) continue; NET.mk = true; try { z = netMkPuppet(nid, x, y, !!(f & 4), NZSPEC[sp]); } finally { NET.mk = false; } if (!z) continue; }
@@ -11639,7 +11677,7 @@ function havenDress(B) {
     for (const sd of [-1, 1]) put('MK_sandbags', gx + sd * 175, R.y0 + 130, 0, 48, 10, true, false, .5);
     firstFree('MK_gen', near(gx + 120, R.y1 - 260, 300), 0, 36, 22, true, 1.3); firstFree('MK_case', near(gx - 300, 3480, 260), 0, 24, 16, true, .5); firstFree('MK_ammo', near(gx - 300, 3480, 260), .4, 20, 12, false);
     firstFree('MK_barrier_w', near(gx, R.y0 - 380, 200), 0, 56, 20, true, 1.4); firstFree('MK_cot', near(gx - 520, R.y0 + 300, 260), 0, 16, 32, false);
-    const ws = near(gx + 460, R.y0 + 330, 460); firstFree('JK_shell', ws, .4, 70, 70, true, 1.2); firstFree('JK_frame', ws, 1.2, 40, 70, true, 1); for (const n of ['JK_tire', 'JK_tire2', 'JK_seat', 'JK_motor', 'JK_bumper', 'JK_battery']) firstFree(n, ws, (n.length % 4) * .7, 22, 22, false);
+    const ws = near(gx + 460, R.y0 + 330, 460); /* build 68: no stripped car shells or bare chassis in Haven, only the parts a workshop keeps */ for (const n of ['JK_tire', 'JK_tire2', 'JK_motor', 'JK_battery']) firstFree(n, ws, (n.length % 4) * .7, 22, 22, false);
     if ((B.garage | 0) >= 1) { const gs = near(R.x0 + 650, R.y1 - 420, 260); firstFree('JK_bench', gs, 0, 30, 40, false); firstFree('JK_door', gs, .7, 16, 26, false); firstFree('JK_grill', gs, 0, 40, 14, false); } }
   // lamps along the paths (they light up with power), a signpost at the crossroads
   put('HP_signpost', gx + 115, 3640, 0, 10, 10, false); if ((B.power | 0) >= 1) for (let i = 0; i < 4; i++) { put('HP_lampm', gx - 110, R.y0 + 300 + i * 280, 0, 12, 12, false); put('HP_lampm', R.x0 + 300 + i * 500, 3460, 0, 12, 12, false); }
@@ -11647,7 +11685,7 @@ function havenDress(B) {
 /* ---------- towns ---------- */
 const TPROPS = { done: false, groups: [], rec: { walls: [] } };
 function townDress() {
-  if (TPROPS.done || !HPG || !world3 || !colGrid || !roads || !roads.length) return; TPROPS.done = true; const t0 = performance.now();
+  if (TPROPS.done || !HPG || !world3 || !colGrid || !roads || !roads.length) return; TPROPS.done = true; const t0 = performance.now(); MILSPOT.length = 0; setTimeout(milHumvees, 0);
   const list = {}; TPROPS.dbg = []; const add = (name, x, y, ry, y0) => { (list[name] = list[name] || []).push([x, y, ry || 0, y0 || 0]); TPROPS.dbg.push({ n: name, x: Math.round(x), y: Math.round(y) }); };
   const onRoad = (x, y, m) => roads.some(q => x > q.x - m && x < q.x + q.w + m && y > q.y - m && y < q.y + q.h + m);
   const inHouse = (x, y, m) => houses.some(q => x > q.x - m && x < q.x + q.w + m && y > q.y - m && y < q.y + q.h + m);
@@ -11694,7 +11732,8 @@ function townDress() {
           { const [x, y] = side(170, O + 30); if (ok(x, y, 26)) { add('MK_gen', x, y, ry0); block(x, y, hor ? 36 : 22, hor ? 22 : 36); } }
           { const [x, y] = side(210, O + 20); if (ok(x, y, 18)) { add('MK_case', x, y, ry0 + .3); add('MK_ammo', x, y, ry0 + .3, .49); block(x, y, 24, 24); } }
           { const [x, y] = side(100, O - 34); if (ok(x, y, 24)) { add('MK_sandbags', x, y, ry0); add('MK_sandbags', x, y, ry0, .46); block(x, y, hor ? 48 : 10, hor ? 10 : 48); } }
-          { const [x, y] = side(320, 0); if (spotFree(x, y, 0, 30)) { add('MK_barrier_w', x, y, hor ? Math.PI / 2 : 0); block(x, y, hor ? 20 : 56, hor ? 56 : 20); } } } } }
+          { const [x, y] = side(320, 0); if (spotFree(x, y, 0, 30)) { add('MK_barrier_w', x, y, hor ? Math.PI / 2 : 0); block(x, y, hor ? 20 : 56, hor ? 56 : 20); } }
+          for (const [t_, o_] of [[400, wdt / 4], [250, O + 40], [250, -O - 40], [520, -wdt / 4]]) { const [x, y] = side(t_, o_); if (!isWater(x, y) && !inHouse(x, y, 45) && spotFree(x, y, 0, 45)) { MILSPOT.push([x, y, ry0 + Math.PI / 2, T.n]); break; } } } } }
     // build 64: scrap from the breakers' yard pack in side yards: stripped shells and frames, tyres, seats, bumpers, engines
     if (K3G) { for (let i = 0, n = 0; i < 160 && n < Math.round(7 * big); i++) { const h = pk(houses.filter(q => q.kind === 'house' && Math.hypot(q.x + q.w / 2 - T.x, q.y + q.h / 2 - T.y) < T.r) || []); if (!h) break;
         const sd = rnd_() < .5, x = sd ? (rnd_() < .5 ? h.x - 60 : h.x + h.w + 60) : h.x + h.w * (.2 + rnd_() * .6), y = sd ? h.y + h.h * (.2 + rnd_() * .6) : (rnd_() < .5 ? h.y - 60 : h.y + h.h + 60);
