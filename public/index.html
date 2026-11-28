@@ -173,7 +173,7 @@ html body #bagui .givebar{background:rgba(8,9,10,.97)}
 `; document.head.appendChild(st);
 })();
 function uiK(k) { return '<kbd class="u-k">' + k + '</kbd>'; }
-function uiBar(items) { return '<div class="u-bar">' + items.map(([k, t, m]) => '<span' + (m ? ' data-m="' + m + '"' : '') + '>' + k.map(uiK).join('') + ' ' + t + '</span>').join('') + '<span class="r">PROTOTYPE BUILD 68</span></div>'; }
+function uiBar(items) { return '<div class="u-bar">' + items.map(([k, t, m]) => '<span' + (m ? ' data-m="' + m + '"' : '') + '>' + k.map(uiK).join('') + ' ' + t + '</span>').join('') + '<span class="r">PROTOTYPE BUILD 69</span></div>'; }
 function uiMainItems() {
   const ready = assetsReady.kit && assetsReady.trees && assetsReady.car && assetsReady.furn && assetsReady.people && assetsReady.wtex;
   const SV = lvlLoad(), hasSv = SV.last !== null && SV.levels[SV.last];
@@ -215,7 +215,7 @@ function renderTitle() {
   } else if (titleMode === 'credits') {
     h += '<div class="u-scr"><div class="u-head"><div class="step">ABOUT</div><h2>Credits</h2></div><div class="u-cred"><p>ColdShore prototype. Characters, zombies, vehicles, buildings, trees and animation built procedurally in Blender. Engine: three.js. Voices: your browser&#39;s speech engine.</p><h4>Models</h4><p style="font-size:13px">From BlendSwap, reduced for the browser: M1 Humvee by panko10 (CC-BY); Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0); Ford Crown Victoria Police Interceptor 2005 (CC-BY 3.0); BMW 3 Series Coupe by mikepan (CC-BY-SA 3.0); Trees &amp; Bushes pack by Painkiller5555; Dodge Challenger 1970 R/T; Low Quality Weapon Pack (CC0); Warehouse by argonius (CC0); Beretta M9 pistol by MazenYasser (CC-BY); Weathered AKM rifle by LonesomeDucky (CC0); Automatic Rifle AR48s by 5thElement (CC0); Remington 870 shotgun by Britdawgmasterfunk (CC0); LMG and MX4 built from Firearms_kit_1.0 by Britdawgmasterfunk (CC0); Mercedes AMG 63 ML by LYES94 (CC-BY); Lamborghini Aventador (For games) by shadewar (CC-BY); Victorian Style House by MrChimp2313 (CC0); military_outpost_kit_1.0, Buildings_kit_1.0 and The_Breakers_yard_1.0 by Britdawgmasterfunk (CC0); Living/TV Room Study by mbarros (CC0); Family House Collection by tastyfish (CC0).</p></div><div class="u-row2"><span class="u-btn" data-m="back">Back</span></div></div>' + uiBar([[['Esc'], 'Back', 'back']]);
   }
-  if (titleMode === 'press') h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 68</div>';
+  if (titleMode === 'press') h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 69</div>';
   titleEl.innerHTML = h; titleEl.classList.add('on');
   titleEl.querySelectorAll('[data-m]').forEach(a => a.onclick = () => { const m = a.dataset.m; if (m === 'bgback') { titleMode = 'bg'; beep(520, .04, 'triangle', .03); renderTitle(); return; } titleAction(m); });
   titleEl.querySelectorAll('.u-menu a[data-i]').forEach(a => a.onmouseenter = () => { if (UI61.sel === +a.dataset.i) return; UI61.sel = +a.dataset.i; beep(880, .015, 'sine', .012); renderTitle(); });
@@ -792,16 +792,16 @@ function mkCrate(x, y) {
 }
 // per-body dimensions and handling (game units; hl/hw are half length/width of the collision box, wb = wheelbase)
 const VEH = {
-  Car: { hl: 49, hw: 19, kg: 1300, wr: .33, eye: 0, acc: 420, top: 620, wb: 56, name: 'Sedan' },
-  Car_hatch: { hl: 43, hw: 19, kg: 1100, wr: .32, eye: 0, acc: 440, top: 600, wb: 52, name: 'Hatchback' },
-  Car_suv: { hl: 49, hw: 20, kg: 1900, wr: .4, eye: .13, acc: 380, top: 590, wb: 58, name: 'SUV' },
-  Car_pickup: { hl: 50, hw: 20, kg: 2000, wr: .4, eye: .13, acc: 390, top: 600, wb: 62, name: 'Pickup' },
-  Car_van: { hl: 50, hw: 20, kg: 2100, wr: .36, eye: .1, acc: 330, top: 540, wb: 64, name: 'Panel van' },
-  Car_police: { hl: 50, hw: 19, kg: 1500, wr: .34, eye: 0, acc: 520, top: 720, wb: 56, name: 'Police cruiser', col: 0xe9e9e4, siren: true },
-  Car_ambulance: { hl: 52, hw: 21, kg: 2600, wr: .38, eye: .1, acc: 330, top: 560, wb: 66, name: 'Ambulance', col: 0xe8e6e0, siren: true },
-  Car_truck: { hl: 74, hw: 25, kg: 5200, wr: .48, eye: .3, acc: 250, top: 480, wb: 92, name: 'Box truck', cam: 1.72 },
-  Car_bus: { hl: 112, hw: 26, kg: 9000, wr: .52, eye: .25, acc: 200, top: 430, wb: 142, name: 'School bus', col: 0xd89a10, cam: 4.47 },
-  Car_moto: { hl: 22, hw: 7, kg: 260, wr: .31, eye: .5, acc: 640, top: 760, wb: 29, name: 'Motorcycle', cam: -.15, lat: 0, moto: true, seatY: .4 }
+  Car: { g: 0.85, hl: 49, hw: 19, kg: 1300, wr: .33, eye: 0, acc: 90, top: 1167, wb: 56, name: 'Sedan' },
+  Car_hatch: { g: 0.85, hl: 43, hw: 19, kg: 1100, wr: .32, eye: 0, acc: 85, top: 1056, wb: 52, name: 'Hatchback' },
+  Car_suv: { g: 0.78, hl: 49, hw: 20, kg: 1900, wr: .4, eye: .13, acc: 89, top: 1056, wb: 58, name: 'SUV' },
+  Car_pickup: { g: 0.72, hl: 50, hw: 20, kg: 2000, wr: .4, eye: .13, acc: 88, top: 972, wb: 62, name: 'Pickup' },
+  Car_van: { g: 0.68, hl: 50, hw: 20, kg: 2100, wr: .36, eye: .1, acc: 74, top: 889, wb: 64, name: 'Panel van' },
+  Car_police: { g: 0.86, hl: 50, hw: 19, kg: 1500, wr: .34, eye: 0, acc: 96, top: 1161, wb: 56, name: 'Police cruiser', col: 0xe9e9e4, siren: true },
+  Car_ambulance: { g: 0.6, hl: 52, hw: 21, kg: 2600, wr: .38, eye: .1, acc: 66, top: 778, wb: 66, name: 'Ambulance', col: 0xe8e6e0, siren: true },
+  Car_truck: { g: 0.55, hl: 74, hw: 25, kg: 5200, wr: .48, eye: .3, acc: 61, top: 667, wb: 92, name: 'Box truck', cam: 1.72 },
+  Car_bus: { g: 0.45, hl: 112, hw: 26, kg: 9000, wr: .52, eye: .25, acc: 48, top: 556, wb: 142, name: 'School bus', col: 0xd89a10, cam: 4.47 },
+  Car_moto: { g: 1.0, hl: 22, hw: 7, kg: 260, wr: .31, eye: .5, acc: 174, top: 1111, wb: 29, name: 'Motorcycle', cam: -.15, lat: 0, moto: true, seatY: .4 }
 };
 const SPECIAL_KINDS = ['Car_police', 'Car_ambulance', 'Car_truck', 'Car_bus', 'Car_moto'];
 function vehOf(c) { return VEH[c.kind] || VEH.Car; }
@@ -2712,6 +2712,7 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyE') {
     if (SEAT.car && !e.repeat) { seatOut(); return; } if (!e.repeat && seatTryEnter()) return;
     if (P.sit) { iaStand(); return; }
+    if (!driving && P.target && P.target.type === 'ia' && P.target.ref.kind === 'carfix') { const c = P.target.ref.c; if (c && c.hp > 0 && !c.wreck) { P.fixTap = { t: performance.now(), c }; return; } }   // build 69: tap E gets in a damaged car, hold E repairs it
     if (!driving && P.target && P.target.type === 'ia') { const it = P.target.ref; if (it.kind === 'stairup' && INT.cur && INT.cur.floors - 1 - INT.cur.fl >= 5) { INT.stairHold = setTimeout(() => { INT.stairHold = 'done'; intEnter(INT.cur.base, INT.cur.fl + 5); }, 600); return; } if (it.def.mode !== 'hold' || it.looted) iaUse(it); return; }
     if (!driving && P.target && P.target.type === 'note') { readNote(P.target.ref); return; }
     if (!driving && P.target && P.target.type === 'door' && !e.repeat) { toggleDoor(P.target.ref); return; }
@@ -2751,13 +2752,13 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyF') { flashOn = !flashOn; flashlight.intensity = flashOn ? 1.8 : 0; }
   if (e.code.startsWith('Arrow') || e.code === 'Space') e.preventDefault();
 });
-addEventListener('keyup', e => { keys[e.code] = false; if (HV.mode) havenKey(e, false); if (e.code === 'KeyE' && INT.stairHold) { if (INT.stairHold !== 'done') { clearTimeout(INT.stairHold); if (INT.cur) intEnter(INT.cur.base, INT.cur.fl + 1); } INT.stairHold = null; } });
+addEventListener('keyup', e => { keys[e.code] = false; if (e.code === 'KeyE' && P && P.fixTap) { const ft = P.fixTap; P.fixTap = null; if (performance.now() - ft.t < 260 && !driving && ft.c.state === 'ready') enterCar(ft.c); else if (performance.now() - ft.t < 260 && !driving) { const c = nearCar(); if (c === ft.c) enterCar(c); } } if (HV.mode) havenKey(e, false); if (e.code === 'KeyE' && INT.stairHold) { if (INT.stairHold !== 'done') { clearTimeout(INT.stairHold); if (INT.cur) intEnter(INT.cur.base, INT.cur.fl + 1); } INT.stairHold = null; } });
 addEventListener('mousemove', e => {
   if (state !== 'play') return;
   let dx = 0, dy = 0;
   if (locked) { dx = e.movementX; dy = e.movementY; } else if (mouse.drag) { dx = e.movementX; dy = e.movementY; } else return;
   swayIn.x += dx; swayIn.y += dy;
-  const sens = 0.0022 * (UISET.sens || 1) * (1 - adsK * .45);
+  const sens = 0.0022 * (UISET.sens || 1) * (1 - adsK * .45) * (W_() && W_().zoom && adsK > .5 ? Math.min(1, 2.2 / scopeZoom()) : 1);
   if (driving) { lookOff = clamp(lookOff + dx * sens, -2.6, 2.6); lookOffT = 1.2; } else yaw += dx * sens;
   pitch = clamp(pitch - dy * sens, -1.3, 1.3);
 });
@@ -2767,13 +2768,13 @@ glc.addEventListener('mousedown', e => {
   if (mapOpen) { mapDown(e); return; }
   initAudio();
   if (e.button === 1) { e.preventDefault(); pingHere(); return; }
-  if (e.button === 2) { if (locked) mouse.ads = true; else mouse.drag = true; return; }
+  if (e.button === 2) { if (locked) mouse.ads = true; else { mouse.drag = true; if (W_() && W_().zoom) mouse.ads = true; } return; }   // build 69: without mouse lock a scoped rifle still aims (drag to look through it)
   if (!locked) { const was = lockFailed; lockFailed = false; lock(); if (was) { mouse.down = true; return; } return; }
   mouse.down = true;
 });
 glc.addEventListener('contextmenu', e => e.preventDefault());
 addEventListener('mouseup', e => { if (e.button === 2) { mouse.drag = false; mouse.ads = false; } else { mouse.down = false; mouse.fired = false; } });
-addEventListener('wheel', e => { if (state === 'play' && mapOpen) { mapWheel(e); return; } if (state !== 'play' || !P || !P.wp || BAG.open) return; const order = WORDER.filter(k => P.wp[k] && P.wp[k].has); if (order.length < 2) return; const i = order.indexOf(curW); switchWeapon(order[(i + (e.deltaY > 0 ? 1 : -1) + order.length) % order.length]); }, { passive: true });
+addEventListener('wheel', e => { if (state === 'play' && mapOpen) { mapWheel(e); return; } if (state === 'play' && !driving && W_() && W_().zoom && adsK > .5) { scopeWheel(e.deltaY); return; } if (state !== 'play' || !P || !P.wp || BAG.open) return; const order = WORDER.filter(k => P.wp[k] && P.wp[k].has); if (order.length < 2) return; const i = order.indexOf(curW); switchWeapon(order[(i + (e.deltaY > 0 ? 1 : -1) + order.length) % order.length]); }, { passive: true });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; mouse.down = false; mouse.drag = false; mouse.ads = false; });
 
 /* ---------- interactables: everything you can aim at and press E on (build 26) ---------- */
@@ -2978,7 +2979,7 @@ const IAK = {
   exitbld: D_(() => 'Leave the building', 'tap', () => intExit()),
   cellardoor: D_('Go down to the cellar', 'tap', it => intEnter(it.spec, 0)),
   atticdoor: D_('Climb the ladder to the attic', 'tap', it => intEnter(it.spec, 0)),
-  formula: D_("Take Voss's formula", 'hold', it => { it.looted = true; story.formula = true; cutFloor23(); }, { time: 1.5 }),
+  formula: D_("Take Voss's formula", 'hold', it => { it.looted = true; story.formula = true; if (it.mesh) it.mesh.visible = false; cutFloor23(); }, { time: 1.5 }),
   elevator: D_(() => 'Call the elevator', 'tap', () => openElevator()),
   mitem: D_(it => it.lbl || 'Take it', 'hold', it => { it.looted = true; toast(it.got || 'Got it.'); }, { time: 1.2 }),
   garage: D_("Eli's garage: upgrade your car", 'tap', () => openGarage()),
@@ -3403,9 +3404,18 @@ function towerFloorBuild(l) {
   const info = intBuild(sp, rec); rec.type = info.type;
   const m = mergeStatic(rec.g); world3.remove(rec.g); m.traverse(o => { if (o.isMesh) { o.receiveShadow = true; o.matrixAutoUpdate = false; } }); world3.add(m); rec.g = m;
   TF.floors[l] = rec;
+  // build 69: Voss's formula was only an invisible spot by her desk. Now it is a case on the desk, open, with glowing vials and a lamp on it
+  const fo = rec.ia.find(i => i.kind === 'formula' && !i.looted); if (fo) { fo.y += 40; const gp = new THREE.Group(), y0 = l * 3.4 + .79;
+    const cm = new THREE.MeshStandardMaterial({ color: 0x1b1d20, roughness: .45, metalness: .6 }), fm = new THREE.MeshStandardMaterial({ color: 0x8a1010, roughness: .7 }), vm = new THREE.MeshStandardMaterial({ color: 0x5bff9a, emissive: 0x2bff7a, emissiveIntensity: 1.6, roughness: .2, transparent: true, opacity: .85 });
+    const b = (w, h, d, m, x, y, z) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); gp.add(o); return o; };
+    b(.46, .07, .32, cm, 0, .035, 0); const lid = b(.46, .02, .32, cm, 0, .2, -.17); lid.rotation.x = -1.2; lid.position.set(0, .18, -.2);
+    for (let i = 0; i < 6; i++) { const v = new THREE.Mesh(new THREE.CylinderGeometry(.016, .016, .11, 10), vm); v.position.set(-.15 + i * .06, .11, .02); gp.add(v); }
+    b(.21, .015, .28, fm, .34, .008, 0); b(.19, .002, .26, new THREE.MeshStandardMaterial({ color: 0xe8e2d0, roughness: .9 }), .34, .017, 0);
+    const pl = new THREE.PointLight(0x5bff9a, 1.1, 3.2, 2); pl.position.set(0, .35, 0); gp.add(pl);
+    gp.position.set(fo.x * S3, y0, fo.y * S3); gp.userData.dyn = 1; world3.add(gp); rec.extra = gp; fo.mesh = gp; }
   if (!INT.saved['seen:' + sp.key] && l > 0) { INT.saved['seen:' + sp.key] = 1; }
 }
-function towerFloorDrop(l) { const rec = TF.floors[l]; if (!rec) return; INT.saved[TF.spec.id + '#' + l] = { looted: rec.ia.map((it, i) => it.looted ? i : -1).filter(i => i >= 0), cleared: rec.z.every(z => z.hp <= 0 || !zombies.includes(z)) }; intClear(rec); delete TF.floors[l]; }
+function towerFloorDrop(l) { const rec = TF.floors[l]; if (!rec) return; INT.saved[TF.spec.id + '#' + l] = { looted: rec.ia.map((it, i) => it.looted ? i : -1).filter(i => i >= 0), cleared: rec.z.every(z => z.hp <= 0 || !zombies.includes(z)) }; if (rec.extra) world3.remove(rec.extra); intClear(rec); delete TF.floors[l]; }
 function towerClose() { for (const l in TF.floors) towerFloorDrop(+l); if (TF.stair) STAIRS = STAIRS.filter(s => s !== TF.stair); if (TF.t) TF.t.open = false; TF.t = null; TF.ti = -1; TF.stair = null; }
 let towerT = 0;
 function towerFloorsTick(dt) {
@@ -4030,7 +4040,7 @@ function update(dt) {
   if (driving) lookOff = clamp(lookOff + look * 2 * dt, -1.6, 1.6); else yaw += look * 2 * dt;
   pitch = clamp(pitch + lookV * 1.5 * dt, -1.3, 1.3);
 
-  adsK += (((mouse.ads && !driving && !(P.rl > 0)) ? 1 : 0) - adsK) * Math.min(1, dt * 11);
+  adsK += (((mouse.ads && !driving && !(P.rl > 0)) ? 1 : 0) - adsK) * Math.min(1, dt * 11); scopeTick(dt);
   if (recoilP > 0) { const r = Math.min(recoilP, dt * .12); pitch -= r * .72; recoilP -= r; }
   const sprint = (!!keys.ShiftLeft || !!keys.ShiftRight) && adsK < .3;
   let sprinting = false, moving = false;
@@ -4041,10 +4051,10 @@ function update(dt) {
     if (P.watch && (f || r)) { P.watch = null; sfx('creak'); }
     if ((f || r) && !P.sit && !P.watch && !(P.sleepT > 0)) {
       const l = Math.hypot(f, r); sprinting = staminaTick(dt, sprint && f > 0 && !NET.carrying, true); moving = true;
-      if (sprinting && STL.crouch) setCrouch(false); const sp = (sprinting ? 110 : 70 * (1 - adsK * .45) * (STL.crouch ? .5 : 1)) * netCarryMul();
+      if (sprinting && STL.crouch) setCrouch(false); const sp = (sprinting ? 110 : 70 * (1 - adsK * .45) * (STL.crouch ? .5 : 1)) * netCarryMul() * (1 - LOWHP.k * .28);
       const fx = Math.cos(yaw), fy = Math.sin(yaw), rx = -Math.sin(yaw), ry = Math.cos(yaw);
       P.x += (fx * f + rx * r) / l * sp * dt; P.y += (fy * f + ry * r) / l * sp * dt; collide(P);
-      bobT += dt * (sprinting ? 12 : STL.crouch ? 5 : 8); if (!STL.crouch) footTick(sprinting);
+      bobT += dt * (sprinting ? 12 : STL.crouch ? 5 : 8) * (1 - LOWHP.k * .3); if (!STL.crouch) footTick(sprinting);
     }
     if (!moving) staminaTick(dt, false, false);
     jumpTick(dt, moving);
@@ -4240,7 +4250,8 @@ function syncScene(dt) {
     yaw = cyaw;
   } else {
     cx = P.x * S3; cz = P.y * S3; cy -= (P.sitK || 0) * .55; cy += lvH(P) + (P.jz || 0);
-    if (P.moving) cy += Math.sin(bobT) * 0.045;
+    if (P.moving) cy += Math.sin(bobT) * 0.045 * (1 + LOWHP.k * .8) - (LOWHP.k > .3 ? Math.max(0, Math.sin(bobT * .5)) * .05 * LOWHP.k : 0);
+    cy -= LOWHP.stum * .25;
   }
   if (SEAT.car) { const sc = seatCam(); if (sc) { cx = sc[0]; cy = sc[1]; cz = sc[2]; } }
   if (P.watch && !driving) { cx = P.watch.x * S3; cz = P.watch.y * S3; cy = P.watch.h; }
@@ -4249,7 +4260,8 @@ function syncScene(dt) {
   const cpi = driving && chaseCam ? -0.16 + (CC.pit || 0) + pitch * .3 : pitch, cp = Math.cos(cpi);
   camera.lookAt(camera.position.x + Math.cos(cyaw) * cp, camera.position.y + Math.sin(cpi), camera.position.z + Math.sin(cyaw) * cp);
   if (driving && !chaseCam && driving.rollS !== undefined) { camera.rotateX(driving.pitchS || 0); camera.rotateZ(-(driving.rollS || 0)); }
-  const zoomW = !driving && W_().zoom ? W_().zoom : 0, FB_ = (UISET.fov || 75) * (P.watch ? (mouse.ads ? .32 : .85) : 1), fov = zoomW ? FB_ - adsK * (FB_ - FB_ / zoomW) : FB_ + (driving ? Math.min(16, Math.abs(driving.v) / 340 * 10) : (keys.ShiftLeft && P.moving ? 4 : 0)) - adsK * 18;
+  if (!driving && LOWHP.k > .02) { const t_ = performance.now() / 1000; camera.rotateZ(Math.sin(t_ * .7) * .035 * LOWHP.k + (P.moving ? Math.sin(bobT * .5) * .025 * LOWHP.k : 0) + LOWHP.stum * .12); camera.rotateX(Math.sin(t_ * .53 + 1) * .012 * LOWHP.k); }
+  const zoomW = !driving && W_().zoom ? scopeZoom() : 0, FB_ = (UISET.fov || 75) * (P.watch ? (mouse.ads ? .32 : .85) : 1), fov = zoomW ? FB_ - adsK * (FB_ - FB_ / zoomW) : FB_ + (driving ? Math.min(22, Math.abs(driving.v) / 420 * 10) : (keys.ShiftLeft && P.moving ? 4 : 0)) - adsK * 18;
   if (VM && VM.root) VM.root.visible = !(zoomW && adsK > .85) && VM.id === curW && !(P.watch && mouse.ads);
   if (Math.abs(camera.fov - fov) > 0.05) { camera.fov += (fov - camera.fov) * Math.min(1, dt * 6); camera.updateProjectionMatrix(); }
   updateWorldBits(dt);
@@ -4303,7 +4315,7 @@ function drawHUD() {
     text(Math.round(Math.abs(c.v) * S3 * 3.6) + ' km/h', VW / 2, VH - 28, '#9fe3c8', 16, 'center');
   }
 
-  if (!driving && W_().zoom && adsK > .85) { const r = Math.min(VW, VH) * .42; ctx.save(); ctx.fillStyle = '#000'; ctx.beginPath(); ctx.rect(0, 0, VW, VH); ctx.arc(VW / 2, VH / 2, r, 0, Math.PI * 2, true); ctx.fill('evenodd'); ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(VW / 2 - r, VH / 2); ctx.lineTo(VW / 2 + r, VH / 2); ctx.moveTo(VW / 2, VH / 2 - r); ctx.lineTo(VW / 2, VH / 2 + r); ctx.stroke(); ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(VW / 2 - r, VH / 2); ctx.lineTo(VW / 2 - r * .12, VH / 2); ctx.moveTo(VW / 2 + r * .12, VH / 2); ctx.lineTo(VW / 2 + r, VH / 2); ctx.moveTo(VW / 2, VH / 2 + r * .12); ctx.lineTo(VW / 2, VH / 2 + r); ctx.stroke(); const vg = ctx.createRadialGradient(VW / 2, VH / 2, r * .7, VW / 2, VH / 2, r); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.7)'); ctx.fillStyle = vg; ctx.beginPath(); ctx.arc(VW / 2, VH / 2, r, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+  drawLowHp(); if (!driving && W_().zoom && adsK > .6) drawScope();
   if (P.watch && mouse.ads) { let B = UI61.bino; if (!B || B.width !== VW || B.height !== VH) { B = UI61.bino = document.createElement('canvas'); B.width = VW; B.height = VH; const c = B.getContext('2d'), r = Math.min(VW, VH) * .36;
       c.fillStyle = '#000'; c.fillRect(0, 0, VW, VH); c.globalCompositeOperation = 'destination-out'; for (const s_ of [-1, 1]) { const g = c.createRadialGradient(VW / 2 + s_ * r * .62, VH / 2, r * .8, VW / 2 + s_ * r * .62, VH / 2, r); g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.beginPath(); c.arc(VW / 2 + s_ * r * .62, VH / 2, r, 0, 6.283); c.fill(); } }
     ctx.drawImage(B, 0, 0); }
@@ -4421,6 +4433,74 @@ function crashFx(dvms, x, y) {
   if (actx) try { audioBus(); const t = actx.currentTime; nb(t, .18, 'lowpass', 900, 1, vol * 1.1, .07, 200, .4); nb(t, .08, 'bandpass', 2600, 3, vol * .5, .03, 0, .3); nb(t + .03, .3, 'bandpass', 4200, 6, vol * .25, .09, 0, .2); } catch (e) {}
   noise = Math.max(noise, clamp(vol * 2, 0, 1.5));
 }
+/* ======================= BUILD 69: BADLY HURT =======================
+   Below 40 health you feel it: a heartbeat that gets louder and faster, ragged breathing, the world going quiet and grey, a red
+   pulse at the edges of the screen, a limp and a sway in the camera, slower steps, and now and then a stumble. Under 15 the
+   vision tunnels and blacks out for a beat. It eases as soon as you heal. */
+const LOWHP = { k: 0, hbT: 0, brT: 0, pulse: 0, stum: 0, stT: 6, lp: null, black: 0 };
+function lowHpTick(dt) {
+  const hp = P && isFinite(P.hp) ? P.hp : 100, want = state === 'play' && !(NET.on && NET.down) ? clamp((40 - hp) / 32, 0, 1) : 0;
+  LOWHP.k += (want - LOWHP.k) * Math.min(1, dt * (want > LOWHP.k ? 3 : 1.2)); const k = LOWHP.k; LOWHP.pulse = Math.max(0, LOWHP.pulse - dt * 2.6);
+  try { const cv = renderer.domElement, f = k > .02 ? 'saturate(' + (1 - k * .75).toFixed(2) + ') contrast(' + (1 + k * .12).toFixed(2) + ')' : ''; if (cv.style.filter !== f) cv.style.filter = f; } catch (e) {}
+  if (actx && master) { try { if (!LOWHP.lp) { LOWHP.lp = actx.createBiquadFilter(); LOWHP.lp.type = 'lowpass'; LOWHP.lp.frequency.value = 22000; master.disconnect(); master.connect(LOWHP.lp); LOWHP.lp.connect(UIVOL); }
+    LOWHP.lp.frequency.setTargetAtTime(k > .02 ? 22000 - k * 19500 : 22000, actx.currentTime, .3); } catch (e) {} }
+  if (k < .05) return;
+  LOWHP.hbT -= dt; if (LOWHP.hbT <= 0) { LOWHP.hbT = 1.05 - k * .5; LOWHP.pulse = 1; const v = .09 + k * .16; beep(52, .13, 'sine', v); setTimeout(() => beep(44, .16, 'sine', v * .75), 160); }
+  LOWHP.brT -= dt; if (LOWHP.brT <= 0 && actx && master) { LOWHP.brT = 2.4 - k * 1.1; try { const t = actx.currentTime; nb(t, .55, 'bandpass', 1100, .9, .035 + k * .05, .14, 700); nb(t + .75 - k * .2, .5, 'bandpass', 700, .9, .03 + k * .045, .12, 450); } catch (e) {} }
+  if (P.moving && k > .45) { LOWHP.stT -= dt; if (LOWHP.stT <= 0) { LOWHP.stT = 5 + Math.random() * 6 - k * 3; LOWHP.stum = 1; } }
+  LOWHP.stum = Math.max(0, LOWHP.stum - dt * 2.2); if (k > .78) { LOWHP.black = Math.max(LOWHP.black - dt * .9, 0); if (Math.random() < dt * .12) LOWHP.black = 1; } else LOWHP.black = 0;
+}
+function drawLowHp() {
+  const k = LOWHP.k; if (k < .03) return; const cx = VW / 2, cy = VH / 2, R_ = Math.hypot(VW, VH) / 2, p = LOWHP.pulse * LOWHP.pulse;
+  ctx.save(); const g = ctx.createRadialGradient(cx, cy, R_ * (.62 - k * .25 - p * .06), cx, cy, R_);
+  g.addColorStop(0, 'rgba(90,0,0,0)'); g.addColorStop(.55, 'rgba(110,0,0,' + (k * .35 + p * .2 * k).toFixed(3) + ')'); g.addColorStop(1, 'rgba(40,0,0,' + Math.min(.95, k * .8 + p * .15).toFixed(3) + ')');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, VW, VH);
+  if (LOWHP.black > 0) { ctx.fillStyle = 'rgba(0,0,0,' + (LOWHP.black * .85).toFixed(3) + ')'; ctx.fillRect(0, 0, VW, VH); }
+  ctx.restore();
+}
+/* ======================= BUILD 69: SCOPES =======================
+   Right mouse looks through the scope. Mouse wheel zooms (2x to the scope's max, a bit beyond its old fixed power); the reticle sways
+   with your breathing, more when you are tired, hurt or moving; hold Shift to hold your breath for up to 4 s. The scope has a lens
+   edge, a mil-dot reticle with an illuminated centre, the magnification and the range to whatever is under the crosshair. */
+const SCOPE = { z: {}, br: 4, hold: false, t: 0, sx: 0, sy: 0, fade: 0 };
+function scopeMax() { const w = W_(); return w && w.zoom ? Math.max(4, w.zoom * 2.2) : 4; }
+function scopeZoom() { const k = curW; if (!SCOPE.z[k]) SCOPE.z[k] = (W_() && W_().zoom) || 3; return SCOPE.z[k]; }
+function scopeWheel(dy) { const k = curW, z = scopeZoom(); SCOPE.z[k] = clamp(z * (dy > 0 ? 1 / 1.18 : 1.18), 2, scopeMax()); beep(1800, .02, 'square', .015); }
+function scopeTick(dt) {
+  const on = !driving && W_() && W_().zoom && adsK > .5; SCOPE.fade += ((on ? 1 : 0) - SCOPE.fade) * Math.min(1, dt * 14);
+  if (!on) { SCOPE.br = Math.min(4, SCOPE.br + dt * .8); SCOPE.hold = false; return; }
+  const wantHold = !!(keys.ShiftLeft || keys.ShiftRight); SCOPE.hold = wantHold && SCOPE.br > 0; if (SCOPE.hold) SCOPE.br = Math.max(0, SCOPE.br - dt); else SCOPE.br = Math.min(4, SCOPE.br + dt * .5);
+  SCOPE.t += dt; const hurt = P.hp < 40 ? 1.8 : 1, mv = P.moving ? 2.2 : 1, gasp = !SCOPE.hold && SCOPE.br < .4 ? 1.6 : 1, z = scopeZoom();
+  const amp = (SCOPE.hold ? .12 : 1) * hurt * mv * gasp * .0042 * (STL.crouch ? .6 : 1), t = SCOPE.t;
+  const nx = Math.sin(t * 1.1) * .7 + Math.sin(t * 2.3 + 1) * .3, ny = Math.sin(t * .9 + 2) * .6 + Math.cos(t * 1.7) * .4 + Math.sin(t * .45) * .5;
+  const dx = nx * amp - SCOPE.sx, dy = ny * amp - SCOPE.sy; SCOPE.sx += dx; SCOPE.sy += dy; yaw += dx; pitch = clamp(pitch + dy, -1.3, 1.3);
+}
+function scopeRange() {   // march the aim line through the collision grid (a raycast against the whole county is too slow to do while scoped)
+  const dir = new THREE.Vector3(); camera.getWorldDirection(dir); const h0 = camera.position.y, hx = Math.hypot(dir.x, dir.z) || 1e-6;
+  for (let t = 1; t < 700; t += t < 60 ? .5 : 1.5) { const x = (camera.position.x + dir.x * t) / S3, y = (camera.position.z + dir.z * t) / S3, h = h0 + dir.y * t;
+    if (h <= lvH(P) + .02 && dir.y < 0) return t; if (!spotFree(x, y, P.lv | 0, 2)) return t;
+    for (const z of zombies) if (z.hp > 0 && Math.abs(z.x - x) < 14 && Math.abs(z.y - y) < 14 && h < lvH(z) + 1.9) return t; }
+  return 0; }
+function drawScope() {
+  const r = Math.min(VW, VH) * .46, cx = VW / 2, cy = VH / 2, a = clamp((adsK - .6) / .4, 0, 1), z = scopeZoom(); ctx.save(); ctx.globalAlpha = a;
+  ctx.fillStyle = '#050505'; ctx.beginPath(); ctx.rect(0, 0, VW, VH); ctx.arc(cx, cy, r, 0, Math.PI * 2, true); ctx.fill('evenodd');
+  const vg = ctx.createRadialGradient(cx, cy, r * .62, cx, cy, r * 1.01); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(.82, 'rgba(0,0,0,.25)'); vg.addColorStop(1, 'rgba(0,0,0,.95)'); ctx.fillStyle = vg; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+  const lg = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r); lg.addColorStop(0, 'rgba(120,170,255,.06)'); lg.addColorStop(.5, 'rgba(0,0,0,0)'); lg.addColorStop(1, 'rgba(255,190,120,.05)'); ctx.fillStyle = lg; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(30,30,30,.9)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+  // reticle: thick posts outside, thin cross inside, mil dots
+  ctx.strokeStyle = '#0a0a0a'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(cx - r, cy); ctx.lineTo(cx - r * .38, cy); ctx.moveTo(cx + r * .38, cy); ctx.lineTo(cx + r, cy); ctx.moveTo(cx, cy + r * .38); ctx.lineTo(cx, cy + r); ctx.stroke();
+  ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(cx - r * .38, cy); ctx.lineTo(cx + r * .38, cy); ctx.moveTo(cx, cy - r); ctx.lineTo(cx, cy + r * .38); ctx.stroke();
+  ctx.fillStyle = '#0a0a0a'; const md = r * .075; for (let i = 1; i <= 4; i++) for (const [dx, dy] of [[i, 0], [-i, 0], [0, i], [0, -i]]) { ctx.beginPath(); ctx.arc(cx + dx * md, cy + dy * md, 2.1, 0, Math.PI * 2); ctx.fill(); }
+  ctx.fillStyle = 'rgba(255,40,30,.95)'; ctx.shadowColor = 'rgba(255,40,30,.9)'; ctx.shadowBlur = 6; ctx.beginPath(); ctx.arc(cx, cy, 1.8, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+  // readouts
+  if ((SCOPE.rT = (SCOPE.rT || 0) - 1) <= 0) { SCOPE.rT = 8; SCOPE.rng = scopeRange(); }
+  ctx.font = '600 12px Inter, sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(220,230,220,.9)';
+  ctx.fillText(z.toFixed(1) + 'x', cx + r * .52, cy + r * .62); ctx.fillText(SCOPE.rng ? Math.round(SCOPE.rng) + ' m' : '--- m', cx + r * .52, cy + r * .62 + 16);
+  ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(200,210,200,.55)'; ctx.font = '500 11px Inter, sans-serif'; ctx.fillText('WHEEL ZOOM · HOLD SHIFT TO HOLD BREATH', cx, cy + r + (VH - cy - r) / 2 + 4);
+  // breath bar
+  const bw = r * .5; ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(cx - bw / 2, cy + r * .78, bw, 3); ctx.fillStyle = SCOPE.br < .8 ? '#e06050' : SCOPE.hold ? '#9fe3c8' : 'rgba(255,255,255,.6)'; ctx.fillRect(cx - bw / 2, cy + r * .78, bw * SCOPE.br / 4, 3);
+  ctx.restore();
+}
 const STATIC = { im: 0, iI: 0, vx: 0, vy: 0, w: 0 };
 function carStep(c, dt, ctl) {
   const fx = Math.cos(c.a), fy = Math.sin(c.a), rx = -fy, ry = fx;
@@ -4429,17 +4509,20 @@ function carStep(c, dt, ctl) {
     const dead = c.hp <= 0 || c.fuel <= 0 || c.stall > 0, V = vehOf(c), sv = Math.abs(vf);
     // smooth throttle so a tapped W does not lurch
     c.thr = (c.thr || 0) + ((ctl.fwd > 0 && !dead ? 1 : 0) - (c.thr || 0)) * Math.min(1, dt * 4);
-    if (c.thr > .01 && vf > -5) vf += V.acc * 1.1 * c.thr * Math.max(0, 1 - Math.pow(Math.max(0, vf) / V.top, 2)) * dt / (1 + Math.min(c.bog || 0, 9) * .12 * 1300 / V.kg);
+    if (c.thr > .01 && vf > -5) vf += V.acc * 1.1 * c.thr * Math.max(0, 1 - Math.max(0, vf) / V.top) * dt / (1 + Math.min(c.bog || 0, 9) * .12 * 1300 / V.kg);
     if (ctl.fwd > 0 && vf < -5) vf = Math.min(0, vf + 900 * dt);                                  // W while rolling back = brake
-    if (ctl.fwd < 0) { if (vf > 8) vf = Math.max(0, vf - 480 * dt); else if (!dead) vf = Math.max(-170, vf - 260 * dt); } // S brakes, then reverses
-    if (ctl.brake) vf -= Math.sign(vf) * Math.min(Math.abs(vf), 560 * dt);                       // Space: real brakes, no slide
-    if (!ctl.fwd && !ctl.brake) vf -= Math.sign(vf) * Math.min(Math.abs(vf), (35 + sv * .25) * dt); // engine braking and drag when coasting
+    // build 69: brakes and drag in real terms (1 g is 196 units/s²): S about 1.1 g, Space 1.35 g; coasting is rolling resistance plus air drag
+    if (ctl.fwd < 0) { if (vf > 8) vf = Math.max(0, vf - 215 * (V.g || .85) / .85 * dt); else if (!dead) vf = Math.max(-170, vf - 260 * dt); } // S brakes, then reverses
+    if (ctl.brake) vf -= Math.sign(vf) * Math.min(Math.abs(vf), 265 * (V.g || .85) / .85 * dt);
+    if (!ctl.fwd && !ctl.brake) vf -= Math.sign(vf) * Math.min(Math.abs(vf), (18 + sv * .05 + sv * sv * 2.2e-5) * dt);
     if (ctl.limit) vf = Math.min(vf, ctl.limit);
     vf = clamp(vf, -170, V.top * (c.flat ? .62 : 1) * (c.hp < 35 ? .82 : 1)); if (c.flat && Math.abs(vf) > 20) c.w += c.flatS * .22 * Math.sign(vf) * dt;
-    const grip = ctl.hand ? 0.35 : 0.0006; vr *= Math.pow(grip, dt);
-    // steering gets gentler with speed so the highway is not twitchy
-    const lock = 0.6 / (1 + Math.pow(sv / 150, 1.5)), wt = vf / V.wb * Math.tan(c.steer * lock);
-    c.w += (wt - c.w) * Math.min(1, dt * (ctl.hand ? 3 : 7));
+    // build 69: turning is limited by tyre grip (V.g, in g) instead of a lock that shrank to nothing at speed. Ask for more than the tyres
+    // have and the car pushes wide and slides; the handbrake lets the rear go. Grip drops on a flat and when the engine is smoking.
+    const gg = (V.g || .85) * (c.flat ? .7 : 1) * (ctl.hand ? .55 : 1), wCap = gg * 196 / Math.max(60, sv), lock = .62 / (1 + Math.pow(sv / 700, 1.6));
+    const want = vf / V.wb * Math.tan(c.steer * lock), over = Math.abs(want) / wCap, wt = clamp(want, -wCap * 1.08, wCap * 1.08);
+    const grip = ctl.hand ? 0.3 : over > 1.25 ? 0.12 : over > 1 ? 0.02 : 0.0006; vr *= Math.pow(grip, dt); if (over > 1.25 && sv > 300) c.skid = Math.min(1, (c.skid || 0) + dt * 3); else c.skid = Math.max(0, (c.skid || 0) - dt * 2);
+    c.w += (wt - c.w) * Math.min(1, dt * (ctl.hand ? 3 : 6.5));
   } else { vf *= Math.pow(0.02, dt); vr *= Math.pow(0.002, dt); c.w *= Math.pow(0.01, dt); }
   c.vx = fx * vf + rx * vr; c.vy = fy * vf + ry * vr; c.v = vf;
   c.x += c.vx * dt; c.y += c.vy * dt; c.a += c.w * dt;
@@ -5147,7 +5230,7 @@ function ambientTick(dt) {
     // something right behind you
     ZVO.stingT -= dt; if (ZVO.stingT <= 0 && !driving) for (const [d, z] of near) { if (d > 150) break; if (z.state !== 'chase' || z.sleep) continue; const da = Math.atan2(z.y - P.y, z.x - P.x) - yaw; if (Math.abs(Math.atan2(Math.sin(da), Math.cos(da))) > 1.9) { zSting(da); ZVO.stingT = 6; break; } }
   } else if (ZVO.bed && actx) { const t = actx.currentTime; ZVO.bed.dg.gain.setTargetAtTime(0, t, .3); ZVO.bed.lg.gain.setTargetAtTime(0, t, .3); }
-  if (P.hp < 35) { hbT -= dt; if (hbT <= 0) { hbT = 0.7 + P.hp / 120; beep(55, .12, 'sine', .14); setTimeout(() => beep(48, .14, 'sine', .1), 170); } }
+  lowHpTick(dt);
 }
 function startWind() {
   try {
@@ -5177,7 +5260,7 @@ if (VMENV) brassMat.envMap = VMENV;
 const VMS = {}; let curW = 'pistol';
 const WPN = {
   pistol: { name: 'G17  9MM', cap: 12, rate: .28, auto: false, dmg: 1, head: 2, spread: .032, pellets: 1, recoil: [.014, .024], range: 700, snd: 'pistol', rlT: 2.12, ads: -.235 },
-  shotgun: { name: 'PUMP 12GA', cap: 6, rate: .95, auto: false, dmg: 1, head: 1, spread: .06, pellets: 8, recoil: [.05, .07], range: 420, snd: 'shotgun', perShell: .55, ads: -.3 },
+  shotgun: { name: 'PUMP 12GA', cap: 6, rate: .95, auto: false, dmg: 1, head: 1, spread: .06, pellets: 8, recoil: [.05, .07], range: 420, snd: 'shotgun', perShell: .55, ads: -.42 },
   rifle: { name: 'CARBINE 5.56', cap: 30, rate: .105, auto: true, dmg: 1.6, head: 3, spread: .016, pellets: 1, recoil: [.009, .014], range: 950, snd: 'rifle', rlT: 2.15, ads: -.17 },
   smg: { name: 'SMG  9MM', cap: 30, rate: .072, auto: true, dmg: .85, head: 2, spread: .026, pellets: 1, recoil: [.006, .011], range: 620, snd: 'smg', rlT: 1.9, ads: -.2, anim: 64 },
   hunting: { name: 'BOLT .308  SCOPED', cap: 5, rate: 1.15, auto: false, dmg: 5, head: 8, spread: .003, pellets: 1, recoil: [.07, .09], range: 1900, snd: 'hunting', rlT: 2.6, ads: -.14, zoom: 3.4, pierce: 3, anim: 42 },
@@ -6102,6 +6185,8 @@ function syncNPCs(dt) {
       if (n.lift > 0 && (n.mode === 'car' || n.party) && !n.kiss) n.lift = 0;
       if (n.lift > 0 && !n.kiss && !cars.some(c => Math.hypot(c.x - n.x, c.y - n.y) < 60)) { n.lift = Math.max(0, n.lift - 9 * (dt || .016)); }
       n.m.position.set(n.x * S3, (n.lift || 0) + lvH(n), n.y * S3); n.m.rotation.set(0, -n.a, 0); if (n.lean) n.m.quaternion.premultiply(_leanQ.setFromAxisAngle(_leanAx.set(-Math.sin(n.a), 0, Math.cos(n.a)), -n.lean));
+      if (n.force && n.moving && !cine && n.party) n.force = null;   // build 69: a story pose left on (June stuck talking or kneeling while she walked)
+      if (n.healT > 0 && (n.moving || driving)) n.healT = 0;
       if (n.force) an = n.force;
       else if (n.mode === 'down') an = 'Down';
       else if (n.healT > 0) an = 'Heal';
@@ -8860,7 +8945,7 @@ function myTruckEnsure() {
   t.m = buildCarMesh(t.col, false, t.kind); t.m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); world3.add(t.m); cars.push(t);
 }
 const carFixCost = c => c.flat ? 2 : c.hp <= 0 ? 4 : 2;   // build 53: every car can be fixed, even one that has died on you (it costs more)
-IAK.carfix = D_(it => (it.c.flat ? 'Change the tyre' + (it.c.hp < 98 ? ' (engine ' + Math.max(0, Math.round(it.c.hp)) + '% next)' : '') : it.c.hp <= 0 ? 'Rebuild the engine' : 'Repair the engine (' + Math.max(0, Math.round(it.c.hp)) + '%)') + (inv.scrap >= carFixCost(it.c) ? '  (' + carFixCost(it.c) + ' scrap)' : '  (needs ' + carFixCost(it.c) + ' scrap)'), 'hold', it => {
+IAK.carfix = D_(it => (it.c.hp > 0 && !it.c.wreck ? 'Tap to drive, hold: ' : '') + (it.c.flat ? 'Change the tyre' + (it.c.hp < 98 ? ' (engine ' + Math.max(0, Math.round(it.c.hp)) + '% next)' : '') : it.c.hp <= 0 ? 'Rebuild the engine' : 'Repair the engine (' + Math.max(0, Math.round(it.c.hp)) + '%)') + (inv.scrap >= carFixCost(it.c) ? '  (' + carFixCost(it.c) + ' scrap)' : '  (needs ' + carFixCost(it.c) + ' scrap)'), 'hold', it => {
   const c = it.c, k = carFixCost(c); if (inv.scrap < k) { toast('You need ' + k + ' scrap.'); return; } inv.scrap -= k; c.stall = 0;
   if (c.flat) { c.flat = 0; c.flatS = 0; toast('Tyre changed.'); } else { c.hp = Math.min(100, Math.max(0, c.hp) + 35 + (bgKey === 'mechanic' ? 20 : 0)); toast('Engine ' + (c.hp <= 55 ? 'rebuilt' : 'patched') + '. ' + Math.round(c.hp) + '%'); }
   if (c.myTruck) { story.truckHp = c.hp; story.truckFlat = c.flat; } if (NET.on) netSend({ t: 'carfix', c: [carNid(c), Math.round(c.hp), c.flat ? 1 : 0] }); beep(500, .1, 'triangle', .05); }, { time: 3.2 });
@@ -10706,7 +10791,7 @@ const SPECIALCARS = [
     lines: [['REY', "Company car for one of the lab's directors. Full tank, armoured glass, and nobody in it."], ['ELI', "The garage is full of them. The dead, I mean. Not Mercedes."]], keys: 'Find the director\'s key card at the security desk', got: 'A key card and a smart key in a leather pouch.', hold: 110, n: 20 },
   { kind: 'Car_bmw', town: 'GRANITE FALLS', col: 0x1d3f7a, party: ['ELI'], sub: 'A coupe nobody came back for', d: 'A BMW 3 Series coupe waits in a Granite Falls showroom, still on the turntable.',
     lines: [['ELI', "A BMW in the showroom window. Not a scratch on it. Let's change that."]], keys: 'The keys are in the sales office', got: 'Dealer keys, still in the plastic.', hold: 90, n: 18 }];
-for (const S of SPECIALCARS) { const K = CARLOCK[S.kind], L = K.L, id = 'sp' + L, at = () => spLot(S.kind, S.town), V = () => ({ Car_s10: 'Chevy S-10', Car_police: 'Crown Vic Interceptor', Car_challenger: 'Challenger', Car_gls: 'AMG GLS', Car_bmw: 'BMW 3 Coupe' })[S.kind] || (VEH[S.kind] && VEH[S.kind].name) || 'car';
+for (const S of SPECIALCARS) { const K = CARLOCK[S.kind], L = K.L, id = 'sp' + L, at = () => spLot(S.kind, S.town), V = () => ({ Car_s10: 'Chevy S-10', Car_police: 'Crown Vic Interceptor', Car_challenger: 'Challenger', Car_gls: 'AMG ML 63', Car_bmw: 'BMW 3 Coupe' })[S.kind] || (VEH[S.kind] && VEH[S.kind].name) || 'car';
   CAMP[L] = { n: K.n, sub: S.sub, diff: 1, party: S.party, jobs: [id + 'find', id + 'hold', id + 'home'], d: S.d, intro: async () => { gather(S.party.concat(['DAR'])); await talk(S.lines.concat([['DAR', 'Bring it home. And bring yourselves home.']])); } };
   CJ(L, id + 'find', { n: 'The ' + V(), d: 'Find it in ' + S.town[0] + S.town.slice(1).toLowerCase() + '.',
     steps: [G('Drive to ' + S.town[0] + S.town.slice(1).toLowerCase(), at, { r: 500 }), CL('Clear the area around it', at, S.n, .35, { husk: .25 }),
@@ -10801,7 +10886,7 @@ function demolish(x, y, gas) {   // the set piece: a fireball, a shockwave, and 
 // Each loads once in the background; until a model is ready the game falls back to its own stand-in.
 const EXTG = {}, EXTV = { Car_humvee: 'veh_humvee.json', Car_s10: 'veh_s10.json', Car_challenger: 'veh_challenger.json', Car_police: 'veh_police.json', Car_gls: 'veh_gls.json', Car_bmw: 'veh_bmw.json', Car_lambo: 'veh_lambo.json' };
 const EXTFALL = { Car_humvee: 'Car_suv', Car_s10: 'Car_pickup', Car_challenger: 'Car', Car_police: 'Car', Car_gls: 'Car_suv', Car_bmw: 'Car', Car_lambo: 'Car' };
-const EXTPAINT = { Car_humvee: /^Grey/, Car_s10: /paint/i, Car_challenger: null, Car_police: null, Car_gls: /^X_paint$/, Car_bmw: /^BodyPaint$/, Car_lambo: /^X_paint$/ };
+const EXTPAINT = { Car_humvee: /^Grey/, Car_s10: /paint/i, Car_challenger: null, Car_police: null, Car_gls: /^paint$/, Car_bmw: /^BodyPaint$/, Car_lambo: /^(Car Paint|MattePaint)$/ };   // build 69: the source names (the ML 63 and the Lambo came up unpainted white)
 const EXTLOOK = {   // build 52: Crown Victoria police, Mercedes GLS, BMW 3 coupe
   Car_police: (m, n) => { const set = (c, r, mt, e) => { m.color.set(c).convertSRGBToLinear(); m.roughness = r; m.metalness = mt; if (e && m.emissive) { m.emissive.set(c).convertSRGBToLinear(); m.emissiveIntensity = e; } };
     if (/Car Paint \(Dark/.test(n)) set(0x0e1013, .35, .55); else if (/Car Paint \(White\)|Police Car Paint/.test(n)) set(0xeeeeea, .35, .4); else if (/Chrome|Mirror/.test(n)) set(0xb9bec3, .25, .9);
@@ -10816,18 +10901,24 @@ for (const k in EXTV) loadGlbJson(EXTV[k]).then(g => {
     if (EXTLOOK[k]) EXTLOOK[k](m, n);
     if (/glass|window|windshield/i.test(n)) m.name = 'C_glass'; else if (EXTPAINT[k] && EXTPAINT[k].test(n)) m.name = 'X_paint'; else if (/tail|b-light|red_reflect/i.test(n)) m.name = 'C_tail'; else if (/^HeadLight$/.test(n)) m.name = 'C_headlight'; else if (/head.?light|head_lights/i.test(n)) m.name = 'C_headlight';
     o.castShadow = true; o.receiveShadow = true; });
-  EXTG[k] = g; }).catch(e => console.warn('vehicle model', k, e));
+  EXTG[k] = g; extRefit(k); }).catch(e => console.warn('vehicle model', k, e));
+// build 69: the real-model cars load after the world is built (build 67's load order), so the ones already parked kept their stand-in
+// body for good: a grey generic coupe where a Lamborghini should be. Swap them in as soon as the model arrives.
+function extRefit(k) { if (!Array.isArray(cars) || !world3) return; for (const c of cars) { if (c.kind !== k || !c.m || c.m.userData.ext || c.wreck) continue;
+  try { const m = buildCarMesh(c.col, false, c.kind); if (!m.userData.ext) continue; m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); m.position.copy(c.m.position); m.rotation.copy(c.m.rotation); world3.remove(c.m); c.m = m; world3.add(m); } catch (e) { console.warn('refit', k, e); } } }
 Object.assign(VEH, {
-  Car_humvee: { hl: 46, hw: 24, kg: 3400, wr: .45, eye: .32, acc: 430, top: 650, wb: 66, name: 'M1 Humvee', col: 0x4a5236, cam: -.25, lat: .52 },
+  Car_humvee: { g: 0.62, hl: 46, hw: 24, kg: 3400, wr: .45, eye: .32, acc: 102, top: 628, wb: 66, name: 'M1 Humvee', col: 0x4a5236, cam: -.25, lat: .52 },
   Car_s10: { hl: 52, hw: 20, kg: 1650, wr: .36, eye: .08, acc: 420, top: 640, wb: 60, name: 'Chevy S-10', cam: -.15, lat: .4 },
-  Car_challenger: { hl: 48, hw: 19, kg: 1600, wr: .35, eye: -.06, acc: 560, top: 780, wb: 56, name: "'70 Challenger R/T", cam: -.38, lat: .38 },
-  Car_police: { hl: 54, hw: 21, kg: 1850, wr: .36, eye: 0, acc: 520, top: 820, wb: 58, name: 'Crown Vic Interceptor', cam: -.3, lat: .4, col: 0xe9e9e4, siren: true },
-  Car_gls: { hl: 48, hw: 20, kg: 2300, wr: .4, eye: .22, acc: 500, top: 760, wb: 58, name: 'Mercedes-AMG ML 63', cam: -.1, lat: .44 },
-  Car_bmw: { hl: 46, hw: 20, kg: 1550, wr: .33, eye: -.08, acc: 560, top: 780, wb: 55, name: 'BMW 3 Coupe', cam: -.35, lat: .38 },
-  Car_lambo: { hl: 48, hw: 22, kg: 1575, wr: .34, eye: -.2, acc: 760, top: 1040, wb: 54, name: 'Lamborghini Aventador', cam: -.45, lat: .34 }
+  Car_challenger: { g: 0.82, hl: 48, hw: 19, kg: 1600, wr: .35, eye: -.06, acc: 127, top: 1294, wb: 56, name: "'70 Challenger R/T", cam: -.38, lat: .38 },
+  Car_police: { g: 0.86, hl: 54, hw: 21, kg: 1850, wr: .36, eye: 0, acc: 96, top: 1161, wb: 58, name: 'Crown Vic Interceptor', cam: -.3, lat: .4, col: 0xe9e9e4, siren: true },
+  Car_gls: { g: 0.9, hl: 48, hw: 20, kg: 2300, wr: .4, eye: .22, acc: 157, top: 1389, wb: 58, name: 'Mercedes-AMG ML 63', cam: -.1, lat: .44 },
+  Car_bmw: { g: 0.95, hl: 46, hw: 20, kg: 1550, wr: .33, eye: -.08, acc: 134, top: 1389, wb: 55, name: 'BMW 3 Coupe', cam: -.35, lat: .38 },
+  Car_lambo: { g: 1.15, hl: 48, hw: 22, kg: 1575, wr: .34, eye: -.2, acc: 230, top: 1944, wb: 54, name: 'Lamborghini Aventador', cam: -.45, lat: .34 }
 });
+// build 69: the colours each real model actually comes in (the Lamborghinis were inheriting a grey sedan's paint)
+const EXTCOLS = { Car_lambo: [0xf07a10, 0xf2c200, 0x7ac020, 0xc01010, 0x1a1a1a, 0x2a5bd7, 0xf2f2f2], Car_gls: [0x101214, 0xeaeaea, 0x8b8f94, 0x1c2b4a, 0x6b1010, 0x3a3f44], Car_bmw: [0x1c3f8a, 0xeaeaea, 0x101214, 0x9a9fa5, 0xa01818] };
 function extKinds() {   // build 52: the real models are spread all over the county (the same cars on every client); every one appears many times
-  const cnt = {}, set = (c, k) => { const V = VEH[k]; c.kind = k; c.hl = V.hl; c.hw = V.hw; c.im = 1 / V.kg; c.iI = 1 / (V.kg * ((V.hl * 2) ** 2 + (V.hw * 2) ** 2) / 12); cnt[k] = (cnt[k] || 0) + 1; };
+  const cnt = {}, set = (c, k) => { const V = VEH[k]; c.kind = k; c.hl = V.hl; c.hw = V.hw; c.im = 1 / V.kg; c.iI = 1 / (V.kg * ((V.hl * 2) ** 2 + (V.hw * 2) ** 2) / 12); cnt[k] = (cnt[k] || 0) + 1; const pal = EXTCOLS[k]; if (pal) c.col = pal[hashI(Math.round(c.x) * 13 + Math.round(c.y) * 977 + 5) % pal.length]; };
   const free = []; cars.forEach((c, i) => { if (c.myTruck || c.ozVan || c.state === 'ready' || c.kind === 'Car_bus' || c.kind === 'Car_truck' || c.kind === 'Car_moto') return; free.push([i, c]); });
   for (const [i, c] of free) { const r = hashI(Math.round(c.x) * 7919 + Math.round(c.y) * 31 + 13) % 100;
     if (c.kind === 'Car_pickup') { if (r < 45) set(c, 'Car_s10'); }
@@ -10838,12 +10929,13 @@ function extKinds() {   // build 52: the real models are spread all over the cou
     while ((cnt[k] || 0) < (k === 'Car_humvee' || k === 'Car_lambo' ? 5 : 8) && j < free.length) { const [, c] = free[(j * 37 + k.length * 11) % free.length]; j++; if (EXTV[c.kind]) continue; set(c, k); } }
   window.__extCnt = cnt;
 }
+function extGlass() { if (extGlass.m) return extGlass.m; const m = new THREE.MeshPhysicalMaterial({ name: 'C_glass', color: 0x1d2a30, metalness: .1, roughness: .04, transparent: true, opacity: .62, depthWrite: false, clearcoat: 1, clearcoatRoughness: .02, envMap: typeof VMENV !== 'undefined' ? VMENV : null, envMapIntensity: 1.6 }); m.color.convertSRGBToLinear(); return extGlass.m = m; }
 function buildExtCar(col, kind) {   // same shape of object as buildGlbCar makes, from the converted model
   const src = EXTG[kind].scene.getObjectByName(kind) || EXTG[kind].scene, g = src.clone(true), out = new THREE.Group(); out.add(g); out.userData.kind = kind;
   const u = out.userData; u.glb = true; u.ext = true;
   g.traverse(o => { if (!o.isMesh) return; const n = o.material.name;
     if (n === 'X_paint') { if (kind === 'Car_humvee') { o.material = o.material.clone(); o.material.color.set(0x4a5236).convertSRGBToLinear(); o.material.roughness = .85; o.material.metalness = .15; } else o.material = carPaint(col, false, o.material, true); }
-    else if (n === 'C_glass') { o.material.transparent = true; o.material.opacity = .45; o.material.depthWrite = false; if (VMENV) { o.material.envMap = VMENV; o.material.envMapIntensity = 1; } }
+    else if (n === 'C_glass') { o.material = extGlass(); }   // build 69: one tinted glass for every real-model car; the S-10's windows had taken its orange indicator lens colour and almost vanished
     else if (n === 'C_tail') { if (!u.tailMat) { u.tailMat = o.material.clone(); if (u.tailMat.emissive) { u.tailMat.emissive.setRGB(1, .06, .04); u.tailMat.emissiveIntensity = .25; } } o.material = u.tailMat; }
     else if (n === 'C_headlight') { o.material = o.material.clone(); u.headMat = o.material; }
     else if (n === 'C_blue' || n === 'C_red') { o.material = o.material.clone(); (u.siren = u.siren || []).push(o.material); } });
@@ -10945,7 +11037,7 @@ function realMesh(name, len) {
 ARSENAL.ak.pack = ['R_akm', .88, { grip: .45, gz: .4 }]; { const pf = WMODEL.ak; WMODEL.ak = () => packGun('R_akm', .88, { grip: .45, gz: .4 }) || (pf ? pf() : { g: new THREE.Group(), muzzle: V(0, .5, .03) }); }
 { const s1 = setupArsenalVM; setupArsenalVM = id => ARSENAL[id] && ARSENAL[id].pack ? WREALP.then(() => s1(id)) : s1(id); }
 // the three starting guns (their rigs are loaded at boot) get the real models too
-const REALSTART = { pistol: ['R_m9', .217, { grip: .2, gz: .25, mz: .03 }], shotgun: ['R_r870', .92, { grip: .3 }], rifle: ['R_ar', .9, { grip: .42 }] };
+const REALSTART = { pistol: ['R_m9', .217, { grip: .2, gz: .25, mz: .03 }], shotgun: ['R_r870', .84, { grip: .3 }], rifle: ['R_ar', .9, { grip: .42 }] };
 function realStarter(g, id) { const R = REALSTART[id]; if (!R) return Promise.resolve(); return WREALP.then(() => { const M_ = packGun(R[0], R[1], R[2]); if (M_) vmAttach(g, M_, V(-.004, .01, .012)); }); }
 { const a0 = arsenalSound; arsenalSound = function (kind) { if (kind === 'sup' && actx) { const t = actx.currentTime; nb(t, .05, 'bandpass', 900, 2, .7, .03, 0, .15); nb(t, .12, 'lowpass', 600, .7, .5, .06, 0, .2); click(2400, .25); return true; } if (kind === 'rifle' && actx) { const t = actx.currentTime; nb(t, .04, 'highpass', 2600, .8, 1.2, .02, 0, .5); nb(t, .2, 'lowpass', 1700, .9, 1.3, .07, 300, .9); nb(t + .004, .35, 'lowpass', 420, .7, .9, .12, 0, .8); return true; } return a0(kind); }; }
 
@@ -11217,14 +11309,14 @@ function netZSnap(list, tm) { if (!world3 || !Array.isArray(zombies)) return;   
   for (const e of list) { const [nid, x, y, a, f, hp, sp] = e; seen.add(nid); if (NET.deadSet.has(nid)) continue; let z = NET.byNid.get(nid);
     if (!z || z.hp <= 0 && !z.puppet) { if (z && z.hp <= 0) continue; NET.mk = true; try { z = netMkPuppet(nid, x, y, !!(f & 4), NZSPEC[sp]); } finally { NET.mk = false; } if (!z) continue; }
     if (z.snH && f & 1) { const ds = Math.max(.05, (ht - z.snH) / 1000); z.nvx = clamp((x - z.snX) / ds, -420, 420); z.nvy = clamp((y - z.snY) / ds, -420, 420); } else { z.nvx = z.nvy = 0; }
-    z.snX = x; z.snY = y; z.snT = t; z.snH = ht; z.tx = x; z.ty = y;
+    z.snX = x; z.snY = y; z.snT = t; z.snH = ht; z.tx = x; z.ty = y; z.snL = NET.clkOk && isFinite(tm) && tm > 1e9 && NET.soff !== undefined ? clamp((t + NET.soff - tm) / 1000, 0, .35) : 0;   // build 69: how old the update already was when it arrived
     z.ta = a / 100; z.moving = !!(f & 1); z.state = f & 2 ? 'chase' : 'wander'; z.feed = !!(f & 8); z.atkT = f & 16 ? .3 : 0; if (f & 32) z.hitT = Math.max(z.hitT || 0, .2); z.alertT = f & 64 ? .3 : 0; z.lv = f & 128 ? 1 : 0; z.down = f & 256 ? .3 : 0; if (f & 512) z.mtag = 'clear'; if (f & 1024 && !z.elite) makeElite(z, true); z.crawl = f & 2048 ? 1 : 0; z.limp = f & 4096 ? 'L' : f & 8192 ? 'R' : z.limp; z.seen = t;
     if (!(z.nhpT && t - z.nhpT < 500)) { z.hp = hp / 10; z.nhp = z.hp; } }
   for (const z of zombies) if (z.puppet && z.nid && !seen.has(z.nid) && t - (z.seen || 0) > 3500) z.gone = true;   // the host refreshes every zombie at least once a second
   for (const [k, v] of NET.deadSet) if (t - v > 15000) NET.deadSet.delete(k);
 }
 function netPuppetTick(z, dt) {
-  const age = z.snT ? Math.min(.35, (performance.now() - z.snT) / 1000) : 0, tx = z.tx + (z.nvx || 0) * age, ty = z.ty + (z.nvy || 0) * age;
+  const age = z.snT ? Math.min(.6, (performance.now() - z.snT) / 1000 + (z.moving ? z.snL || 0 : 0)) : 0, tx = z.tx + (z.nvx || 0) * age, ty = z.ty + (z.nvy || 0) * age;
   const k = Math.min(1, dt * 12); if (Math.hypot(tx - z.x, ty - z.y) > 200) { z.x = tx; z.y = ty; } else { z.x += (tx - z.x) * k; z.y += (ty - z.y) * k; }
   let da = z.ta - z.ang; da = Math.atan2(Math.sin(da), Math.cos(da)); z.ang += da * Math.min(1, dt * 12);
   z.hitT = Math.max(0, (z.hitT || 0) - dt);
@@ -11238,7 +11330,7 @@ function netZStream() { const t = performance.now(), z_ = []; let n = 0;
     const changed = L && (Math.abs(L[0] - x) + Math.abs(L[1] - y) > (near ? 3 : 14) || Math.abs(L[2] - a) > (near ? 8 : 30) || L[3] !== f || L[4] !== hp);
     if (!(stale || changed && (near || t - z.nsT > 300))) continue;
     z.nsL = [x, y, a, f, hp]; z.nsT = t; z_.push([z.nid, x, y, a, f, hp, Math.max(0, NZSPEC.indexOf(z.spec || null))]); if (++n >= 90) break; }
-  if (z_.length) netSend({ t: 'zs', z: z_, tm: Math.round(t) }); }
+  if (z_.length) netSend({ t: 'zs', z: z_, tm: Math.round(t + (NET.clkOk && NET.soff !== undefined ? NET.soff : 0)) }); }   // build 69: stamped in server time, so others can tell how late it arrived
 /* ---------- the give menu ---------- */
 function giveNearest() { if (!NET.on) return; let best = null, bd = 110; for (const r of NET.RP.values()) { if (!r.s) continue; const d = Math.hypot(r.x - P.x, r.y - P.y); if (d < bd) { bd = d; best = r; } }
   if (!best) { toast('Stand next to a teammate to give them something.'); return; } giveMenu(best); }

@@ -221,6 +221,47 @@ Online, the county outside Haven is no longer empty between operations. The serv
 
 **Mercedes GLS.** The converted mesh itself is lumpy, with dented panels baked in. Smoothing its normals and subdividing it didn't fix that, so it is unchanged. It needs a different source model.
 
+### Build 69: cars, scopes, getting hurt
+
+**Cars.**
+- **Real-model cars arrive after the world.** Since build 67 the real-model cars load after the world is built, so cars already parked kept their stand-in body. That was the grey coupe where a Lamborghini should be. They are now swapped in as soon as the model arrives.
+- **Paint:**
+  - The Lamborghini's body paint is now recognised; its material is called "MattePaint".
+  - The ML 63's body paint is recognised too ("paint").
+  - Lamborghinis, ML 63s and BMWs now come in that model's real colours instead of inheriting a grey sedan's.
+- **Glass.** Every real-model car shares one tinted glass. The S-10's windows had taken on its orange indicator-lens colour and almost disappeared.
+- **Damaged cars.** Tap E to get in; hold E to repair. The repair prompt used to block getting in.
+- **Real top speeds and acceleration.** Measured with the game's own physics:
+
+  | Car | 0–100 km/h | Top speed |
+  |---|---|---|
+  | Lamborghini | 2.8 s | 348 km/h |
+  | ML 63 | 4.3 s | 248 km/h |
+  | Sedan | 7.8 s | 203 km/h |
+  | Humvee | 12.3 s | 113 km/h |
+
+  Every car is set from its real 0–100 time, about 12% quicker for feel. Its acceleration falls off in a straight line towards its real top speed.
+- **Handling.** Turning is limited by tyre grip, set per car in g (Lamborghini 1.15, sedan 0.85, bus 0.45). Asking for more than the tyres can give makes the car push wide and slide; the handbrake lets the rear go. Braking is about 1.1 g on S and 1.35 g on Space. Coasting is rolling resistance plus air drag. The field of view widens a little at high speed.
+
+**Scopes.** Right mouse looks through the scope; without mouse lock, a right-drag aims through it as well.
+- The mouse wheel zooms from 2x up to about twice the scope's old fixed power.
+- The reticle sways with your breathing, more when you are hurt, moving or out of breath. Holding Shift holds your breath for up to 4 s.
+- The scope view has a lens edge, a mil-dot reticle with a lit red centre, the magnification and a rangefinder.
+- Aim sensitivity scales with the zoom.
+
+**Badly hurt (under 40 health).**
+- A heartbeat that gets louder and faster, and ragged breathing.
+- Muffled sound and a greyed-out picture.
+- A red pulse at the edges of the screen.
+- A limp, camera sway, slower steps and the odd stumble.
+- Under about 15 health, short blackouts.
+
+**Story.**
+- **Voss's formula:** an open case of glowing vials with a lamp on her desk on floor 23. It used to be an invisible spot.
+- **Companion poses:** a story pose left switched on no longer sticks when a companion walks. June kept her Talk pose while walking.
+
+**Online.** The zombie host stamps updates in server time, so other players move zombies forward by the time the update spent in transit as well as the time since it arrived.
+
 ### Build 68: bleeding out, repairs, Humvees, new models
 
 **Going down.** A downed player bleeds out after 45 s, or 20 s if no teammate is within 150 m. A teammate holds E beside them for about 2 s to pick them up, with 45 health.
