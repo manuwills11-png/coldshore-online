@@ -221,6 +221,11 @@ Online, the county outside Haven is no longer empty between operations. The serv
 
 **Mercedes GLS.** The converted mesh itself is lumpy, with dented panels baked in. Smoothing its normals and subdividing it didn't fix that, so it is unchanged. It needs a different source model.
 
+### Build 70: floors and the kiss
+
+- **Sinking through Halden Tower floors.** Your height on a floor is worked out as floor number x storey height. The tower's storeys are 3.4 m, but a save, a story teleport or a different staircase could leave the old 3.1 m value on you, which put you about 0.6 m into the floor by floor 2 (more the higher you went). The storey height now always comes from the building you're standing in (tower 3.4 m, the Hartwell house its own value), so a stale value fixes itself within a frame. Checked on floors 2 and 5 with a forced stale value: eye height stays 1.68 m.
+- **Kiss scene.** Two things pushed the pair apart and then the lean made up the gap by tipping them into each other: the NPC-vs-NPC push and the car/prop collision. Kissing pairs are now pinned to their marks (half a metre apart, feet) and ignore each other's push. The lean is solved from their real head heights and corrected every frame to keep heads about 0.19 m apart; the taller one dips a little while the shorter looks up and rises onto their toes, so mouths meet instead of a face going into a forehead. Chests stay about 0.35 m apart.
+
 ### Build 69: cars, scopes, getting hurt
 
 **Cars.**

@@ -173,7 +173,7 @@ html body #bagui .givebar{background:rgba(8,9,10,.97)}
 `; document.head.appendChild(st);
 })();
 function uiK(k) { return '<kbd class="u-k">' + k + '</kbd>'; }
-function uiBar(items) { return '<div class="u-bar">' + items.map(([k, t, m]) => '<span' + (m ? ' data-m="' + m + '"' : '') + '>' + k.map(uiK).join('') + ' ' + t + '</span>').join('') + '<span class="r">PROTOTYPE BUILD 69</span></div>'; }
+function uiBar(items) { return '<div class="u-bar">' + items.map(([k, t, m]) => '<span' + (m ? ' data-m="' + m + '"' : '') + '>' + k.map(uiK).join('') + ' ' + t + '</span>').join('') + '<span class="r">PROTOTYPE BUILD 70</span></div>'; }
 function uiMainItems() {
   const ready = assetsReady.kit && assetsReady.trees && assetsReady.car && assetsReady.furn && assetsReady.people && assetsReady.wtex;
   const SV = lvlLoad(), hasSv = SV.last !== null && SV.levels[SV.last];
@@ -215,7 +215,7 @@ function renderTitle() {
   } else if (titleMode === 'credits') {
     h += '<div class="u-scr"><div class="u-head"><div class="step">ABOUT</div><h2>Credits</h2></div><div class="u-cred"><p>ColdShore prototype. Characters, zombies, vehicles, buildings, trees and animation built procedurally in Blender. Engine: three.js. Voices: your browser&#39;s speech engine.</p><h4>Models</h4><p style="font-size:13px">From BlendSwap, reduced for the browser: M1 Humvee by panko10 (CC-BY); Chevy S-10 Stepside 2001 by digitalcos (CC-BY 3.0); Ford Crown Victoria Police Interceptor 2005 (CC-BY 3.0); BMW 3 Series Coupe by mikepan (CC-BY-SA 3.0); Trees &amp; Bushes pack by Painkiller5555; Dodge Challenger 1970 R/T; Low Quality Weapon Pack (CC0); Warehouse by argonius (CC0); Beretta M9 pistol by MazenYasser (CC-BY); Weathered AKM rifle by LonesomeDucky (CC0); Automatic Rifle AR48s by 5thElement (CC0); Remington 870 shotgun by Britdawgmasterfunk (CC0); LMG and MX4 built from Firearms_kit_1.0 by Britdawgmasterfunk (CC0); Mercedes AMG 63 ML by LYES94 (CC-BY); Lamborghini Aventador (For games) by shadewar (CC-BY); Victorian Style House by MrChimp2313 (CC0); military_outpost_kit_1.0, Buildings_kit_1.0 and The_Breakers_yard_1.0 by Britdawgmasterfunk (CC0); Living/TV Room Study by mbarros (CC0); Family House Collection by tastyfish (CC0).</p></div><div class="u-row2"><span class="u-btn" data-m="back">Back</span></div></div>' + uiBar([[['Esc'], 'Back', 'back']]);
   }
-  if (titleMode === 'press') h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 69</div>';
+  if (titleMode === 'press') h += '<div class="foot" style="bottom:3vh;right:3vw;left:auto;text-align:right">PROTOTYPE BUILD 70</div>';
   titleEl.innerHTML = h; titleEl.classList.add('on');
   titleEl.querySelectorAll('[data-m]').forEach(a => a.onclick = () => { const m = a.dataset.m; if (m === 'bgback') { titleMode = 'bg'; beep(520, .04, 'triangle', .03); renderTitle(); return; } titleAction(m); });
   titleEl.querySelectorAll('.u-menu a[data-i]').forEach(a => a.onmouseenter = () => { if (UI61.sel === +a.dataset.i) return; UI61.sel = +a.dataset.i; beep(880, .015, 'sine', .012); renderTitle(); });
@@ -749,8 +749,15 @@ function stairTick(e, dt) {
   const st = STAIRS.length ? stairAt(e.x, e.y) : null;
   if (st) { const c = st.ax === 'x' ? e.x : e.y, a0 = st.ax === 'x' ? st.x0 : st.y0, a1 = st.ax === 'x' ? st.x1 : st.y1, prog = clamp(st.dir > 0 ? (c - a0) / (a1 - a0) : (a1 - c) / (a1 - a0), 0, 1);
     const k = clamp(Math.round(e.lvf - prog), 0, st.top - 1); e.lvf = k + prog; e.lv = e.lvf >= k + .5 ? k + 1 : k; e.fh = st.fh; e.onStair = st; }
-  else { e.onStair = null; const t = e.lv | 0; e.lvf += (t - e.lvf) * Math.min(1, dt * 12); if (Math.abs(t - e.lvf) < .002) e.lvf = t; }
+  else { e.onStair = null; const t = e.lv | 0; e.lvf += (t - e.lvf) * Math.min(1, dt * 12); if (Math.abs(t - e.lvf) < .002) e.lvf = t; if (t > 0 || e.lvf > 0) { const f = fhAt(e.x, e.y); if (f) e.fh = f; } }
 }
+/* build 70: the storey height came from whichever staircase you last used (or from a save, or none at all, meaning 3.1 m), so you could
+   stand in a Halden Tower floor (3.4 m storeys) at house height: 0.6 m into the floor on floor 2 and worse higher up. Now it always
+   comes from the building you are standing in. */
+function fhAt(x, y) {
+  const t = typeof TF !== 'undefined' && TF.t; if (t && x > t.x - 40 && x < t.x + t.w + 40 && y > t.y - 40 && y < t.y + t.h + 40) return 3.4;
+  const c = typeof VIC !== 'undefined' && VIC.c; if (c && c.R && x > c.R.x && x < c.R.x + c.R.w && y > c.R.y && y < c.R.y + c.R.h) return VICCOL.f1;
+  return 0; }   // anywhere else keeps whatever the stairs / elevator set
 const lvH = e => (e.lvf || 0) * (e.fh || 3.1);
 function upstairsTick() {
   if ((P.lv | 0) !== 1 || P.onStair) return; const h = houses.find(h => h.two && P.x > h.x && P.x < h.x + h.w && P.y > h.y && P.y < h.y + h.h); if (!h || h.upDone) return; h.upDone = true;
@@ -6109,7 +6116,7 @@ function updateNPCs(dt) {
   for (const n of npcs) {
     if (n.mode === 'car') continue;
     if (!driving && (n.lv | 0) === (P.lv | 0)) { const dx = n.x - P.x, dy = n.y - P.y, d = Math.hypot(dx, dy), m = n.r + P.r; if (d < m && d > .01) { n.x += dx / d * (m - d); n.y += dy / d * (m - d); } }
-    for (const o of npcs) { if (o === n || o.mode === 'car' || (o.lv | 0) !== (n.lv | 0)) continue; const dx = n.x - o.x, dy = n.y - o.y, d = Math.hypot(dx, dy), m = n.r + o.r; if (d < m && d > .01) { n.x += dx / d * (m - d) / 2; n.y += dy / d * (m - d) / 2; } }
+    for (const o of npcs) { if (o === n || o.mode === 'car' || (n.kiss && o.kiss) || (o.lv | 0) !== (n.lv | 0)) continue; const dx = n.x - o.x, dy = n.y - o.y, d = Math.hypot(dx, dy), m = n.r + o.r; if (d < m && d > .01) { n.x += dx / d * (m - d) / 2; n.y += dy / d * (m - d) / 2; } }
     collide(n);
     for (const c of cars) { const sp = Math.hypot(c.vx, c.vy); if (sp < 30 || Math.abs(c.x - n.x) > 70 || Math.abs(c.y - n.y) > 70) continue; const hb = circBox(n.x, n.y, n.r, c); if (hb && sp > 140 && n.party && n.mode !== 'down') { n.mode = 'down'; n.downT = 20; n.hp = 0; n.x += hb.n.x * 30; n.y += hb.n.y * 30; collide(n); bark(n.ch, pick(LINES.down[n.ch] || ['Ow!']), true); } }
   }
@@ -6184,6 +6191,7 @@ function syncNPCs(dt) {
     } else {
       if (n.lift > 0 && (n.mode === 'car' || n.party) && !n.kiss) n.lift = 0;
       if (n.lift > 0 && !n.kiss && !cars.some(c => Math.hypot(c.x - n.x, c.y - n.y) < 60)) { n.lift = Math.max(0, n.lift - 9 * (dt || .016)); }
+      if (n.kiss === 2 && n.pin) { n.x = n.pin[0]; n.y = n.pin[1]; n.goal = null; }   // build 70: nothing (cars, props, the other person) shoves a kissing pair apart
       n.m.position.set(n.x * S3, (n.lift || 0) + lvH(n), n.y * S3); n.m.rotation.set(0, -n.a, 0); if (n.lean) n.m.quaternion.premultiply(_leanQ.setFromAxisAngle(_leanAx.set(-Math.sin(n.a), 0, Math.cos(n.a)), -n.lean));
       if (n.force && n.moving && !cine && n.party) n.force = null;   // build 69: a story pose left on (June stuck talking or kneeling while she walked)
       if (n.healT > 0 && (n.moving || driving)) n.healT = 0;
@@ -7059,20 +7067,24 @@ async function duoKiss(a_, b_) {
   const mx = (a_.x + b_.x) / 2, my = (a_.y + b_.y) / 2, ang = Math.atan2(b_.y - a_.y, b_.x - a_.x);
   a_.mode = b_.mode = 'script'; a_.kiss = b_.kiss = 1; romanceMusic(true);
   await Promise.all([walkTo(a_, mx - Math.cos(ang) * 9, my - Math.sin(ang) * 9, 45), walkTo(b_, mx + Math.cos(ang) * 9, my + Math.sin(ang) * 9, 45)]);
-  // face to face, half a metre apart (bodies never pass through each other), each leaning in from the ankles
-  const H = 3.9; a_.x = mx - Math.cos(ang) * H; a_.y = my - Math.sin(ang) * H; b_.x = mx + Math.cos(ang) * H; b_.y = my + Math.sin(ang) * H;
-  a_.a = ang; b_.a = ang + Math.PI; a_.force = b_.force = 'Idle'; a_.goal = b_.goal = null;
-  // the taller one bends their head down, the shorter one lifts theirs
-  const hy = n => { const u = n.m && n.m.userData; if (!u || !u.head) return 1.6; n.m.updateMatrixWorld(true); return u.head.getWorldPosition(new THREE.Vector3()).y; };
-  const dh = clamp(hy(a_) - hy(b_), -.35, .35), tilt = Math.atan2(dh, .3), eyeH = (hy(a_) + hy(b_)) / 2 + .02;
+  // build 70: they stood 0.39 m apart and both leaned a fixed amount, so faces and chests went into each other. Now they stand
+  // half a metre apart and the lean is worked out from their real head heights so their heads end up about 0.19 m apart
+  // (lips meeting, faces turned opposite ways); while it plays the heads are measured every frame and the lean is corrected.
+  const H = 5; a_.x = mx - Math.cos(ang) * H; a_.y = my - Math.sin(ang) * H; b_.x = mx + Math.cos(ang) * H; b_.y = my + Math.sin(ang) * H;
+  a_.a = ang; b_.a = ang + Math.PI; a_.force = b_.force = 'Idle'; a_.goal = b_.goal = null; a_.lean = b_.lean = 0; a_.pin = [a_.x, a_.y]; b_.pin = [b_.x, b_.y]; a_.kiss = b_.kiss = 2;
+  const hp = n => { const u = n.m && n.m.userData; if (!u || !u.head) return null; n.m.updateMatrixWorld(true); return u.head.getWorldPosition(new THREE.Vector3()); };
+  const hy = n => { const v = hp(n); return v ? v.y - lvH(n) : 1.6; };
+  const ha = hy(a_), hb = hy(b_), dh = clamp(ha - hb, -.35, .35), tilt = Math.atan2(dh, .3), eyeH = (ha + hb) / 2 + lvH(a_) + .02, GAP = .19;
+  const lean0 = Math.asin(clamp((2 * H * S3 - GAP) / Math.max(2.4, ha + hb), 0, .3)); let la = lean0 + Math.max(0, dh) * .03, lb = lean0 + Math.max(0, -dh) * .03;
   let t = 0; cine.tick = dt => { t += dt; const k = clamp(t / 2, 0, 1), e = k * k * (3 - 2 * k);
-    a_.headTilt = .22 * e; b_.headTilt = -.22 * e; a_.headNod = (.06 + tilt) * e; b_.headNod = (.06 - tilt) * e; a_.lean = (.07 + Math.max(0, dh) * .05) * e; b_.lean = (.065 + Math.max(0, -dh) * .05) * e; a_.lift = Math.min(.06, Math.max(0, -dh) * .3) * e; b_.lift = Math.min(.06, Math.max(0, dh) * .3) * e;   // the shorter one goes up on their toes
+    if (k > .85) { const A = hp(a_), B = hp(b_); if (A && B) { const d = Math.hypot(A.x - B.x, A.z - B.z); if (d < GAP - .025) { la -= .004; lb -= .004; } else if (d > GAP + .03) { la += .003; lb += .003; } la = clamp(la, 0, .32); lb = clamp(lb, 0, .32); } }
+    a_.headTilt = .22 * e; b_.headTilt = -.22 * e; a_.headNod = (tilt > 0 ? .06 + tilt * .35 : .02 + tilt * .9) * e; b_.headNod = (tilt < 0 ? .06 - tilt * .35 : .02 - tilt * .9) * e; a_.lean = la * e; b_.lean = lb * e; a_.lift = Math.min(.07, Math.max(0, -dh) * .5) * e; b_.lift = Math.min(.07, Math.max(0, dh) * .5) * e;   // build 70: the taller one dips a little, the shorter one looks up and rises, so mouths meet instead of a face going into a forehead   // the shorter one goes up on their toes
     a_.eyes = b_.eyes = clamp((t - .9) / .7, 0, 1); a_.mood = b_.mood = 1; };
   // profile shot from whichever side has a clear line (cars, walls, trees and buildings are checked), pulled in if something is close
   const free = sd => { const ex = mx + Math.cos(sd) * 40, ey = my + Math.sin(sd) * 40; let f = 40; try { f = camRay(mx, my, ex, ey); } catch (e) {} for (const c of cars) { if (!c.m) continue; for (let t = 6; t <= 40; t += 3) if (Math.hypot(mx + Math.cos(sd) * t - c.x, my + Math.sin(sd) * t - c.y) < Math.max(c.hl, c.hw) * .9) { f = Math.min(f, t - 3); break; } } return f; };
   let side = ang + Math.PI / 2; const fa = free(side), fb = free(side + Math.PI); if (fb > fa) side += Math.PI; const d = clamp(Math.max(fa, fb) - 4, 14, 34), sw = fb > fa ? -.45 : .45;
   await shot([mx + Math.cos(side) * d, my + Math.sin(side) * d, eyeH + .05, mx, my, eyeH - .03], [mx + Math.cos(side + sw * .25) * d * .72, my + Math.sin(side + sw * .25) * d * .72, eyeH, mx, my, eyeH - .02], 5.2);   // a slow push-in that stays in profile
-  cine.tick = null; for (const q of [a_, b_]) { q.headTilt = 0; q.headNod = 0; q.eyes = 0; q.kiss = 0; q.lean = 0; q.lift = 0; }
+  cine.tick = null; for (const q of [a_, b_]) { q.pin = null; q.headTilt = 0; q.headNod = 0; q.eyes = 0; q.kiss = 0; q.lean = 0; q.lift = 0; }
 }
 async function cutDawn() {
   if (story._cutDawn) return; story._cutDawn = 1; const C = CAMPFIRE;
